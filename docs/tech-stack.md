@@ -87,73 +87,84 @@
 
 ## 🧱 プロジェクト名
 - テンプレート名称：`forge-ts`
-- 実装例：`platype-example`
+- 実装例：`forge-ts-example`
 
 
 ## ディレクトリ構成
 ```
 forge-ts/
-├── .devcontainer/
-│   ├── Dockerfile
-│   └── docker-compose.yml
-├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml
-│   │   ├── deploy.yml
-│   │   ├── e2e.yml
-│   │   └── test.yml
-│   └── dependabot.yml
 ├── apps/
-│   ├── web/                        # Next.js App Router
-│   │   ├── app/                    # pages/api は使わない
+│   ├── web/                          # Next.js (Webフロントエンド)
+│   │   ├── app/                      # App Router構成
 │   │   ├── components/
-│   │   ├── e2e/                    # Playwright テスト
-│   │   ├── tests/                  # Vitest ユニットテスト
-│   │   ├── storybook/
+│   │   ├── lib/
+│   │   ├── public/
+│   │   ├── styles/
+│   │   ├── tests/                    # Playwrightテスト
+│   │   ├── vitest.config.ts
 │   │   ├── playwright.config.ts
 │   │   └── tsconfig.json
-│   ├── mobile/                    # Expo + Tamagui
-│   │   ├── App.tsx
+│   ├── mobile/                       # Expo + React Native
+│   │   ├── app/
 │   │   ├── components/
-│   │   ├── tests/                 # Vitest
-│   │   └── storybook/
-│   └── api/                       # Hono バックエンド（REST / Edge対応）
+│   │   ├── assets/
+│   │   ├── tests/
+│   │   └── tsconfig.json
+│   └── api/                          # Hono（APIサーバー）
 │       ├── src/
 │       │   ├── routes/
-│       │   ├── middlewares/
-│       │   ├── handlers/
-│       │   └── server.ts
-│       ├── tests/                 # Vitest テスト
-│       ├── Dockerfile             # ECS 用
+│       │   ├── middleware/
+│       │   └── index.ts
+│       ├── tests/
+│       ├── vitest.config.ts
 │       └── tsconfig.json
+
 ├── packages/
-│   ├── config/                    # ESLint, Prettier, tsconfig 共通設定
-│   │   ├── eslint/
-│   │   ├── prettier/
-│   │   └── tsconfig/
-│   ├── db/                        # Prismaスキーマとクライアント
+│   ├── ui/                           # UIコンポーネント（shadcn/uiなど）
+│   │   ├── src/
+│   │   └── tsconfig.json
+│   ├── db/                           # Prisma + PostgreSQL定義
 │   │   ├── prisma/
 │   │   │   └── schema.prisma
-│   │   ├── migrations/
-│   │   ├── scripts/
-│   │   │   └── seed.ts
-│   │   └── index.ts               # Prisma Client Export
-│   ├── ui/                        # Tamagui UI共通コンポーネント
-│   │   ├── button.tsx
-│   │   ├── theme.ts
-│   │   └── tamagui.config.ts
-│   └── auth/                      # Auth.js ヘルパー
-│       └── getSession.ts
-├── docker/                        # Dev用 + ECS用Docker関連
-│   ├── api/Dockerfile
-│   ├── db/Dockerfile
-│   └── docker-compose.yml
-├── vitest.config.ts              # ルート設定（または各パッケージ別）
-├── .eslintrc.cjs
-├── .prettierrc.cjs
-├── turbo.json
-├── pnpm-workspace.yaml
-├── package.json
-└── README.md
+│   │   ├── src/
+│   │   │   └── client.ts
+│   │   └── tsconfig.json
+│   ├── config/                       # 各種共有設定
+│   │   ├── eslint/
+│   │   │   └── eslint.config.js      # Flat Config方式
+│   │   ├── prettier/
+│   │   │   └── .prettierrc
+│   │   ├── tsconfig/
+│   │   │   └── tsconfig.base.json
+│   │   └── vitest/
+│   │       └── vitest.config.ts
+│   └── auth/                         # Auth.js共有設定など
+│       └── src/
 
+├── infra/                            # AWS CDKによるインフラコード
+│   ├── bin/
+│   │   └── forge-ts.ts
+│   ├── lib/
+│   │   ├── ecs-fargate.ts
+│   │   ├── s3-cloudfront.ts
+│   │   └── rds-postgres.ts
+│   └── cdk.json
+
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml                    # lint, test, build
+│   │   ├── deploy.yml                # CDKデプロイ or ECSデプロイ
+│   │   ├── e2e.yml
+│   └── dependabot.yml
+
+├── .devcontainer/                    # 開発環境定義（VS Code Remote Container）
+│   ├── devcontainer.json
+│   ├── Dockerfile
+│   └── docker-compose.yml
+
+├── tsconfig.base.json               # 共有tsconfig（旧形式でトップにも）
+├── turbo.json                       # Turborepo設定
+├── package.json
+├── pnpm-workspace.yaml
+└── README.md
 ```
