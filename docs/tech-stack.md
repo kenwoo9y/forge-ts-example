@@ -1,12 +1,34 @@
 # 📦 使用技術スタック
 
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![PNPM](https://img.shields.io/badge/pnpm-%234a4a4a.svg?style=for-the-badge&logo=pnpm&logoColor=f69220)
+![Turborepo](https://img.shields.io/badge/Turborepo-FF1E56.svg?style=for-the-badge&logo=Turborepo&logoColor=white)
+![Biome](https://img.shields.io/badge/Biome-60A5FA.svg?style=for-the-badge&logo=Biome&logoColor=white)
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
+![React Native](https://img.shields.io/badge/react_native-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Expo](https://img.shields.io/badge/Expo-1B1F23?style=for-the-badge&logo=expo&logoColor=white)
+![Tamagui](https://img.shields.io/badge/Tamagui-000000?style=for-the-badge&logo=tamagui&logoColor=white)
+![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=authjs&logoColor=white)
+![Hono](https://img.shields.io/badge/Hono-E36002.svg?style=for-the-badge&logo=Hono&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Vitest](https://img.shields.io/badge/-Vitest-252529?style=for-the-badge&logo=vitest&logoColor=FCC72B)
+![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
+![Storybook](https://img.shields.io/badge/Storybook-FF4785?style=for-the-badge&logo=storybook&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![AWS CDK](https://img.shields.io/badge/AWS_CDK-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+
 ## 🧠 共通設定・言語
 - **言語**: TypeScript（全体で統一）
+- **実行環境**: Node.js
 - **パッケージマネージャー**: pnpm
 - **モノレポ管理**: Turborepo
-- **コード整形**: Prettier
-- **静的解析**: ESLint
-- **共通設定**: `packages/config` に ESLint / Prettier / tsconfig を集約
+- **コード整形・静的解析**: Biome
+- **共通設定**: `packages/config` に Biome / tsconfig を集約
 
 ---
 
@@ -81,7 +103,7 @@
 - `packages/ui`：Tamagui UI コンポーネント共通化
 - `packages/db`：Prisma ORM / DBクライアント
 - `packages/auth`：Auth.js関連のロジック共通化
-- `packages/config`：ESLint / Prettier / tsconfig 設定
+- `packages/config`：Biome / tsconfig 設定
 
 ---
 
@@ -130,10 +152,8 @@ forge-ts/
 │   │   │   └── client.ts
 │   │   └── tsconfig.json
 │   ├── config/                       # 各種共有設定
-│   │   ├── eslint/
-│   │   │   └── eslint.config.js      # Flat Config方式
-│   │   ├── prettier/
-│   │   │   └── .prettierrc
+│   │   ├── biome/
+│   │   │   └── biome.json            # Biome設定
 │   │   ├── tsconfig/
 │   │   │   └── tsconfig.base.json
 │   │   └── vitest/
