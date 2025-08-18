@@ -1,10 +1,16 @@
 {
   "name": "forge-ts-example",
+  "private": true,
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "format": "turbo run format",
+    "test": "turbo run test"
   },
   "keywords": [],
   "author": "",
