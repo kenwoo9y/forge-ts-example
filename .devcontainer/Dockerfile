@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/typescript-node:18
+FROM mcr.microsoft.com/devcontainers/typescript-node:22
 
 # システムパッケージの更新
 RUN apt-get update && apt-get install -y \
@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # pnpmのインストール
-RUN npm install -g pnpm@8.15.4
+RUN npm install -g pnpm@10.14.0
 
 # 開発ツールのインストール
 RUN npm install -g \
