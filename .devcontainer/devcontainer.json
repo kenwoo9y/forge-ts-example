@@ -1,0 +1,73 @@
+{
+  "name": "Forge TS Example",
+  "dockerComposeFile": "compose.yaml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-json",
+        "ms-vscode.vscode-yaml",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.remote-containers",
+        "github.copilot",
+        "github.copilot-chat",
+        "ms-vscode.vscode-github",
+        "ms-vscode.vscode-github-pullrequest-github",
+        "ms-vscode.vscode-github-issue-notebooks",
+        "ms-vscode.vscode-github-pullrequest-github-insiders",
+        "ms-vscode.vscode-github-pullrequest-github",
+        "ms-vscode.vscode-github-issue-notebooks",
+        "ms-vscode.vscode-github-pullrequest-github-insiders"
+      ],
+      "settings": {
+        "typescript.preferences.includePackageJsonAutoImports": "on",
+        "typescript.suggest.autoImports": true,
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit",
+          "source.organizeImports": "explicit"
+        },
+        "editor.defaultFormatter": "biomejs.biome",
+        "files.associations": {
+          "*.ts": "typescript",
+          "*.tsx": "typescriptreact",
+          "*.js": "javascript",
+          "*.jsx": "javascriptreact"
+        }
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "pnpm install",
+  "postStartCommand": "pnpm run type-check",
+  "forwardPorts": [3000, 3001, 8080, 5432],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Web App",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "React Native Expo",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Hono API Server",
+      "onAutoForward": "notify"
+    },
+    "5432": {
+      "label": "PostgreSQL Database",
+      "onAutoForward": "notify"
+    }
+  }
+}
