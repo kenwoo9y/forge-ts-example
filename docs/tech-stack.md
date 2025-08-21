@@ -180,7 +180,7 @@ forge-ts/
 ├── .devcontainer/                    # 開発環境定義（VS Code Remote Container）
 │   ├── devcontainer.json
 │   ├── Dockerfile
-│   └── docker-compose.yml
+│   └── compose.yaml
 
 ├── tsconfig.base.json               # 共有tsconfig（旧形式でトップにも）
 ├── turbo.json                       # Turborepo設定
