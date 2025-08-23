@@ -14,8 +14,7 @@ RUN npm install -g pnpm@10.14.0
 # 開発ツールのインストール
 RUN npm install -g \
     @biomejs/biome \
-    turbo \
-    typescript
+    turbo
 
 # 作業ディレクトリの設定
 WORKDIR /workspace
