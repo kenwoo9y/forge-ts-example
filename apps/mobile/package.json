@@ -12,12 +12,12 @@
     "@tamagui/babel-plugin": "^1.132.23",
     "expo": "~53.0.22",
     "expo-status-bar": "~2.2.3",
-    "react": "19.0.0",
+    "react": "19.1.1",
     "react-native": "0.81.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "~19.0.10",
+    "@types/react": "~19.1.12",
     "typescript": "~5.9.2"
   },
   "private": true
