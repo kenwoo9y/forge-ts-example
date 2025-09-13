@@ -5,12 +5,12 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ..:/workspace:cached
-      - node_modules:/workspace/node_modules
       - pnpm_store:/home/node/.pnpm-store
     command: sleep infinity
     environment:
       - NODE_ENV=development
       - PNPM_HOME=/home/node/.pnpm
+      - PNPM_STORE_PATH=/home/node/.pnpm-store
     working_dir: /workspace
 
   postgres:
