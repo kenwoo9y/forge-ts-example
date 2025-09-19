@@ -2,6 +2,6 @@ pre-commit:
   parallel: true
   commands:
     biome:
-      run: pnpm biome check --write=false
+      run: pnpm biome check .
     secrets:
       run: git secrets --scan
