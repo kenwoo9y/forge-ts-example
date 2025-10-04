@@ -22,6 +22,9 @@ check-fix: ## Run check fix
 type-check: ## Run type check
 	pnpm exec tsc --noEmit .
 
+psql: ## Access PostgreSQL Database
+	psql -h postgres -U postgres -d forge_ts_dev
+
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
