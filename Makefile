@@ -25,6 +25,12 @@ type-check: ## Run type check
 psql: ## Access PostgreSQL Database
 	psql -h postgres -U postgres -d forge_ts_dev
 
+migrate-generate:  ## Generate migration
+	cd packages/db && npx prisma migrate dev --create-only
+
+migrate:  ## Execute migration
+	cd packages/db && npx prisma migrate dev
+
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
