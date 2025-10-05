@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     sudo \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # nodeユーザーにsudo権限を付与
