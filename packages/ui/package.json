@@ -12,14 +12,14 @@
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
     "@tamagui/config": "^1.132.23",
-    "react": "19.1.1",
+    "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "^0.81.4",
     "react-native-web": "^0.21.1",
     "tamagui": "^1.132.23"
   },
   "devDependencies": {
-    "@types/react": "^19.1.11",
+    "@types/react": "^19.2.2",
     "@types/react-dom": "^19.1.7"
   }
 }
