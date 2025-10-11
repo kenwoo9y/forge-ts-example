@@ -85,7 +85,7 @@ importers:
     dependencies:
       '@tamagui/next-plugin':
         specifier: ^1.135.0
-        version: 1.135.0(@babel/core@7.28.4)(next@15.5.4(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0)
+        version: 1.135.0(@babel/core@7.28.4)(next@15.5.4(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0(esbuild@0.25.10))
       next:
         specifier: 15.5.4
         version: 15.5.4(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -7536,21 +7536,21 @@ snapshots:
       - react-dom
       - react-native
 
-  '@tamagui/next-plugin@1.135.0(@babel/core@7.28.4)(next@15.5.4(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0)':
+  '@tamagui/next-plugin@1.135.0(@babel/core@7.28.4)(next@15.5.4(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0(esbuild@0.25.10))':
     dependencies:
       '@babel/preset-react': 7.27.1(@babel/core@7.28.4)
       '@tamagui/proxy-worm': 1.135.0
       '@tamagui/react-native-svg': 1.135.0
       '@tamagui/static': 1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)
-      babel-loader: 9.2.1(@babel/core@7.28.4)(webpack@5.102.0)
+      babel-loader: 9.2.1(@babel/core@7.28.4)(webpack@5.102.0(esbuild@0.25.10))
       browserslist: 4.26.3
-      css-loader: 6.11.0(webpack@5.102.0)
-      esbuild-loader: 4.3.0(webpack@5.102.0)
-      file-loader: 6.2.0(webpack@5.102.0)
-      html-webpack-plugin: 5.6.4(webpack@5.102.0)
+      css-loader: 6.11.0(webpack@5.102.0(esbuild@0.25.10))
+      esbuild-loader: 4.3.0(webpack@5.102.0(esbuild@0.25.10))
+      file-loader: 6.2.0(webpack@5.102.0(esbuild@0.25.10))
+      html-webpack-plugin: 5.6.4(webpack@5.102.0(esbuild@0.25.10))
       next: 15.5.4(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      tamagui-loader: 1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0)
-      url-loader: 4.1.1(file-loader@6.2.0(webpack@5.102.0))(webpack@5.102.0)
+      tamagui-loader: 1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0(esbuild@0.25.10))
+      url-loader: 4.1.1(file-loader@6.2.0(webpack@5.102.0(esbuild@0.25.10)))(webpack@5.102.0(esbuild@0.25.10))
     transitivePeerDependencies:
       - '@babel/core'
       - '@rspack/core'
@@ -8639,12 +8639,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.0):
+  babel-loader@9.2.1(@babel/core@7.28.4)(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       '@babel/core': 7.28.4
       find-cache-dir: 4.0.0
       schema-utils: 4.3.3
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
 
   babel-plugin-istanbul@6.1.1:
     dependencies:
@@ -9045,7 +9045,7 @@ snapshots:
     dependencies:
       hyphenate-style-name: 1.1.0
 
-  css-loader@6.11.0(webpack@5.102.0):
+  css-loader@6.11.0(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.6)
       postcss: 8.5.6
@@ -9056,7 +9056,7 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.7.2
     optionalDependencies:
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
 
   css-select@4.3.0:
     dependencies:
@@ -9197,12 +9197,12 @@ snapshots:
 
   es-module-lexer@1.7.0: {}
 
-  esbuild-loader@4.3.0(webpack@5.102.0):
+  esbuild-loader@4.3.0(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       esbuild: 0.25.10
       get-tsconfig: 4.10.1
       loader-utils: 2.0.4
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
       webpack-sources: 1.4.3
 
   esbuild-register@3.6.0(esbuild@0.25.10):
@@ -9423,11 +9423,11 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.3
 
-  file-loader@6.2.0(webpack@5.102.0):
+  file-loader@6.2.0(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 3.3.0
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
 
   fill-range@7.1.1:
     dependencies:
@@ -9619,7 +9619,7 @@ snapshots:
       relateurl: 0.2.7
       terser: 5.44.0
 
-  html-webpack-plugin@5.6.4(webpack@5.102.0):
+  html-webpack-plugin@5.6.4(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
@@ -9627,7 +9627,7 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.3.0
     optionalDependencies:
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
 
   htmlparser2@6.1.0:
     dependencies:
@@ -11404,13 +11404,13 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
 
-  tamagui-loader@1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0):
+  tamagui-loader@1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       '@tamagui/cli-color': 1.135.0
       '@tamagui/core': 1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)
       '@tamagui/static': 1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)
       '@tamagui/web': 1.135.0(react-dom@19.2.0(react@19.2.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.17)(react@19.2.0))(react@19.2.0)
-      esbuild-loader: 4.3.0(webpack@5.102.0)
+      esbuild-loader: 4.3.0(webpack@5.102.0(esbuild@0.25.10))
       esm-resolve: 1.0.11
       fs-extra: 11.3.2
       loader-utils: 3.3.1
@@ -11499,14 +11499,16 @@ snapshots:
       ansi-escapes: 4.3.2
       supports-hyperlinks: 2.3.0
 
-  terser-webpack-plugin@5.3.14(webpack@5.102.0):
+  terser-webpack-plugin@5.3.14(esbuild@0.25.10)(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       jest-worker: 27.5.1
       schema-utils: 4.3.3
       serialize-javascript: 6.0.2
       terser: 5.44.0
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
+    optionalDependencies:
+      esbuild: 0.25.10
 
   terser@5.44.0:
     dependencies:
@@ -11647,14 +11649,14 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  url-loader@4.1.1(file-loader@6.2.0(webpack@5.102.0))(webpack@5.102.0):
+  url-loader@4.1.1(file-loader@6.2.0(webpack@5.102.0(esbuild@0.25.10)))(webpack@5.102.0(esbuild@0.25.10)):
     dependencies:
       loader-utils: 2.0.4
       mime-types: 2.1.35
       schema-utils: 3.3.0
-      webpack: 5.102.0
+      webpack: 5.102.0(esbuild@0.25.10)
     optionalDependencies:
-      file-loader: 6.2.0(webpack@5.102.0)
+      file-loader: 6.2.0(webpack@5.102.0(esbuild@0.25.10))
 
   util-deprecate@1.0.2: {}
 
@@ -11777,7 +11779,7 @@ snapshots:
 
   webpack-sources@3.3.3: {}
 
-  webpack@5.102.0:
+  webpack@5.102.0(esbuild@0.25.10):
     dependencies:
       '@types/eslint-scope': 3.7.7
       '@types/estree': 1.0.8
@@ -11801,7 +11803,7 @@ snapshots:
       neo-async: 2.6.2
       schema-utils: 4.3.3
       tapable: 2.3.0
-      terser-webpack-plugin: 5.3.14(webpack@5.102.0)
+      terser-webpack-plugin: 5.3.14(esbuild@0.25.10)(webpack@5.102.0(esbuild@0.25.10))
       watchpack: 2.4.4
       webpack-sources: 3.3.3
     transitivePeerDependencies:
