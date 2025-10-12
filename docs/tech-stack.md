@@ -118,39 +118,41 @@ forge-ts/
 ├── apps/
 │   ├── web/                          # Next.js (Webフロントエンド)
 │   │   ├── app/                      # App Router構成
-│   │   ├── components/
-│   │   ├── lib/
 │   │   ├── public/
-│   │   ├── styles/
 │   │   ├── tests/                    # Playwrightテスト
 │   │   ├── vitest.config.ts
 │   │   ├── playwright.config.ts
+|   |   ├── biome.json
+|   |   ├── next.config.ts
+|   |   ├── package.json
 │   │   └── tsconfig.json
 │   ├── mobile/                       # Expo + React Native
-│   │   ├── app/
-│   │   ├── components/
 │   │   ├── assets/
 │   │   ├── tests/
+│   │   ├── vitest.config.ts
+|   |   ├── app.json
+|   |   ├── package.json
 │   │   └── tsconfig.json
 │   └── api/                          # Hono（APIサーバー）
 │       ├── src/
-│       │   ├── routes/
-│       │   ├── middleware/
-│       │   └── index.ts
 │       ├── tests/
+│       ├── .dockerignore
+│       ├── compose.yaml
+│       ├── Dockerfile
 │       ├── vitest.config.ts
+│       ├── package.json
 │       └── tsconfig.json
 
 ├── packages/
 │   ├── ui/                           # UIコンポーネント（shadcn/uiなど）
 │   │   ├── src/
-│   │   └── tsconfig.json
+│   │   └── package.json
 │   ├── db/                           # Prisma + PostgreSQL定義
 │   │   ├── prisma/
 │   │   │   └── schema.prisma
 │   │   ├── src/
 │   │   │   └── client.ts
-│   │   └── tsconfig.json
+│   │   └── package.json
 │   ├── config/                       # 各種共有設定
 │   │   ├── biome/
 │   │   │   └── biome.json            # Biome設定
@@ -163,12 +165,15 @@ forge-ts/
 
 ├── infra/                            # AWS CDKによるインフラコード
 │   ├── bin/
-│   │   └── forge-ts.ts
+│   │   └── infra.ts
 │   ├── lib/
 │   │   ├── ecs-fargate.ts
 │   │   ├── s3-cloudfront.ts
 │   │   └── rds-postgres.ts
-│   └── cdk.json
+│   ├── test/
+│   ├── cdk.json
+│   ├── package.json
+│   └── tsconfig.json
 
 ├── .github/
 │   ├── workflows/
@@ -182,9 +187,15 @@ forge-ts/
 │   ├── Dockerfile
 │   └── compose.yaml
 
-├── tsconfig.base.json               # 共有tsconfig（旧形式でトップにも）
+├── .biomeignore
+├── .gitignore
+├── .lefthook.yaml
+├── .npmrc
+├── biome.json
+├── Makefile
 ├── turbo.json                       # Turborepo設定
 ├── package.json
+├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml
 └── README.md
 ```
