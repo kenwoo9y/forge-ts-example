@@ -11,7 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tamagui/next-plugin": "^1.135.0",
+    "@tamagui/next-plugin": "^1.135.2",
     "next": "15.5.4",
     "react": "19.2.0",
     "react-dom": "19.2.0"
