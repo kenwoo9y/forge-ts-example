@@ -11,6 +11,7 @@
 ![Expo](https://img.shields.io/badge/Expo-1B1F23?style=for-the-badge&logo=expo&logoColor=white)
 ![Tamagui](https://img.shields.io/badge/Tamagui-000000?style=for-the-badge&logo=tamagui&logoColor=white)
 ![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=authjs&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Hono](https://img.shields.io/badge/Hono-E36002.svg?style=for-the-badge&logo=Hono&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
@@ -34,6 +35,7 @@
 
 ## 🖥 フロントエンド（Web）
 - **フレームワーク**: Next.js（App Router）
+- **CSSフレームワーク**: TailwindCSS
 - **UIライブラリ**: Tamagui（モバイルと共通）
 - **認証**: Auth.js（NextAuth.js）+ Prisma Adapter
 - **テスト**:
