@@ -16,7 +16,7 @@
     "react-dom": "19.2.1",
     "react-native": "^0.82.1",
     "react-native-web": "^0.21.2",
-    "tamagui": "^1.138.6"
+    "tamagui": "^1.140.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.2",
