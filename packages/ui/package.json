@@ -14,7 +14,7 @@
     "@tamagui/config": "^1.140.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-native": "^0.82.1",
+    "react-native": "^0.83.0",
     "react-native-web": "^0.21.2",
     "tamagui": "^1.140.4"
   },
