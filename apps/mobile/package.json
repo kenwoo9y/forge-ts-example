@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@tamagui/babel-plugin": "^1.139.1",
+    "@tamagui/babel-plugin": "^1.141.5",
     "expo": "~54.0.29",
     "expo-status-bar": "~3.0.9",
     "react": "19.2.3",
