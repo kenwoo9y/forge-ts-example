@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@tamagui/babel-plugin": "^1.144.1",
-    "expo": "~54.0.30",
+    "expo": "~54.0.31",
     "expo-status-bar": "~3.0.9",
     "react": "19.2.3",
     "react-native": "0.83.1"
