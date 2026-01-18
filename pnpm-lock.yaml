@@ -38,10 +38,10 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^1.19.8
-        version: 1.19.9(hono@4.11.3)
+        version: 1.19.9(hono@4.11.4)
       hono:
-        specifier: ^4.11.3
-        version: 4.11.3
+        specifier: ^4.11.4
+        version: 4.11.4
     devDependencies:
       '@types/node':
         specifier: ^25.0.9
@@ -4173,8 +4173,8 @@ packages:
     resolution: {integrity: sha512-BIdolzGpDO9MQ4nu3AUuDwHZZ+KViNm+EZ75Ae55eMXMqLVhDFqEMXxtUe9Qh8hjL+pIna/frs2j6Y2yD5Ua/g==}
     engines: {node: '>=16.9.0'}
 
-  hono@4.11.3:
-    resolution: {integrity: sha512-PmQi306+M/ct/m5s66Hrg+adPnkD5jiO6IjA7WhWw0gSBSo1EcRegwuI1deZ+wd5pzCGynCcn2DprnE4/yEV4w==}
+  hono@4.11.4:
+    resolution: {integrity: sha512-U7tt8JsyrxSRKspfhtLET79pU8K+tInj5QZXs1jSugO1Vq5dFj3kmZsRldo29mTBfcjDRVRXrEZ6LS63Cog9ZA==}
     engines: {node: '>=16.9.0'}
 
   hosted-git-info@7.0.2:
@@ -7746,9 +7746,9 @@ snapshots:
     dependencies:
       hono: 4.10.6
 
-  '@hono/node-server@1.19.9(hono@4.11.3)':
+  '@hono/node-server@1.19.9(hono@4.11.4)':
     dependencies:
-      hono: 4.11.3
+      hono: 4.11.4
 
   '@img/colour@1.0.0':
     optional: true
@@ -11641,7 +11641,7 @@ snapshots:
 
   hono@4.10.6: {}
 
-  hono@4.11.3: {}
+  hono@4.11.4: {}
 
   hosted-git-info@7.0.2:
     dependencies:
