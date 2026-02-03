@@ -17,7 +17,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     env_file:
-      - .devcontainer/.env
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
