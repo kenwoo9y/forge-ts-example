@@ -1,4 +1,4 @@
-.PHONY: help lint-check lint-fix format-check format-fix
+.PHONY: help lint-check lint-fix format-check format-fix check check-fix type-check secrets-scan psql migrate-generate migrate
 .DEFAULT_GOAL := help
 
 lint-check: ## Run lint check
@@ -21,6 +21,9 @@ check-fix: ## Run check fix
 
 type-check: ## Run type check
 	pnpm exec tsc --noEmit .
+
+secrets-scan: ## Run AWS Git Secrets Scan
+	git secrets --scan
 
 psql: ## Access PostgreSQL Database
 	psql -h postgres -U postgres -d forge_ts_dev

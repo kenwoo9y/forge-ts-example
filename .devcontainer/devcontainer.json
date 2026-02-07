@@ -49,7 +49,7 @@
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "rm -f pnpm-lock.yaml && pnpm install && git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets && sudo make install -C /tmp/git-secrets && rm -rf /tmp/git-secrets",
+  "postCreateCommand": "rm -f pnpm-lock.yaml && pnpm install && node_modules/.bin/lefthook install || true && git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets && (cd /tmp/git-secrets && sudo make install) && sudo chmod 755 \"$(command -v git-secrets || echo /usr/local/bin/git-secrets)\" || true && rm -rf /tmp/git-secrets",
   "postStartCommand": "pnpm run type-check",
   "forwardPorts": [3000, 3001, 8080, 5432],
   "portsAttributes": {
