@@ -8,10 +8,24 @@ export interface CreateUserInput {
   lastName: string | null;
 }
 
-export class CreateUserUseCase {
+export interface CreateUserOutput {
+  id: bigint;
+  username: string | null;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ICreateUserUseCase {
+  execute(input: CreateUserInput): Promise<CreateUserOutput>;
+}
+
+export class CreateUserUseCase implements ICreateUserUseCase {
   constructor(private readonly userRepository: IUserRepository) {}
 
-  async execute(input: CreateUserInput): Promise<User> {
+  async execute(input: CreateUserInput): Promise<CreateUserOutput> {
     const user = new User(
       BigInt(0),
       input.username,
@@ -21,6 +35,15 @@ export class CreateUserUseCase {
       new Date(),
       new Date()
     );
-    return this.userRepository.save(user);
+    const saved = await this.userRepository.save(user);
+    return {
+      id: saved.id,
+      username: saved.username,
+      email: saved.email,
+      firstName: saved.firstName,
+      lastName: saved.lastName,
+      createdAt: saved.createdAt,
+      updatedAt: saved.updatedAt,
+    };
   }
 }

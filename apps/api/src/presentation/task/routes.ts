@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { CreateTaskUseCase } from '../../application/task/createTaskUseCase.js';
-import type { GetTaskUseCase } from '../../application/task/getTaskUseCase.js';
+import type { ICreateTaskUseCase } from '../../application/task/createTaskUseCase.js';
+import type { IGetTaskUseCase } from '../../application/task/getTaskUseCase.js';
 
 interface TaskRouteDeps {
-  createTaskUseCase: CreateTaskUseCase;
-  getTaskUseCase: GetTaskUseCase;
+  createTaskUseCase: ICreateTaskUseCase;
+  getTaskUseCase: IGetTaskUseCase;
 }
 
 export function createTaskRoutes(deps: TaskRouteDeps) {

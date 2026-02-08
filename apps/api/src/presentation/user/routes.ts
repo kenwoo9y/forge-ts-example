@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
-import type { CreateUserUseCase } from '../../application/user/createUserUseCase.js';
-import type { GetUserUseCase } from '../../application/user/getUserUseCase.js';
+import type { ICreateUserUseCase } from '../../application/user/createUserUseCase.js';
+import type { IGetUserUseCase } from '../../application/user/getUserUseCase.js';
 
 interface UserRouteDeps {
-  createUserUseCase: CreateUserUseCase;
-  getUserUseCase: GetUserUseCase;
+  createUserUseCase: ICreateUserUseCase;
+  getUserUseCase: IGetUserUseCase;
 }
 
 export function createUserRoutes(deps: UserRouteDeps) {
