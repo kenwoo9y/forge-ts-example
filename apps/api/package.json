@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.8",
+    "@prisma/client": "^7.3.0",
+    "db": "workspace:*",
     "hono": "^4.11.5"
   },
   "devDependencies": {
