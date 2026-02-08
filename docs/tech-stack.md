@@ -9,7 +9,6 @@
 ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![React Native](https://img.shields.io/badge/react_native-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Expo](https://img.shields.io/badge/Expo-1B1F23?style=for-the-badge&logo=expo&logoColor=white)
-![Tamagui](https://img.shields.io/badge/Tamagui-000000?style=for-the-badge&logo=tamagui&logoColor=white)
 ![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=authjs&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Hono](https://img.shields.io/badge/Hono-E36002.svg?style=for-the-badge&logo=Hono&logoColor=white)
@@ -36,7 +35,7 @@
 ## 🖥 フロントエンド（Web）
 - **フレームワーク**: Next.js（App Router）
 - **CSSフレームワーク**: TailwindCSS
-- **UIライブラリ**: Tamagui（モバイルと共通）
+- **UIライブラリ**: shadcn/ui
 - **認証**: Auth.js（NextAuth.js）+ Prisma Adapter
 - **テスト**:
   - 単体テスト: Vitest
@@ -47,7 +46,6 @@
 
 ## 📱 モバイル
 - **フレームワーク**: React Native + Expo
-- **UIライブラリ**: Tamagui（Webと共通）
 - **テスト**:
   - 単体テスト: Vitest
   - UIドキュメント: Storybook（任意）
@@ -102,7 +100,6 @@
 - `apps/web`：Next.js App Router
 - `apps/mobile`：React Native + Expo
 - `apps/api`：Hono API
-- `packages/ui`：Tamagui UI コンポーネント共通化
 - `packages/db`：Prisma ORM / DBクライアント
 - `packages/auth`：Auth.js関連のロジック共通化
 - `packages/config`：Biome / tsconfig 設定
@@ -146,9 +143,6 @@ forge-ts/
 │       └── tsconfig.json
 
 ├── packages/
-│   ├── ui/                           # UIコンポーネント（shadcn/uiなど）
-│   │   ├── src/
-│   │   └── package.json
 │   ├── db/                           # Prisma + PostgreSQL定義
 │   │   ├── prisma/
 │   │   │   └── schema.prisma
