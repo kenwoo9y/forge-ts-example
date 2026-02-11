@@ -1,13 +1,6 @@
-export type TaskReadModel = {
-  id: bigint;
-  title: string | null;
-  description: string | null;
-  dueDate: Date | null;
-  status: string | null;
-  ownerId: bigint | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { TaskReadModel } from './dto.js';
+
+export type { TaskReadModel };
 
 export interface ITaskQueryService {
   findById(id: bigint): Promise<TaskReadModel | null>;

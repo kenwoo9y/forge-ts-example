@@ -1,22 +1,6 @@
 import type { IUserRepository, UserUpdateData } from '../../domain/user/repository.js';
 import { Email } from '../../domain/user/value/email.js';
-
-export type UpdateUserInput = {
-  username?: string | null;
-  email?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-};
-
-export type UpdateUserOutput = {
-  id: bigint;
-  username: string | null;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { UpdateUserInput, UpdateUserOutput } from './dto.js';
 
 export interface IUpdateUserUseCase {
   execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null>;

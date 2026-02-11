@@ -1,4 +1,5 @@
-import type { ITaskQueryService, TaskReadModel } from './queryService.js';
+import type { TaskReadModel } from './dto.js';
+import type { ITaskQueryService } from './queryService.js';
 
 export interface IGetTaskUseCase {
   execute(id: bigint): Promise<TaskReadModel | null>;

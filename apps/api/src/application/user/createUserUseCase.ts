@@ -1,23 +1,7 @@
 import { User } from '../../domain/user/entity.js';
 import type { IUserRepository } from '../../domain/user/repository.js';
 import { Email } from '../../domain/user/value/email.js';
-
-export type CreateUserInput = {
-  username: string | null;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-};
-
-export type CreateUserOutput = {
-  id: bigint;
-  username: string | null;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { CreateUserInput, CreateUserOutput } from './dto.js';
 
 export interface ICreateUserUseCase {
   execute(input: CreateUserInput): Promise<CreateUserOutput>;

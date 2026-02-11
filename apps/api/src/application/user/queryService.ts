@@ -1,12 +1,6 @@
-export type UserReadModel = {
-  id: bigint;
-  username: string | null;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { UserReadModel } from './dto.js';
+
+export type { UserReadModel };
 
 export interface IUserQueryService {
   findByUsername(username: string): Promise<UserReadModel | null>;

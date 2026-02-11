@@ -1,24 +1,6 @@
 import type { ITaskRepository, TaskUpdateData } from '../../domain/task/repository.js';
 import { TaskStatus } from '../../domain/task/value/taskStatus.js';
-
-export type UpdateTaskInput = {
-  title?: string | null;
-  description?: string | null;
-  dueDate?: Date | null;
-  status?: string | null;
-  ownerId?: bigint | null;
-};
-
-export type UpdateTaskOutput = {
-  id: bigint;
-  title: string | null;
-  description: string | null;
-  dueDate: Date | null;
-  status: string | null;
-  ownerId: bigint | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import type { UpdateTaskInput, UpdateTaskOutput } from './dto.js';
 
 export interface IUpdateTaskUseCase {
   execute(id: bigint, input: UpdateTaskInput): Promise<UpdateTaskOutput | null>;
