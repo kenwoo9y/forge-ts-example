@@ -1,4 +1,4 @@
-export interface TaskReadModel {
+export type TaskReadModel = {
   id: bigint;
   title: string | null;
   description: string | null;
@@ -7,7 +7,7 @@ export interface TaskReadModel {
   ownerId: bigint | null;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
 export interface ITaskQueryService {
   findById(id: bigint): Promise<TaskReadModel | null>;

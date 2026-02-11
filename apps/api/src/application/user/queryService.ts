@@ -1,4 +1,4 @@
-export interface UserReadModel {
+export type UserReadModel = {
   id: bigint;
   username: string | null;
   email: string | null;
@@ -6,7 +6,7 @@ export interface UserReadModel {
   lastName: string | null;
   createdAt: Date;
   updatedAt: Date;
-}
+};
 
 export interface IUserQueryService {
   findByUsername(username: string): Promise<UserReadModel | null>;
