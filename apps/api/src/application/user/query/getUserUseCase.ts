@@ -1,4 +1,5 @@
-import type { IUserQueryService, UserReadModel } from './queryService.js';
+import type { UserReadModel } from '../dto.js';
+import type { IUserQueryService } from './queryService.js';
 
 export interface IGetUserUseCase {
   execute(username: string): Promise<UserReadModel | null>;

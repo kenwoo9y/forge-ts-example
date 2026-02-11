@@ -7,6 +7,9 @@ export function createUserRoutes(deps: UserHandlerDeps) {
 
   app.post('/users', handler.createUser);
   app.get('/users/:username', handler.getUser);
+  app.patch('/users/:username', handler.updateUser);
+  app.delete('/users/:username', handler.deleteUser);
+  app.get('/users/:username/tasks', handler.getUserTasks);
 
   return app;
 }

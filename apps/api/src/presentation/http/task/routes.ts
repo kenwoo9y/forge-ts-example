@@ -7,6 +7,8 @@ export function createTaskRoutes(deps: TaskHandlerDeps) {
 
   app.post('/tasks', handler.createTask);
   app.get('/tasks/:id', handler.getTask);
+  app.patch('/tasks/:id', handler.updateTask);
+  app.delete('/tasks/:id', handler.deleteTask);
 
   return app;
 }

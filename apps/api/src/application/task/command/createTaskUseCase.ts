@@ -1,25 +1,7 @@
-import { Task } from '../../domain/task/entity.js';
-import type { ITaskRepository } from '../../domain/task/repository.js';
-import { TaskStatus } from '../../domain/task/value/taskStatus.js';
-
-export type CreateTaskInput = {
-  title: string | null;
-  description: string | null;
-  dueDate: Date | null;
-  status: string | null;
-  ownerId: bigint | null;
-};
-
-export type CreateTaskOutput = {
-  id: bigint;
-  title: string | null;
-  description: string | null;
-  dueDate: Date | null;
-  status: string | null;
-  ownerId: bigint | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+import { Task } from '../../../domain/task/entity.js';
+import type { ITaskRepository } from '../../../domain/task/repository.js';
+import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
+import type { CreateTaskInput, CreateTaskOutput } from '../dto.js';
 
 export interface ICreateTaskUseCase {
   execute(input: CreateTaskInput): Promise<CreateTaskOutput>;

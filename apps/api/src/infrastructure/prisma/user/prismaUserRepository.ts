@@ -1,6 +1,6 @@
 import type { PrismaClient } from 'db/generated/prisma/index.js';
 import { User } from '../../../domain/user/entity.js';
-import type { IUserRepository } from '../../../domain/user/repository.js';
+import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
 
 export class PrismaUserRepository implements IUserRepository {
@@ -15,14 +15,53 @@ export class PrismaUserRepository implements IUserRepository {
         lastName: user.lastName,
       },
     });
+    return this.toEntity(created);
+  }
+
+  async update(username: string, data: UserUpdateData): Promise<User> {
+    const found = await this.prisma.user.findFirst({ where: { username } });
+    if (!found) {
+      throw new Error('User not found');
+    }
+
+    const prismaData: Record<string, unknown> = {};
+    if ('username' in data) prismaData.username = data.username;
+    if ('email' in data) prismaData.email = data.email?.toString() ?? null;
+    if ('firstName' in data) prismaData.firstName = data.firstName;
+    if ('lastName' in data) prismaData.lastName = data.lastName;
+
+    const updated = await this.prisma.user.update({
+      where: { id: found.id },
+      data: prismaData,
+    });
+    return this.toEntity(updated);
+  }
+
+  async delete(username: string): Promise<void> {
+    const found = await this.prisma.user.findFirst({ where: { username } });
+    if (!found) {
+      throw new Error('User not found');
+    }
+    await this.prisma.user.delete({ where: { id: found.id } });
+  }
+
+  private toEntity(record: {
+    id: bigint;
+    username: string | null;
+    email: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): User {
     return new User(
-      created.id,
-      created.username,
-      created.email ? Email.create(created.email) : null,
-      created.firstName,
-      created.lastName,
-      created.createdAt,
-      created.updatedAt
+      record.id,
+      record.username,
+      record.email ? Email.create(record.email) : null,
+      record.firstName,
+      record.lastName,
+      record.createdAt,
+      record.updatedAt
     );
   }
 }
