@@ -1,6 +1,6 @@
 import type { PrismaClient } from 'db/generated/prisma/index.js';
-import { User } from '../../domain/user/entity.js';
-import type { IUserRepository } from '../../domain/user/repository.js';
+import { User } from '../../../domain/user/entity.js';
+import type { IUserRepository } from '../../../domain/user/repository.js';
 
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaClient) {}

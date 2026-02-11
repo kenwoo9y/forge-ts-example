@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { createUserSchema } from 'schemas';
 import { ZodError } from 'zod';
-import type { ICreateUserUseCase } from '../../application/user/createUserUseCase.js';
-import type { IGetUserUseCase } from '../../application/user/getUserUseCase.js';
+import type { ICreateUserUseCase } from '../../../application/user/createUserUseCase.js';
+import type { IGetUserUseCase } from '../../../application/user/getUserUseCase.js';
 
 interface UserRouteDeps {
   createUserUseCase: ICreateUserUseCase;

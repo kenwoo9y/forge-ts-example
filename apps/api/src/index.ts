@@ -5,12 +5,12 @@ import { CreateTaskUseCase } from './application/task/createTaskUseCase.js';
 import { GetTaskUseCase } from './application/task/getTaskUseCase.js';
 import { CreateUserUseCase } from './application/user/createUserUseCase.js';
 import { GetUserUseCase } from './application/user/getUserUseCase.js';
-import { PrismaTaskQueryService } from './infrastructure/task/prismaTaskQueryService.js';
-import { PrismaTaskRepository } from './infrastructure/task/prismaTaskRepository.js';
-import { PrismaUserQueryService } from './infrastructure/user/prismaUserQueryService.js';
-import { PrismaUserRepository } from './infrastructure/user/prismaUserRepository.js';
-import { createTaskRoutes } from './presentation/task/routes.js';
-import { createUserRoutes } from './presentation/user/routes.js';
+import { PrismaTaskQueryService } from './infrastructure/prisma/task/prismaTaskQueryService.js';
+import { PrismaTaskRepository } from './infrastructure/prisma/task/prismaTaskRepository.js';
+import { PrismaUserQueryService } from './infrastructure/prisma/user/prismaUserQueryService.js';
+import { PrismaUserRepository } from './infrastructure/prisma/user/prismaUserRepository.js';
+import { createTaskRoutes } from './presentation/http/task/routes.js';
+import { createUserRoutes } from './presentation/http/user/routes.js';
 
 const prisma = new PrismaClient();
 

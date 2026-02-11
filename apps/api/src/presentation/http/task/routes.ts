@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { createTaskSchema } from 'schemas';
 import { ZodError } from 'zod';
-import type { ICreateTaskUseCase } from '../../application/task/createTaskUseCase.js';
-import type { IGetTaskUseCase } from '../../application/task/getTaskUseCase.js';
+import type { ICreateTaskUseCase } from '../../../application/task/createTaskUseCase.js';
+import type { IGetTaskUseCase } from '../../../application/task/getTaskUseCase.js';
 
 interface TaskRouteDeps {
   createTaskUseCase: ICreateTaskUseCase;
