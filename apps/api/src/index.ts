@@ -3,6 +3,7 @@ import { PrismaClient } from 'db/generated/prisma/index.js';
 import { Hono } from 'hono';
 import { CreateTaskUseCase } from './application/task/createTaskUseCase.js';
 import { DeleteTaskUseCase } from './application/task/deleteTaskUseCase.js';
+import { GetTasksByUsernameUseCase } from './application/task/getTasksByUsernameUseCase.js';
 import { GetTaskUseCase } from './application/task/getTaskUseCase.js';
 import { UpdateTaskUseCase } from './application/task/updateTaskUseCase.js';
 import { CreateUserUseCase } from './application/user/createUserUseCase.js';
@@ -18,16 +19,6 @@ import { createUserRoutes } from './presentation/http/user/routes.js';
 
 const prisma = new PrismaClient();
 
-// Task - Command side
-const taskRepository = new PrismaTaskRepository(prisma);
-const createTaskUseCase = new CreateTaskUseCase(taskRepository);
-const updateTaskUseCase = new UpdateTaskUseCase(taskRepository);
-const deleteTaskUseCase = new DeleteTaskUseCase(taskRepository);
-
-// Task - Query side
-const taskQueryService = new PrismaTaskQueryService(prisma);
-const getTaskUseCase = new GetTaskUseCase(taskQueryService);
-
 // User - Command side
 const userRepository = new PrismaUserRepository(prisma);
 const createUserUseCase = new CreateUserUseCase(userRepository);
@@ -37,6 +28,17 @@ const deleteUserUseCase = new DeleteUserUseCase(userRepository);
 // User - Query side
 const userQueryService = new PrismaUserQueryService(prisma);
 const getUserUseCase = new GetUserUseCase(userQueryService);
+
+// Task - Command side
+const taskRepository = new PrismaTaskRepository(prisma);
+const createTaskUseCase = new CreateTaskUseCase(taskRepository);
+const updateTaskUseCase = new UpdateTaskUseCase(taskRepository);
+const deleteTaskUseCase = new DeleteTaskUseCase(taskRepository);
+
+// Task - Query side
+const taskQueryService = new PrismaTaskQueryService(prisma);
+const getTaskUseCase = new GetTaskUseCase(taskQueryService);
+const getTasksByUsernameUseCase = new GetTasksByUsernameUseCase(taskQueryService, userQueryService);
 
 const app = new Hono();
 
@@ -60,6 +62,7 @@ app.route(
     getUserUseCase,
     updateUserUseCase,
     deleteUserUseCase,
+    getTasksByUsernameUseCase,
   })
 );
 

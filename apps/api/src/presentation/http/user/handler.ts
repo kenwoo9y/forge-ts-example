@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { createUserSchema, updateUserSchema } from 'schemas';
 import { ZodError } from 'zod';
+import type { IGetTasksByUsernameUseCase } from '../../../application/task/getTasksByUsernameUseCase.js';
 import type { ICreateUserUseCase } from '../../../application/user/createUserUseCase.js';
 import type { IDeleteUserUseCase } from '../../../application/user/deleteUserUseCase.js';
 import type { IGetUserUseCase } from '../../../application/user/getUserUseCase.js';
@@ -11,6 +12,7 @@ export interface UserHandlerDeps {
   getUserUseCase: IGetUserUseCase;
   updateUserUseCase: IUpdateUserUseCase;
   deleteUserUseCase: IDeleteUserUseCase;
+  getTasksByUsernameUseCase: IGetTasksByUsernameUseCase;
 }
 
 export function createUserHandler(deps: UserHandlerDeps) {
@@ -101,6 +103,26 @@ export function createUserHandler(deps: UserHandlerDeps) {
         return c.json({ error: 'User not found' }, 404);
       }
       return c.body(null, 204);
+    },
+
+    getUserTasks: async (c: Context) => {
+      const username = c.req.param('username');
+      const tasks = await deps.getTasksByUsernameUseCase.execute(username);
+      if (!tasks) {
+        return c.json({ error: 'User not found' }, 404);
+      }
+      return c.json(
+        tasks.map((task) => ({
+          id: task.id.toString(),
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate?.toISOString() ?? null,
+          status: task.status,
+          ownerId: task.ownerId?.toString() ?? null,
+          createdAt: task.createdAt.toISOString(),
+          updatedAt: task.updatedAt.toISOString(),
+        }))
+      );
     },
   };
 }

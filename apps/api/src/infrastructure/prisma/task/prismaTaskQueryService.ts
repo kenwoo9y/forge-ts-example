@@ -9,15 +9,35 @@ export class PrismaTaskQueryService implements ITaskQueryService {
       where: { id },
     });
     if (!found) return null;
+    return this.toReadModel(found);
+  }
+
+  async findByOwnerId(ownerId: bigint): Promise<TaskReadModel[]> {
+    const tasks = await this.prisma.task.findMany({
+      where: { ownerId },
+    });
+    return tasks.map((task) => this.toReadModel(task));
+  }
+
+  private toReadModel(record: {
+    id: bigint;
+    title: string | null;
+    description: string | null;
+    dueDate: Date | null;
+    status: string | null;
+    ownerId: bigint | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): TaskReadModel {
     return {
-      id: found.id,
-      title: found.title,
-      description: found.description,
-      dueDate: found.dueDate,
-      status: found.status,
-      ownerId: found.ownerId,
-      createdAt: found.createdAt,
-      updatedAt: found.updatedAt,
+      id: record.id,
+      title: record.title,
+      description: record.description,
+      dueDate: record.dueDate,
+      status: record.status,
+      ownerId: record.ownerId,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
     };
   }
 }
