@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
 import { createUserSchema, updateUserSchema } from 'schemas';
 import { ZodError } from 'zod';
-import type { IGetTasksByUsernameUseCase } from '../../../application/task/getTasksByUsernameUseCase.js';
-import type { ICreateUserUseCase } from '../../../application/user/createUserUseCase.js';
-import type { IDeleteUserUseCase } from '../../../application/user/deleteUserUseCase.js';
-import type { IGetUserUseCase } from '../../../application/user/getUserUseCase.js';
-import type { IUpdateUserUseCase } from '../../../application/user/updateUserUseCase.js';
+import type { IGetTasksByUsernameUseCase } from '../../../application/task/query/getTasksByUsernameUseCase.js';
+import type { ICreateUserUseCase } from '../../../application/user/command/createUserUseCase.js';
+import type { IDeleteUserUseCase } from '../../../application/user/command/deleteUserUseCase.js';
+import type { IUpdateUserUseCase } from '../../../application/user/command/updateUserUseCase.js';
+import type { IGetUserUseCase } from '../../../application/user/query/getUserUseCase.js';
 
 export interface UserHandlerDeps {
   createUserUseCase: ICreateUserUseCase;

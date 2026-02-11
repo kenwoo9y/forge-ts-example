@@ -1,4 +1,4 @@
-import type { UserReadModel } from './dto.js';
+import type { UserReadModel } from '../dto.js';
 import type { IUserQueryService } from './queryService.js';
 
 export interface IGetUserUseCase {

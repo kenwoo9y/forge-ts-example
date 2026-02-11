@@ -1,6 +1,6 @@
-import type { ITaskRepository, TaskUpdateData } from '../../domain/task/repository.js';
-import { TaskStatus } from '../../domain/task/value/taskStatus.js';
-import type { UpdateTaskInput, UpdateTaskOutput } from './dto.js';
+import type { ITaskRepository, TaskUpdateData } from '../../../domain/task/repository.js';
+import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
+import type { UpdateTaskInput, UpdateTaskOutput } from '../dto.js';
 
 export interface IUpdateTaskUseCase {
   execute(id: bigint, input: UpdateTaskInput): Promise<UpdateTaskOutput | null>;

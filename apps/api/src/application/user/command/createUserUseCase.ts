@@ -1,7 +1,7 @@
-import { User } from '../../domain/user/entity.js';
-import type { IUserRepository } from '../../domain/user/repository.js';
-import { Email } from '../../domain/user/value/email.js';
-import type { CreateUserInput, CreateUserOutput } from './dto.js';
+import { User } from '../../../domain/user/entity.js';
+import type { IUserRepository } from '../../../domain/user/repository.js';
+import { Email } from '../../../domain/user/value/email.js';
+import type { CreateUserInput, CreateUserOutput } from '../dto.js';
 
 export interface ICreateUserUseCase {
   execute(input: CreateUserInput): Promise<CreateUserOutput>;

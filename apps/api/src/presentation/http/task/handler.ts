@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
 import { createTaskSchema, updateTaskSchema } from 'schemas';
 import { ZodError } from 'zod';
-import type { ICreateTaskUseCase } from '../../../application/task/createTaskUseCase.js';
-import type { IDeleteTaskUseCase } from '../../../application/task/deleteTaskUseCase.js';
-import type { IGetTaskUseCase } from '../../../application/task/getTaskUseCase.js';
-import type { IUpdateTaskUseCase } from '../../../application/task/updateTaskUseCase.js';
+import type { ICreateTaskUseCase } from '../../../application/task/command/createTaskUseCase.js';
+import type { IDeleteTaskUseCase } from '../../../application/task/command/deleteTaskUseCase.js';
+import type { IUpdateTaskUseCase } from '../../../application/task/command/updateTaskUseCase.js';
+import type { IGetTaskUseCase } from '../../../application/task/query/getTaskUseCase.js';
 
 export interface TaskHandlerDeps {
   createTaskUseCase: ICreateTaskUseCase;

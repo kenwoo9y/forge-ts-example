@@ -1,4 +1,4 @@
-import type { IUserRepository } from '../../domain/user/repository.js';
+import type { IUserRepository } from '../../../domain/user/repository.js';
 
 export interface IDeleteUserUseCase {
   execute(username: string): Promise<boolean>;

@@ -1,5 +1,5 @@
-import type { IUserQueryService } from '../user/queryService.js';
-import type { TaskReadModel } from './dto.js';
+import type { IUserQueryService } from '../../user/query/queryService.js';
+import type { TaskReadModel } from '../dto.js';
 import type { ITaskQueryService } from './queryService.js';
 
 export interface IGetTasksByUsernameUseCase {

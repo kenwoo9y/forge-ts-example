@@ -1,7 +1,7 @@
-import { Task } from '../../domain/task/entity.js';
-import type { ITaskRepository } from '../../domain/task/repository.js';
-import { TaskStatus } from '../../domain/task/value/taskStatus.js';
-import type { CreateTaskInput, CreateTaskOutput } from './dto.js';
+import { Task } from '../../../domain/task/entity.js';
+import type { ITaskRepository } from '../../../domain/task/repository.js';
+import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
+import type { CreateTaskInput, CreateTaskOutput } from '../dto.js';
 
 export interface ICreateTaskUseCase {
   execute(input: CreateTaskInput): Promise<CreateTaskOutput>;

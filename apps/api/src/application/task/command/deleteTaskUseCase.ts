@@ -1,4 +1,4 @@
-import type { ITaskRepository } from '../../domain/task/repository.js';
+import type { ITaskRepository } from '../../../domain/task/repository.js';
 
 export interface IDeleteTaskUseCase {
   execute(id: bigint): Promise<boolean>;

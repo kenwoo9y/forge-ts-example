@@ -1,4 +1,4 @@
-import type { TaskReadModel } from './dto.js';
+import type { TaskReadModel } from '../dto.js';
 
 export type { TaskReadModel };
 

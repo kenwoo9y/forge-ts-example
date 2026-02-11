@@ -1,5 +1,8 @@
 import type { PrismaClient } from 'db/generated/prisma/index.js';
-import type { IUserQueryService, UserReadModel } from '../../../application/user/queryService.js';
+import type {
+  IUserQueryService,
+  UserReadModel,
+} from '../../../application/user/query/queryService.js';
 
 export class PrismaUserQueryService implements IUserQueryService {
   constructor(private readonly prisma: PrismaClient) {}

@@ -1,6 +1,6 @@
-import type { IUserRepository, UserUpdateData } from '../../domain/user/repository.js';
-import { Email } from '../../domain/user/value/email.js';
-import type { UpdateUserInput, UpdateUserOutput } from './dto.js';
+import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
+import { Email } from '../../../domain/user/value/email.js';
+import type { UpdateUserInput, UpdateUserOutput } from '../dto.js';
 
 export interface IUpdateUserUseCase {
   execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null>;

@@ -1,4 +1,4 @@
-import type { TaskReadModel } from './dto.js';
+import type { TaskReadModel } from '../dto.js';
 import type { ITaskQueryService } from './queryService.js';
 
 export interface IGetTaskUseCase {
