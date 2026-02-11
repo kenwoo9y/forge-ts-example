@@ -6,7 +6,9 @@ import { DeleteTaskUseCase } from './application/task/deleteTaskUseCase.js';
 import { GetTaskUseCase } from './application/task/getTaskUseCase.js';
 import { UpdateTaskUseCase } from './application/task/updateTaskUseCase.js';
 import { CreateUserUseCase } from './application/user/createUserUseCase.js';
+import { DeleteUserUseCase } from './application/user/deleteUserUseCase.js';
 import { GetUserUseCase } from './application/user/getUserUseCase.js';
+import { UpdateUserUseCase } from './application/user/updateUserUseCase.js';
 import { PrismaTaskQueryService } from './infrastructure/prisma/task/prismaTaskQueryService.js';
 import { PrismaTaskRepository } from './infrastructure/prisma/task/prismaTaskRepository.js';
 import { PrismaUserQueryService } from './infrastructure/prisma/user/prismaUserQueryService.js';
@@ -29,6 +31,8 @@ const getTaskUseCase = new GetTaskUseCase(taskQueryService);
 // User - Command side
 const userRepository = new PrismaUserRepository(prisma);
 const createUserUseCase = new CreateUserUseCase(userRepository);
+const updateUserUseCase = new UpdateUserUseCase(userRepository);
+const deleteUserUseCase = new DeleteUserUseCase(userRepository);
 
 // User - Query side
 const userQueryService = new PrismaUserQueryService(prisma);
@@ -49,7 +53,15 @@ app.route(
     deleteTaskUseCase,
   })
 );
-app.route('/', createUserRoutes({ createUserUseCase, getUserUseCase }));
+app.route(
+  '/',
+  createUserRoutes({
+    createUserUseCase,
+    getUserUseCase,
+    updateUserUseCase,
+    deleteUserUseCase,
+  })
+);
 
 serve(
   {
