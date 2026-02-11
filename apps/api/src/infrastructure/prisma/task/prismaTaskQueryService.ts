@@ -1,5 +1,5 @@
 import type { PrismaClient } from 'db/generated/prisma/index.js';
-import type { ITaskQueryService, TaskReadModel } from '../../application/task/taskQueryService.js';
+import type { ITaskQueryService, TaskReadModel } from '../../../application/task/queryService.js';
 
 export class PrismaTaskQueryService implements ITaskQueryService {
   constructor(private readonly prisma: PrismaClient) {}

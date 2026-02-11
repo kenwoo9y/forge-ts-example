@@ -1,6 +1,7 @@
 import type { PrismaClient } from 'db/generated/prisma/index.js';
-import { User } from '../../domain/user/entity.js';
-import type { IUserRepository } from '../../domain/user/repository.js';
+import { User } from '../../../domain/user/entity.js';
+import type { IUserRepository } from '../../../domain/user/repository.js';
+import { Email } from '../../../domain/user/value/email.js';
 
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -9,7 +10,7 @@ export class PrismaUserRepository implements IUserRepository {
     const created = await this.prisma.user.create({
       data: {
         username: user.username,
-        email: user.email,
+        email: user.email?.toString() ?? null,
         firstName: user.firstName,
         lastName: user.lastName,
       },
@@ -17,7 +18,7 @@ export class PrismaUserRepository implements IUserRepository {
     return new User(
       created.id,
       created.username,
-      created.email,
+      created.email ? Email.create(created.email) : null,
       created.firstName,
       created.lastName,
       created.createdAt,

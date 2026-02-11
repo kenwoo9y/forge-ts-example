@@ -48,6 +48,9 @@ importers:
       hono:
         specifier: ^4.11.5
         version: 4.11.8
+      schemas:
+        specifier: workspace:*
+        version: link:../../packages/schemas
     devDependencies:
       '@types/node':
         specifier: ^25.2.2

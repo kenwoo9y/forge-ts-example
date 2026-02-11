@@ -1,6 +1,7 @@
 import type { PrismaClient } from 'db/generated/prisma/index.js';
-import { Task } from '../../domain/task/entity.js';
-import type { ITaskRepository } from '../../domain/task/repository.js';
+import { Task } from '../../../domain/task/entity.js';
+import type { ITaskRepository } from '../../../domain/task/repository.js';
+import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
 
 export class PrismaTaskRepository implements ITaskRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -11,7 +12,7 @@ export class PrismaTaskRepository implements ITaskRepository {
         title: task.title,
         description: task.description,
         dueDate: task.dueDate,
-        status: task.status,
+        status: task.status?.toString() ?? null,
         ownerId: task.ownerId,
       },
     });
@@ -20,7 +21,7 @@ export class PrismaTaskRepository implements ITaskRepository {
       created.title,
       created.description,
       created.dueDate,
-      created.status,
+      created.status ? TaskStatus.create(created.status) : null,
       created.ownerId,
       created.createdAt,
       created.updatedAt
