@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { createTaskSchema } from 'schemas';
+import { ZodError } from 'zod';
 import type { ICreateTaskUseCase } from '../../application/task/createTaskUseCase.js';
 import type { IGetTaskUseCase } from '../../application/task/getTaskUseCase.js';
 
@@ -12,26 +14,34 @@ export function createTaskRoutes(deps: TaskRouteDeps) {
 
   app.post('/tasks', async (c) => {
     const body = await c.req.json();
-    const task = await deps.createTaskUseCase.execute({
-      title: body.title ?? null,
-      description: body.description ?? null,
-      dueDate: body.dueDate ? new Date(body.dueDate) : null,
-      status: body.status ?? null,
-      ownerId: body.ownerId ? BigInt(body.ownerId) : null,
-    });
-    return c.json(
-      {
-        id: task.id.toString(),
-        title: task.title,
-        description: task.description,
-        dueDate: task.dueDate?.toISOString() ?? null,
-        status: task.status,
-        ownerId: task.ownerId?.toString() ?? null,
-        createdAt: task.createdAt.toISOString(),
-        updatedAt: task.updatedAt.toISOString(),
-      },
-      201
-    );
+    try {
+      const validated = createTaskSchema.parse(body);
+      const task = await deps.createTaskUseCase.execute({
+        title: validated.title ?? null,
+        description: validated.description ?? null,
+        dueDate: validated.dueDate ? new Date(validated.dueDate) : null,
+        status: validated.status ?? null,
+        ownerId: validated.ownerId ? BigInt(validated.ownerId) : null,
+      });
+      return c.json(
+        {
+          id: task.id.toString(),
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate?.toISOString() ?? null,
+          status: task.status,
+          ownerId: task.ownerId?.toString() ?? null,
+          createdAt: task.createdAt.toISOString(),
+          updatedAt: task.updatedAt.toISOString(),
+        },
+        201
+      );
+    } catch (e) {
+      if (e instanceof ZodError) {
+        return c.json({ error: 'Validation failed', details: e.errors }, 400);
+      }
+      throw e;
+    }
   });
 
   app.get('/tasks/:id', async (c) => {

@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { createUserSchema } from 'schemas';
+import { ZodError } from 'zod';
 import type { ICreateUserUseCase } from '../../application/user/createUserUseCase.js';
 import type { IGetUserUseCase } from '../../application/user/getUserUseCase.js';
 
@@ -12,24 +14,32 @@ export function createUserRoutes(deps: UserRouteDeps) {
 
   app.post('/users', async (c) => {
     const body = await c.req.json();
-    const user = await deps.createUserUseCase.execute({
-      username: body.username ?? null,
-      email: body.email ?? null,
-      firstName: body.firstName ?? null,
-      lastName: body.lastName ?? null,
-    });
-    return c.json(
-      {
-        id: user.id.toString(),
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      },
-      201
-    );
+    try {
+      const validated = createUserSchema.parse(body);
+      const user = await deps.createUserUseCase.execute({
+        username: validated.username ?? null,
+        email: validated.email ?? null,
+        firstName: validated.firstName ?? null,
+        lastName: validated.lastName ?? null,
+      });
+      return c.json(
+        {
+          id: user.id.toString(),
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        },
+        201
+      );
+    } catch (e) {
+      if (e instanceof ZodError) {
+        return c.json({ error: 'Validation failed', details: e.errors }, 400);
+      }
+      throw e;
+    }
   });
 
   app.get('/users/:username', async (c) => {
