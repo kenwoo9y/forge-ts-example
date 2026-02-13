@@ -100,7 +100,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
       }
       return c.json(
         tasks.map((task) => ({
-          id: task.id.toString(),
+          publicId: task.publicId,
           title: task.title,
           description: task.description,
           dueDate: task.dueDate?.toISOString() ?? null,

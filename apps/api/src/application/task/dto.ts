@@ -7,7 +7,7 @@ export type CreateTaskInput = {
 };
 
 export type CreateTaskOutput = {
-  id: bigint;
+  publicId: string;
   title: string | null;
   description: string | null;
   dueDate: Date | null;
@@ -26,7 +26,7 @@ export type UpdateTaskInput = {
 };
 
 export type UpdateTaskOutput = {
-  id: bigint;
+  publicId: string;
   title: string | null;
   description: string | null;
   dueDate: Date | null;
@@ -37,7 +37,7 @@ export type UpdateTaskOutput = {
 };
 
 export type TaskReadModel = {
-  id: bigint;
+  publicId: string;
   title: string | null;
   description: string | null;
   dueDate: Date | null;

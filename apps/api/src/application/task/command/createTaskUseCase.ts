@@ -14,6 +14,7 @@ export class CreateTaskUseCase implements ICreateTaskUseCase {
     const status = input.status ? TaskStatus.create(input.status) : null;
     const task = new Task(
       BigInt(0),
+      '',
       input.title,
       input.description,
       input.dueDate,
@@ -24,7 +25,7 @@ export class CreateTaskUseCase implements ICreateTaskUseCase {
     );
     const saved = await this.taskRepository.save(task);
     return {
-      id: saved.id,
+      publicId: saved.publicId,
       title: saved.title,
       description: saved.description,
       dueDate: saved.dueDate,

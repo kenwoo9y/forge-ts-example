@@ -19,7 +19,7 @@ export class PrismaTaskRepository implements ITaskRepository {
     return this.toEntity(created);
   }
 
-  async update(id: bigint, data: TaskUpdateData): Promise<Task> {
+  async update(publicId: string, data: TaskUpdateData): Promise<Task> {
     const prismaData: Record<string, unknown> = {};
     if ('title' in data) prismaData.title = data.title;
     if ('description' in data) prismaData.description = data.description;
@@ -29,7 +29,7 @@ export class PrismaTaskRepository implements ITaskRepository {
 
     try {
       const updated = await this.prisma.task.update({
-        where: { id },
+        where: { publicId },
         data: prismaData,
       });
       return this.toEntity(updated);
@@ -41,9 +41,9 @@ export class PrismaTaskRepository implements ITaskRepository {
     }
   }
 
-  async delete(id: bigint): Promise<void> {
+  async delete(publicId: string): Promise<void> {
     try {
-      await this.prisma.task.delete({ where: { id } });
+      await this.prisma.task.delete({ where: { publicId } });
     } catch (e) {
       if (e instanceof Error && 'code' in e && (e as { code: string }).code === 'P2025') {
         throw new Error('Task not found');
@@ -54,6 +54,7 @@ export class PrismaTaskRepository implements ITaskRepository {
 
   private toEntity(record: {
     id: bigint;
+    publicId: string;
     title: string | null;
     description: string | null;
     dueDate: Date | null;
@@ -64,6 +65,7 @@ export class PrismaTaskRepository implements ITaskRepository {
   }): Task {
     return new Task(
       record.id,
+      record.publicId,
       record.title,
       record.description,
       record.dueDate,
