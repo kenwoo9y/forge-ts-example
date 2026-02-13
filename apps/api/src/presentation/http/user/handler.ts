@@ -18,8 +18,12 @@ export function createUserHandler(deps: UserHandlerDeps) {
   return {
     createUser: async (c: Context) => {
       const validated = await c.req.json<CreateUserInput>();
+      const { username } = validated;
+      if (!username) {
+        return c.json({ error: 'Username is required' }, 400);
+      }
       const user = await deps.createUserUseCase.execute({
-        username: validated.username ?? null,
+        username,
         email: validated.email ?? null,
         firstName: validated.firstName ?? null,
         lastName: validated.lastName ?? null,

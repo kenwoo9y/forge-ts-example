@@ -1,5 +1,6 @@
 import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
+import { Username } from '../../../domain/user/value/username.js';
 import type { UpdateUserInput, UpdateUserOutput } from '../dto.js';
 
 export interface IUpdateUserUseCase {
@@ -12,7 +13,7 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
   async execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null> {
     const data: UserUpdateData = {};
 
-    if ('username' in input) data.username = input.username ?? null;
+    if ('username' in input && input.username) data.username = Username.create(input.username);
     if ('email' in input) {
       data.email = input.email ? Email.create(input.email) : null;
     }
@@ -23,7 +24,7 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
       const saved = await this.userRepository.update(username, data);
       return {
         id: saved.id,
-        username: saved.username,
+        username: saved.username.toString(),
         email: saved.email?.toString() ?? null,
         firstName: saved.firstName,
         lastName: saved.lastName,

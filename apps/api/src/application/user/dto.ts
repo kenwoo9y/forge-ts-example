@@ -1,5 +1,5 @@
 export type CreateUserInput = {
-  username: string | null;
+  username: string;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -7,7 +7,7 @@ export type CreateUserInput = {
 
 export type CreateUserOutput = {
   id: bigint;
-  username: string | null;
+  username: string;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -24,7 +24,7 @@ export type UpdateUserInput = {
 
 export type UpdateUserOutput = {
   id: bigint;
-  username: string | null;
+  username: string;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -34,7 +34,7 @@ export type UpdateUserOutput = {
 
 export type UserReadModel = {
   id: bigint;
-  username: string | null;
+  username: string;
   email: string | null;
   firstName: string | null;
   lastName: string | null;
