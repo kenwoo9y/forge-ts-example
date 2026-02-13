@@ -2,6 +2,7 @@ import type { PrismaClient } from 'db/generated/prisma/index.js';
 import { User } from '../../../domain/user/entity.js';
 import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
+import { Username } from '../../../domain/user/value/username.js';
 
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -9,7 +10,7 @@ export class PrismaUserRepository implements IUserRepository {
   async save(user: User): Promise<User> {
     const created = await this.prisma.user.create({
       data: {
-        username: user.username,
+        username: user.username.toString(),
         email: user.email?.toString() ?? null,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -25,7 +26,7 @@ export class PrismaUserRepository implements IUserRepository {
     }
 
     const prismaData: Record<string, unknown> = {};
-    if ('username' in data) prismaData.username = data.username;
+    if ('username' in data) prismaData.username = data.username?.toString();
     if ('email' in data) prismaData.email = data.email?.toString() ?? null;
     if ('firstName' in data) prismaData.firstName = data.firstName;
     if ('lastName' in data) prismaData.lastName = data.lastName;
@@ -56,7 +57,7 @@ export class PrismaUserRepository implements IUserRepository {
   }): User {
     return new User(
       record.id,
-      record.username,
+      Username.create(record.username),
       record.email ? Email.create(record.email) : null,
       record.firstName,
       record.lastName,
