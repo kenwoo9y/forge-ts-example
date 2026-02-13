@@ -30,7 +30,6 @@ export function createUserHandler(deps: UserHandlerDeps) {
       });
       return c.json(
         {
-          id: user.id.toString(),
           username: user.username,
           email: user.email,
           firstName: user.firstName,
@@ -49,7 +48,6 @@ export function createUserHandler(deps: UserHandlerDeps) {
         return c.json({ error: 'User not found' }, 404);
       }
       return c.json({
-        id: user.id.toString(),
         username: user.username,
         email: user.email,
         firstName: user.firstName,
@@ -73,7 +71,6 @@ export function createUserHandler(deps: UserHandlerDeps) {
         return c.json({ error: 'User not found' }, 404);
       }
       return c.json({
-        id: user.id.toString(),
         username: user.username,
         email: user.email,
         firstName: user.firstName,
