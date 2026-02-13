@@ -25,7 +25,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
       });
       return c.json(
         {
-          id: task.id.toString(),
+          publicId: task.publicId,
           title: task.title,
           description: task.description,
           dueDate: task.dueDate?.toISOString() ?? null,
@@ -39,13 +39,13 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     },
 
     getTask: async (c: Context) => {
-      const id = BigInt(c.req.param('id'));
-      const task = await deps.getTaskUseCase.execute(id);
+      const publicId = c.req.param('publicId');
+      const task = await deps.getTaskUseCase.execute(publicId);
       if (!task) {
         return c.json({ error: 'Task not found' }, 404);
       }
       return c.json({
-        id: task.id.toString(),
+        publicId: task.publicId,
         title: task.title,
         description: task.description,
         dueDate: task.dueDate?.toISOString() ?? null,
@@ -57,7 +57,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     },
 
     updateTask: async (c: Context) => {
-      const id = BigInt(c.req.param('id'));
+      const publicId = c.req.param('publicId');
       const validated = await c.req.json<UpdateTaskInput>();
       const input: Record<string, unknown> = {};
       if ('title' in validated) input.title = validated.title ?? null;
@@ -68,12 +68,12 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
       if ('ownerId' in validated)
         input.ownerId = validated.ownerId ? BigInt(validated.ownerId) : null;
 
-      const task = await deps.updateTaskUseCase.execute(id, input);
+      const task = await deps.updateTaskUseCase.execute(publicId, input);
       if (!task) {
         return c.json({ error: 'Task not found' }, 404);
       }
       return c.json({
-        id: task.id.toString(),
+        publicId: task.publicId,
         title: task.title,
         description: task.description,
         dueDate: task.dueDate?.toISOString() ?? null,
@@ -85,8 +85,8 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     },
 
     deleteTask: async (c: Context) => {
-      const id = BigInt(c.req.param('id'));
-      const deleted = await deps.deleteTaskUseCase.execute(id);
+      const publicId = c.req.param('publicId');
+      const deleted = await deps.deleteTaskUseCase.execute(publicId);
       if (!deleted) {
         return c.json({ error: 'Task not found' }, 404);
       }

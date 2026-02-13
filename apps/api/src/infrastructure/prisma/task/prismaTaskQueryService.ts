@@ -7,9 +7,9 @@ import type {
 export class PrismaTaskQueryService implements ITaskQueryService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async findById(id: bigint): Promise<TaskReadModel | null> {
+  async findByPublicId(publicId: string): Promise<TaskReadModel | null> {
     const found = await this.prisma.task.findUnique({
-      where: { id },
+      where: { publicId },
     });
     if (!found) return null;
     return this.toReadModel(found);
@@ -23,7 +23,7 @@ export class PrismaTaskQueryService implements ITaskQueryService {
   }
 
   private toReadModel(record: {
-    id: bigint;
+    publicId: string;
     title: string | null;
     description: string | null;
     dueDate: Date | null;
@@ -33,7 +33,7 @@ export class PrismaTaskQueryService implements ITaskQueryService {
     updatedAt: Date;
   }): TaskReadModel {
     return {
-      id: record.id,
+      publicId: record.publicId,
       title: record.title,
       description: record.description,
       dueDate: record.dueDate,

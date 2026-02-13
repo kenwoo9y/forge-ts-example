@@ -3,13 +3,13 @@ import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
 import type { UpdateTaskInput, UpdateTaskOutput } from '../dto.js';
 
 export interface IUpdateTaskUseCase {
-  execute(id: bigint, input: UpdateTaskInput): Promise<UpdateTaskOutput | null>;
+  execute(publicId: string, input: UpdateTaskInput): Promise<UpdateTaskOutput | null>;
 }
 
 export class UpdateTaskUseCase implements IUpdateTaskUseCase {
   constructor(private readonly taskRepository: ITaskRepository) {}
 
-  async execute(id: bigint, input: UpdateTaskInput): Promise<UpdateTaskOutput | null> {
+  async execute(publicId: string, input: UpdateTaskInput): Promise<UpdateTaskOutput | null> {
     const data: TaskUpdateData = {};
 
     if ('title' in input) data.title = input.title ?? null;
@@ -21,9 +21,9 @@ export class UpdateTaskUseCase implements IUpdateTaskUseCase {
     if ('ownerId' in input) data.ownerId = input.ownerId ?? null;
 
     try {
-      const saved = await this.taskRepository.update(id, data);
+      const saved = await this.taskRepository.update(publicId, data);
       return {
-        id: saved.id,
+        publicId: saved.publicId,
         title: saved.title,
         description: saved.description,
         dueDate: saved.dueDate,

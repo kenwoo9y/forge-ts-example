@@ -8,9 +8,9 @@ export function createTaskRoutes(deps: TaskHandlerDeps) {
   const handler = createTaskHandler(deps);
 
   app.post('/tasks', zValidator('json', createTaskSchema), handler.createTask);
-  app.get('/tasks/:id', handler.getTask);
-  app.patch('/tasks/:id', zValidator('json', updateTaskSchema), handler.updateTask);
-  app.delete('/tasks/:id', handler.deleteTask);
+  app.get('/tasks/:publicId', handler.getTask);
+  app.patch('/tasks/:publicId', zValidator('json', updateTaskSchema), handler.updateTask);
+  app.delete('/tasks/:publicId', handler.deleteTask);
 
   return app;
 }
