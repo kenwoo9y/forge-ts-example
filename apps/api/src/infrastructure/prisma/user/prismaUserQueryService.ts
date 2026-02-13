@@ -8,7 +8,7 @@ export class PrismaUserQueryService implements IUserQueryService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async findByUsername(username: string): Promise<UserReadModel | null> {
-    const found = await this.prisma.user.findFirst({
+    const found = await this.prisma.user.findUnique({
       where: { username },
     });
     if (!found) return null;

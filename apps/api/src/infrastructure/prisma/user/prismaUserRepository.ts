@@ -19,7 +19,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async update(username: string, data: UserUpdateData): Promise<User> {
-    const found = await this.prisma.user.findFirst({ where: { username } });
+    const found = await this.prisma.user.findUnique({ where: { username } });
     if (!found) {
       throw new Error('User not found');
     }
@@ -31,23 +31,23 @@ export class PrismaUserRepository implements IUserRepository {
     if ('lastName' in data) prismaData.lastName = data.lastName;
 
     const updated = await this.prisma.user.update({
-      where: { id: found.id },
+      where: { username },
       data: prismaData,
     });
     return this.toEntity(updated);
   }
 
   async delete(username: string): Promise<void> {
-    const found = await this.prisma.user.findFirst({ where: { username } });
+    const found = await this.prisma.user.findUnique({ where: { username } });
     if (!found) {
       throw new Error('User not found');
     }
-    await this.prisma.user.delete({ where: { id: found.id } });
+    await this.prisma.user.delete({ where: { username } });
   }
 
   private toEntity(record: {
     id: bigint;
-    username: string | null;
+    username: string;
     email: string | null;
     firstName: string | null;
     lastName: string | null;
