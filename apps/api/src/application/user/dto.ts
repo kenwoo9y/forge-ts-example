@@ -6,7 +6,6 @@ export type CreateUserInput = {
 };
 
 export type CreateUserOutput = {
-  id: bigint;
   username: string;
   email: string | null;
   firstName: string | null;
@@ -23,7 +22,6 @@ export type UpdateUserInput = {
 };
 
 export type UpdateUserOutput = {
-  id: bigint;
   username: string;
   email: string | null;
   firstName: string | null;

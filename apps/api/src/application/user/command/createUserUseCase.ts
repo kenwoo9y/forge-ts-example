@@ -25,7 +25,6 @@ export class CreateUserUseCase implements ICreateUserUseCase {
     );
     const saved = await this.userRepository.save(user);
     return {
-      id: saved.id,
       username: saved.username.toString(),
       email: saved.email?.toString() ?? null,
       firstName: saved.firstName,

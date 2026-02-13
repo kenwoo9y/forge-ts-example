@@ -23,7 +23,6 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
     try {
       const saved = await this.userRepository.update(username, data);
       return {
-        id: saved.id,
         username: saved.username.toString(),
         email: saved.email?.toString() ?? null,
         firstName: saved.firstName,
