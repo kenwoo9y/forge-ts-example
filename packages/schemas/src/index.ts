@@ -1,6 +1,7 @@
 export {
   type CreateTaskInput,
   createTaskSchema,
+  type TaskStatus,
   taskStatusEnum,
   type UpdateTaskInput,
   updateTaskSchema,

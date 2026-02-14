@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server';
+import { swaggerUI } from '@hono/swagger-ui';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
-import { Hono } from 'hono';
 import { pinoLogger } from 'hono-pino';
 import { CreateTaskUseCase } from './application/task/command/createTaskUseCase.js';
 import { DeleteTaskUseCase } from './application/task/command/deleteTaskUseCase.js';
@@ -19,7 +21,8 @@ import { PrismaUserRepository } from './infrastructure/prisma/user/prismaUserRep
 import { createTaskRoutes } from './presentation/http/task/routes.js';
 import { createUserRoutes } from './presentation/http/user/routes.js';
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 // User - Command side
 const userRepository = new PrismaUserRepository(prisma);
@@ -42,7 +45,7 @@ const taskQueryService = new PrismaTaskQueryService(prisma);
 const getTaskUseCase = new GetTaskUseCase(taskQueryService);
 const getTasksByUsernameUseCase = new GetTasksByUsernameUseCase(taskQueryService, userQueryService);
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
 app.use(pinoLogger({ pino: logger }));
 
@@ -69,6 +72,16 @@ app.route(
     getTasksByUsernameUseCase,
   })
 );
+
+app.doc('/doc', {
+  openapi: '3.1.0',
+  info: {
+    title: 'Task Management API',
+    version: '1.0.0',
+  },
+});
+
+app.get('/ui', swaggerUI({ url: '/doc' }));
 
 serve(
   {
