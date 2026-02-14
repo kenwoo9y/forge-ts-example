@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.19.8",
+    "@hono/swagger-ui": "^0.5.3",
+    "@hono/zod-openapi": "^1.2.1",
     "@hono/zod-validator": "^0.7.6",
     "@prisma/client": "^7.3.0",
     "db": "workspace:*",
