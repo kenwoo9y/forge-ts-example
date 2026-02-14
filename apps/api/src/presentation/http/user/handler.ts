@@ -5,6 +5,7 @@ import type { ICreateUserUseCase } from '../../../application/user/command/creat
 import type { IDeleteUserUseCase } from '../../../application/user/command/deleteUserUseCase.js';
 import type { IUpdateUserUseCase } from '../../../application/user/command/updateUserUseCase.js';
 import type { IGetUserUseCase } from '../../../application/user/query/getUserUseCase.js';
+import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 
 export interface UserHandlerDeps {
   createUserUseCase: ICreateUserUseCase;
@@ -22,23 +23,30 @@ export function createUserHandler(deps: UserHandlerDeps) {
       if (!username) {
         return c.json({ error: 'Username is required' }, 400);
       }
-      const user = await deps.createUserUseCase.execute({
-        username,
-        email: validated.email ?? null,
-        firstName: validated.firstName ?? null,
-        lastName: validated.lastName ?? null,
-      });
-      return c.json(
-        {
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          createdAt: user.createdAt.toISOString(),
-          updatedAt: user.updatedAt.toISOString(),
-        },
-        201
-      );
+      try {
+        const user = await deps.createUserUseCase.execute({
+          username,
+          email: validated.email ?? null,
+          firstName: validated.firstName ?? null,
+          lastName: validated.lastName ?? null,
+        });
+        return c.json(
+          {
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            createdAt: user.createdAt.toISOString(),
+            updatedAt: user.updatedAt.toISOString(),
+          },
+          201
+        );
+      } catch (e) {
+        if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
+          return c.json({ error: e.message }, 409);
+        }
+        throw e;
+      }
     },
 
     getUser: async (c: Context) => {
@@ -66,18 +74,25 @@ export function createUserHandler(deps: UserHandlerDeps) {
       if ('firstName' in validated) input.firstName = validated.firstName ?? null;
       if ('lastName' in validated) input.lastName = validated.lastName ?? null;
 
-      const user = await deps.updateUserUseCase.execute(username, input);
-      if (!user) {
-        return c.json({ error: 'User not found' }, 404);
+      try {
+        const user = await deps.updateUserUseCase.execute(username, input);
+        if (!user) {
+          return c.json({ error: 'User not found' }, 404);
+        }
+        return c.json({
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        });
+      } catch (e) {
+        if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
+          return c.json({ error: e.message }, 409);
+        }
+        throw e;
       }
-      return c.json({
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      });
     },
 
     deleteUser: async (c: Context) => {

@@ -1,3 +1,4 @@
+import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
 import { Username } from '../../../domain/user/value/username.js';
@@ -13,9 +14,31 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
   async execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null> {
     const data: UserUpdateData = {};
 
-    if ('username' in input && input.username) data.username = Username.create(input.username);
+    if ('username' in input && input.username) {
+      const newUsername = Username.create(input.username);
+      if (input.username !== username) {
+        const existing = await this.userRepository.findByUsername(newUsername.toString());
+        if (existing) {
+          throw new UsernameDuplicateError(newUsername.toString());
+        }
+      }
+      data.username = newUsername;
+    }
     if ('email' in input) {
-      data.email = input.email ? Email.create(input.email) : null;
+      if (input.email) {
+        const newEmail = Email.create(input.email);
+        const currentUser = await this.userRepository.findByUsername(username);
+        const currentEmail = currentUser?.email?.toString() ?? null;
+        if (input.email !== currentEmail) {
+          const existingEmail = await this.userRepository.findByEmail(newEmail.toString());
+          if (existingEmail) {
+            throw new EmailDuplicateError(newEmail.toString());
+          }
+        }
+        data.email = newEmail;
+      } else {
+        data.email = null;
+      }
     }
     if ('firstName' in input) data.firstName = input.firstName ?? null;
     if ('lastName' in input) data.lastName = input.lastName ?? null;
