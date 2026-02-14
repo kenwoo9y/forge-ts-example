@@ -194,13 +194,11 @@ export function createUserRoutes(deps: UserHandlerDeps) {
   const app = new OpenAPIHono();
   const handler = createUserHandler(deps);
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   app.openapi(createUserRoute, handler.createUser as never);
   app.openapi(getUserRoute, handler.getUser as never);
   app.openapi(updateUserRoute, handler.updateUser as never);
   app.openapi(deleteUserRoute, handler.deleteUser as never);
   app.openapi(getUserTasksRoute, handler.getUserTasks as never);
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return app;
 }
