@@ -4,3 +4,10 @@ export class UsernameDuplicateError extends Error {
     this.name = 'UsernameDuplicateError';
   }
 }
+
+export class EmailDuplicateError extends Error {
+  constructor(email: string) {
+    super(`Email '${email}' is already taken`);
+    this.name = 'EmailDuplicateError';
+  }
+}

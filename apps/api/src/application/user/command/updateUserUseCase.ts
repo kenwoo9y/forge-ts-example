@@ -1,4 +1,4 @@
-import { UsernameDuplicateError } from '../../../domain/user/error.js';
+import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
 import { Username } from '../../../domain/user/value/username.js';
@@ -25,7 +25,20 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
       data.username = newUsername;
     }
     if ('email' in input) {
-      data.email = input.email ? Email.create(input.email) : null;
+      if (input.email) {
+        const newEmail = Email.create(input.email);
+        const currentUser = await this.userRepository.findByUsername(username);
+        const currentEmail = currentUser?.email?.toString() ?? null;
+        if (input.email !== currentEmail) {
+          const existingEmail = await this.userRepository.findByEmail(newEmail.toString());
+          if (existingEmail) {
+            throw new EmailDuplicateError(newEmail.toString());
+          }
+        }
+        data.email = newEmail;
+      } else {
+        data.email = null;
+      }
     }
     if ('firstName' in input) data.firstName = input.firstName ?? null;
     if ('lastName' in input) data.lastName = input.lastName ?? null;

@@ -1,5 +1,5 @@
 import { User } from '../../../domain/user/entity.js';
-import { UsernameDuplicateError } from '../../../domain/user/error.js';
+import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 import type { IUserRepository } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
 import { Username } from '../../../domain/user/value/username.js';
@@ -19,6 +19,12 @@ export class CreateUserUseCase implements ICreateUserUseCase {
       throw new UsernameDuplicateError(username.toString());
     }
     const email = input.email ? Email.create(input.email) : null;
+    if (email) {
+      const existingEmail = await this.userRepository.findByEmail(email.toString());
+      if (existingEmail) {
+        throw new EmailDuplicateError(email.toString());
+      }
+    }
     const user = new User(
       BigInt(0),
       username,

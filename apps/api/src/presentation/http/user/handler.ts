@@ -5,7 +5,7 @@ import type { ICreateUserUseCase } from '../../../application/user/command/creat
 import type { IDeleteUserUseCase } from '../../../application/user/command/deleteUserUseCase.js';
 import type { IUpdateUserUseCase } from '../../../application/user/command/updateUserUseCase.js';
 import type { IGetUserUseCase } from '../../../application/user/query/getUserUseCase.js';
-import { UsernameDuplicateError } from '../../../domain/user/error.js';
+import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 
 export interface UserHandlerDeps {
   createUserUseCase: ICreateUserUseCase;
@@ -42,7 +42,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
           201
         );
       } catch (e) {
-        if (e instanceof UsernameDuplicateError) {
+        if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
           return c.json({ error: e.message }, 409);
         }
         throw e;
@@ -88,7 +88,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
           updatedAt: user.updatedAt.toISOString(),
         });
       } catch (e) {
-        if (e instanceof UsernameDuplicateError) {
+        if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
           return c.json({ error: e.message }, 409);
         }
         throw e;
