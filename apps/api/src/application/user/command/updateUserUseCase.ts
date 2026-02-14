@@ -1,3 +1,4 @@
+import { UsernameDuplicateError } from '../../../domain/user/error.js';
 import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
 import { Username } from '../../../domain/user/value/username.js';
@@ -13,7 +14,16 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
   async execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null> {
     const data: UserUpdateData = {};
 
-    if ('username' in input && input.username) data.username = Username.create(input.username);
+    if ('username' in input && input.username) {
+      const newUsername = Username.create(input.username);
+      if (input.username !== username) {
+        const existing = await this.userRepository.findByUsername(newUsername.toString());
+        if (existing) {
+          throw new UsernameDuplicateError(newUsername.toString());
+        }
+      }
+      data.username = newUsername;
+    }
     if ('email' in input) {
       data.email = input.email ? Email.create(input.email) : null;
     }
