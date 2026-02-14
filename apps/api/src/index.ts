@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { PrismaClient } from 'db/generated/prisma/index.js';
 import { Hono } from 'hono';
+import { pinoLogger } from 'hono-pino';
 import { CreateTaskUseCase } from './application/task/command/createTaskUseCase.js';
 import { DeleteTaskUseCase } from './application/task/command/deleteTaskUseCase.js';
 import { UpdateTaskUseCase } from './application/task/command/updateTaskUseCase.js';
@@ -10,6 +11,7 @@ import { CreateUserUseCase } from './application/user/command/createUserUseCase.
 import { DeleteUserUseCase } from './application/user/command/deleteUserUseCase.js';
 import { UpdateUserUseCase } from './application/user/command/updateUserUseCase.js';
 import { GetUserUseCase } from './application/user/query/getUserUseCase.js';
+import { logger } from './infrastructure/logger/index.js';
 import { PrismaTaskQueryService } from './infrastructure/prisma/task/prismaTaskQueryService.js';
 import { PrismaTaskRepository } from './infrastructure/prisma/task/prismaTaskRepository.js';
 import { PrismaUserQueryService } from './infrastructure/prisma/user/prismaUserQueryService.js';
@@ -42,6 +44,8 @@ const getTasksByUsernameUseCase = new GetTasksByUsernameUseCase(taskQueryService
 
 const app = new Hono();
 
+app.use(pinoLogger({ pino: logger }));
+
 app.get('/', (c) => {
   return c.text('Hello Hono!');
 });
@@ -72,6 +76,6 @@ serve(
     port: 3000,
   },
   (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`);
+    logger.info(`Server is running on http://localhost:${info.port}`);
   }
 );
