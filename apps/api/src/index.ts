@@ -21,7 +21,11 @@ import { PrismaUserRepository } from './infrastructure/prisma/user/prismaUserRep
 import { createTaskRoutes } from './presentation/http/task/routes.js';
 import { createUserRoutes } from './presentation/http/user/routes.js';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL environment variable is required');
+}
+const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
 
 // User - Command side
@@ -73,7 +77,7 @@ app.route(
   })
 );
 
-app.doc('/doc', {
+app.doc('/openapi.json', {
   openapi: '3.1.0',
   info: {
     title: 'Task Management API',
@@ -81,7 +85,7 @@ app.doc('/doc', {
   },
 });
 
-app.get('/ui', swaggerUI({ url: '/doc' }));
+app.get('/docs', swaggerUI({ url: '/openapi.json' }));
 
 serve(
   {
