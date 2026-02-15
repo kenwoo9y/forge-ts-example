@@ -1,0 +1,69 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    ".next",
+    "out",
+    "coverage",
+    ".turbo",
+    ".pnpm-store",
+    "pnpm-lock.yaml",
+    "generated",
+    "*.log",
+    "**/*.tsbuildinfo"
+  ],
+  "words": [
+    "appsync",
+    "autoincrement",
+    "biome",
+    "biomeignore",
+    "biomejs",
+    "cspell",
+    "customresources",
+    "datasource",
+    "dbgenerated",
+    "Descryption",
+    "domexception",
+    "evenodd",
+    "eventsource",
+    "fkey",
+    "formdata",
+    "hono",
+    "importmeta",
+    "lefthook",
+    "logomark",
+    "nextauth",
+    "nodegroup",
+    "opengraph",
+    "opensearch",
+    "opensearchservice",
+    "otheruser",
+    "pkey",
+    "pnpm",
+    "prisma",
+    "psql",
+    "QLAPI",
+    "subresource",
+    "testuser",
+    "tsconfig",
+    "turbo",
+    "turbopack",
+    "turborepo",
+    "updateduser",
+    "vitest",
+    "weakref"
+  ],
+  "overrides": [
+    {
+      "filename": "**/*.sql",
+      "words": ["pkey", "fkey"]
+    },
+    {
+      "filename": "**/*.prisma",
+      "words": ["autoincrement", "dbgenerated"]
+    }
+  ]
+}
