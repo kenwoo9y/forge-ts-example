@@ -1,7 +1,10 @@
 pre-commit:
   parallel: true
   commands:
-    biome:
+    biome-check:
       run: pnpm biome check .
-    secrets:
+    secret-scan:
       run: git secrets --scan
+    spell-check:
+      glob: "*.{ts,tsx,js,jsx,json,md,yml,yaml}"
+      run: pnpm exec cspell --no-progress --no-summary {staged_files}
