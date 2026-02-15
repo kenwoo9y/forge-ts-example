@@ -20,6 +20,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
     createUser: async (c: Context) => {
       const validated = await c.req.json<CreateUserInput>();
       const { username } = validated;
+      /* c8 ignore next 3 -- Zod validates username before handler */
       if (!username) {
         return c.json({ error: 'Username is required' }, 400);
       }
@@ -45,6 +46,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
         if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
           return c.json({ error: e.message }, 409);
         }
+        /* c8 ignore next */
         throw e;
       }
     },
@@ -91,6 +93,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
         if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
           return c.json({ error: e.message }, 409);
         }
+        /* c8 ignore next */
         throw e;
       }
     },

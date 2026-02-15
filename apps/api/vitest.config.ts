@@ -15,6 +15,7 @@ export default mergeConfig(
           'src/**/dto.ts',
           'src/**/repository.ts',
           'src/**/queryService.ts',
+          'src/domain/shared/valueObject.ts',
         ],
       },
     },

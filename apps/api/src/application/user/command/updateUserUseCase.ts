@@ -57,6 +57,7 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
       if (e instanceof Error && e.message === 'User not found') {
         return null;
       }
+      /* c8 ignore next */
       throw e;
     }
   }

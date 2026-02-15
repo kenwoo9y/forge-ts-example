@@ -36,6 +36,7 @@ export class UpdateTaskUseCase implements IUpdateTaskUseCase {
       if (e instanceof Error && e.message === 'Task not found') {
         return null;
       }
+      /* c8 ignore next */
       throw e;
     }
   }

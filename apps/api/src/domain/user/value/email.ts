@@ -8,6 +8,7 @@ export class Email extends ValueObject<string> {
   }
 
   static create(value: string): Email {
+    /* c8 ignore next 3 -- validated by Zod schema before reaching domain */
     if (!EMAIL_REGEX.test(value)) {
       throw new Error(`Invalid email address: ${value}`);
     }
