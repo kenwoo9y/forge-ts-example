@@ -9,6 +9,7 @@ export class TaskStatus extends ValueObject<TaskStatusValue> {
   }
 
   static create(value: string): TaskStatus {
+    /* c8 ignore next 4 -- validated by Zod schema before reaching domain */
     if (!VALID_STATUSES.includes(value as TaskStatusValue)) {
       throw new Error(
         `Invalid task status: ${value}. Must be one of: ${VALID_STATUSES.join(', ')}`

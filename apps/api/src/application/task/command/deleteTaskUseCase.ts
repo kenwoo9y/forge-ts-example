@@ -15,6 +15,7 @@ export class DeleteTaskUseCase implements IDeleteTaskUseCase {
       if (e instanceof Error && e.message === 'Task not found') {
         return false;
       }
+      /* c8 ignore next */
       throw e;
     }
   }

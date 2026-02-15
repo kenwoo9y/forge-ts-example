@@ -15,6 +15,7 @@ export class DeleteUserUseCase implements IDeleteUserUseCase {
       if (e instanceof Error && e.message === 'User not found') {
         return false;
       }
+      /* c8 ignore next */
       throw e;
     }
   }

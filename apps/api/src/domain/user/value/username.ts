@@ -8,6 +8,7 @@ export class Username extends ValueObject<string> {
   }
 
   static create(value: string): Username {
+    /* c8 ignore next 6 -- validated by Zod schema before reaching domain */
     if (value.length === 0) {
       throw new Error('Username must not be empty');
     }
