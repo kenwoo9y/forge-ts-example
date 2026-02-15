@@ -10,7 +10,8 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "format": "turbo run format",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "spell-check": "cspell \"**\""
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "lefthook": "^2.0.15",
     "turbo": "^2.7.6",
     "typescript": "^5.9.2",
+    "cspell": "^9.6.4",
     "vitest": "3.2.4"
   },
   "dependencies": {
