@@ -8,3 +8,8 @@ pre-commit:
     spell-check:
       glob: "*.{ts,tsx,js,jsx,json,md,yml,yaml}"
       run: pnpm exec cspell --no-progress --no-summary --no-must-find-files {staged_files}
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}
