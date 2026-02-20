@@ -4,9 +4,21 @@ import type {
   TaskReadModel,
 } from '../../../application/task/query/queryService.js';
 
+/**
+ * Prismaを使ったタスククエリサービスの実装クラス。
+ * `ITaskQueryService` インターフェースに従い、読み取り専用のタスク検索を行う。
+ */
 export class PrismaTaskQueryService implements ITaskQueryService {
+  /**
+   * @param prisma Prismaクライアント
+   */
   constructor(private readonly prisma: PrismaClient) {}
 
+  /**
+   * 公開IDでタスクを取得する。
+   * @param publicId 検索するタスクの公開ID
+   * @returns 該当するタスクの読み取りモデル。存在しない場合は `null`
+   */
   async findByPublicId(publicId: string): Promise<TaskReadModel | null> {
     const found = await this.prisma.task.findUnique({
       where: { publicId },
@@ -15,6 +27,11 @@ export class PrismaTaskQueryService implements ITaskQueryService {
     return this.toReadModel(found);
   }
 
+  /**
+   * 所有者IDでタスク一覧を取得する。
+   * @param ownerId 検索する所有者のユーザーID
+   * @returns 該当するタスクの読み取りモデルの配列
+   */
   async findByOwnerId(ownerId: bigint): Promise<TaskReadModel[]> {
     const tasks = await this.prisma.task.findMany({
       where: { ownerId },
@@ -22,6 +39,11 @@ export class PrismaTaskQueryService implements ITaskQueryService {
     return tasks.map((task) => this.toReadModel(task));
   }
 
+  /**
+   * Prismaのレコードをタスクの読み取りモデルに変換する。
+   * @param record Prismaから取得したタスクレコード
+   * @returns 変換されたタスクの読み取りモデル
+   */
   private toReadModel(record: {
     publicId: string;
     title: string | null;

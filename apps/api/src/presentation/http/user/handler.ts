@@ -7,16 +7,36 @@ import type { IUpdateUserUseCase } from '../../../application/user/command/updat
 import type { IGetUserUseCase } from '../../../application/user/query/getUserUseCase.js';
 import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 
+/**
+ * ユーザーハンドラーの依存関係インターフェース。
+ * ユーザー操作に必要なすべてのユースケースを保持する。
+ */
 export interface UserHandlerDeps {
+  /** ユーザー作成ユースケース */
   createUserUseCase: ICreateUserUseCase;
+  /** ユーザー取得ユースケース */
   getUserUseCase: IGetUserUseCase;
+  /** ユーザー更新ユースケース */
   updateUserUseCase: IUpdateUserUseCase;
+  /** ユーザー削除ユースケース */
   deleteUserUseCase: IDeleteUserUseCase;
+  /** ユーザー名でタスク一覧を取得するユースケース */
   getTasksByUsernameUseCase: IGetTasksByUsernameUseCase;
 }
 
+/**
+ * ユーザー関連のHTTPハンドラーを生成する。
+ * @param deps ハンドラーが使用するユースケースの依存関係
+ * @returns ユーザー操作のハンドラーオブジェクト
+ */
 export function createUserHandler(deps: UserHandlerDeps) {
   return {
+    /**
+     * ユーザーを作成するハンドラー。
+     * POST /users に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 作成されたユーザー情報（201）、またはエラー（400 / 409）
+     */
     createUser: async (c: Context) => {
       const validated = await c.req.json<CreateUserInput>();
       const { username } = validated;
@@ -51,6 +71,12 @@ export function createUserHandler(deps: UserHandlerDeps) {
       }
     },
 
+    /**
+     * ユーザーを取得するハンドラー。
+     * GET /users/:username に対応する。
+     * @param c Honoのコンテキスト
+     * @returns ユーザー情報（200）、またはエラー（404）
+     */
     getUser: async (c: Context) => {
       const username = c.req.param('username');
       const user = await deps.getUserUseCase.execute(username);
@@ -67,6 +93,12 @@ export function createUserHandler(deps: UserHandlerDeps) {
       });
     },
 
+    /**
+     * ユーザー情報を更新するハンドラー。
+     * PATCH /users/:username に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 更新後のユーザー情報（200）、またはエラー（404 / 409）
+     */
     updateUser: async (c: Context) => {
       const username = c.req.param('username');
       const validated = await c.req.json<UpdateUserInput>();
@@ -98,6 +130,12 @@ export function createUserHandler(deps: UserHandlerDeps) {
       }
     },
 
+    /**
+     * ユーザーを削除するハンドラー。
+     * DELETE /users/:username に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 空レスポンス（204）、またはエラー（404）
+     */
     deleteUser: async (c: Context) => {
       const username = c.req.param('username');
       const deleted = await deps.deleteUserUseCase.execute(username);
@@ -107,6 +145,12 @@ export function createUserHandler(deps: UserHandlerDeps) {
       return c.body(null, 204);
     },
 
+    /**
+     * ユーザーのタスク一覧を取得するハンドラー。
+     * GET /users/:username/tasks に対応する。
+     * @param c Honoのコンテキスト
+     * @returns タスク一覧（200）、またはエラー（404）
+     */
     getUserTasks: async (c: Context) => {
       const username = c.req.param('username');
       const tasks = await deps.getTasksByUsernameUseCase.execute(username);

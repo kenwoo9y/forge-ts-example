@@ -3,13 +3,33 @@ import type { ITaskRepository } from '../../../domain/task/repository.js';
 import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
 import type { CreateTaskInput, CreateTaskOutput } from '../dto.js';
 
+/**
+ * タスク作成ユースケースのインターフェース。
+ */
 export interface ICreateTaskUseCase {
+  /**
+   * タスクを作成する。
+   * @param input タスク作成に必要な入力データ
+   * @returns 作成されたタスクの出力データ
+   */
   execute(input: CreateTaskInput): Promise<CreateTaskOutput>;
 }
 
+/**
+ * タスク作成ユースケースの実装クラス。
+ * ステータスを値オブジェクトに変換してタスクを保存する。
+ */
 export class CreateTaskUseCase implements ICreateTaskUseCase {
+  /**
+   * @param taskRepository タスクリポジトリ
+   */
   constructor(private readonly taskRepository: ITaskRepository) {}
 
+  /**
+   * タスクを作成する。
+   * @param input タスク作成に必要な入力データ
+   * @returns 作成されたタスクの出力データ
+   */
   async execute(input: CreateTaskInput): Promise<CreateTaskOutput> {
     const status = input.status ? TaskStatus.create(input.status) : null;
     const task = new Task(

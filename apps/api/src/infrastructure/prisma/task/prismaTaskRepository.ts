@@ -3,9 +3,21 @@ import { Task } from '../../../domain/task/entity.js';
 import type { ITaskRepository, TaskUpdateData } from '../../../domain/task/repository.js';
 import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
 
+/**
+ * Prismaを使ったタスクリポジトリの実装クラス。
+ * `ITaskRepository` インターフェースに従い、データベースへのCRUD操作を行う。
+ */
 export class PrismaTaskRepository implements ITaskRepository {
+  /**
+   * @param prisma Prismaクライアント
+   */
   constructor(private readonly prisma: PrismaClient) {}
 
+  /**
+   * タスクをデータベースに新規保存する。
+   * @param task 保存するタスクエンティティ
+   * @returns 保存されたタスクエンティティ
+   */
   async save(task: Task): Promise<Task> {
     const created = await this.prisma.task.create({
       data: {
@@ -19,6 +31,13 @@ export class PrismaTaskRepository implements ITaskRepository {
     return this.toEntity(created);
   }
 
+  /**
+   * タスクを更新する。
+   * @param publicId 更新対象のタスクの公開ID
+   * @param data 更新するフィールドのデータ
+   * @returns 更新後のタスクエンティティ
+   * @throws タスクが存在しない場合にエラーをスローする
+   */
   async update(publicId: string, data: TaskUpdateData): Promise<Task> {
     const prismaData: Record<string, unknown> = {};
     if ('title' in data) prismaData.title = data.title;
@@ -41,6 +60,11 @@ export class PrismaTaskRepository implements ITaskRepository {
     }
   }
 
+  /**
+   * タスクを削除する。
+   * @param publicId 削除対象のタスクの公開ID
+   * @throws タスクが存在しない場合にエラーをスローする
+   */
   async delete(publicId: string): Promise<void> {
     try {
       await this.prisma.task.delete({ where: { publicId } });
@@ -52,6 +76,11 @@ export class PrismaTaskRepository implements ITaskRepository {
     }
   }
 
+  /**
+   * Prismaのレコードをタスクエンティティに変換する。
+   * @param record Prismaから取得したタスクレコード
+   * @returns 変換されたタスクエンティティ
+   */
   private toEntity(record: {
     id: bigint;
     publicId: string;

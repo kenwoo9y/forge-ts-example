@@ -4,13 +4,37 @@ import { Email } from '../../../domain/user/value/email.js';
 import { Username } from '../../../domain/user/value/username.js';
 import type { UpdateUserInput, UpdateUserOutput } from '../dto.js';
 
+/**
+ * ユーザー更新ユースケースのインターフェース。
+ */
 export interface IUpdateUserUseCase {
+  /**
+   * ユーザー情報を更新する。
+   * @param username 更新対象のユーザー名
+   * @param input 更新する内容
+   * @returns 更新後のユーザーの出力データ。ユーザーが存在しない場合は `null`
+   */
   execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null>;
 }
 
+/**
+ * ユーザー更新ユースケースの実装クラス。
+ * ユーザー名・メールアドレスの重複チェックを行い、ユーザー情報を更新する。
+ */
 export class UpdateUserUseCase implements IUpdateUserUseCase {
+  /**
+   * @param userRepository ユーザーリポジトリ
+   */
   constructor(private readonly userRepository: IUserRepository) {}
 
+  /**
+   * ユーザー情報を更新する。
+   * @param username 更新対象のユーザー名
+   * @param input 更新する内容
+   * @returns 更新後のユーザーの出力データ。ユーザーが存在しない場合は `null`
+   * @throws {UsernameDuplicateError} 新しいユーザー名が既に使用されている場合
+   * @throws {EmailDuplicateError} 新しいメールアドレスが既に使用されている場合
+   */
   async execute(username: string, input: UpdateUserInput): Promise<UpdateUserOutput | null> {
     const data: UserUpdateData = {};
 

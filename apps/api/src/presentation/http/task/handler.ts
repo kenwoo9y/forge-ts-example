@@ -5,15 +5,34 @@ import type { IDeleteTaskUseCase } from '../../../application/task/command/delet
 import type { IUpdateTaskUseCase } from '../../../application/task/command/updateTaskUseCase.js';
 import type { IGetTaskUseCase } from '../../../application/task/query/getTaskUseCase.js';
 
+/**
+ * タスクハンドラーの依存関係インターフェース。
+ * タスク操作に必要なすべてのユースケースを保持する。
+ */
 export interface TaskHandlerDeps {
+  /** タスク作成ユースケース */
   createTaskUseCase: ICreateTaskUseCase;
+  /** タスク取得ユースケース */
   getTaskUseCase: IGetTaskUseCase;
+  /** タスク更新ユースケース */
   updateTaskUseCase: IUpdateTaskUseCase;
+  /** タスク削除ユースケース */
   deleteTaskUseCase: IDeleteTaskUseCase;
 }
 
+/**
+ * タスク関連のHTTPハンドラーを生成する。
+ * @param deps ハンドラーが使用するユースケースの依存関係
+ * @returns タスク操作のハンドラーオブジェクト
+ */
 export function createTaskHandler(deps: TaskHandlerDeps) {
   return {
+    /**
+     * タスクを作成するハンドラー。
+     * POST /tasks に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 作成されたタスク情報（201）
+     */
     createTask: async (c: Context) => {
       const validated = await c.req.json<CreateTaskInput>();
       const task = await deps.createTaskUseCase.execute({
@@ -38,6 +57,12 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
       );
     },
 
+    /**
+     * タスクを取得するハンドラー。
+     * GET /tasks/:publicId に対応する。
+     * @param c Honoのコンテキスト
+     * @returns タスク情報（200）、またはエラー（404）
+     */
     getTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
       const task = await deps.getTaskUseCase.execute(publicId);
@@ -56,6 +81,12 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
       });
     },
 
+    /**
+     * タスクを更新するハンドラー。
+     * PATCH /tasks/:publicId に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 更新後のタスク情報（200）、またはエラー（404）
+     */
     updateTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
       const validated = await c.req.json<UpdateTaskInput>();
@@ -84,6 +115,12 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
       });
     },
 
+    /**
+     * タスクを削除するハンドラー。
+     * DELETE /tasks/:publicId に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 空レスポンス（204）、またはエラー（404）
+     */
     deleteTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
       const deleted = await deps.deleteTaskUseCase.execute(publicId);

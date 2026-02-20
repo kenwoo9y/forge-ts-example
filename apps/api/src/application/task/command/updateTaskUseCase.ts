@@ -2,13 +2,35 @@ import type { ITaskRepository, TaskUpdateData } from '../../../domain/task/repos
 import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
 import type { UpdateTaskInput, UpdateTaskOutput } from '../dto.js';
 
+/**
+ * タスク更新ユースケースのインターフェース。
+ */
 export interface IUpdateTaskUseCase {
+  /**
+   * タスクを更新する。
+   * @param publicId 更新対象のタスクの公開ID
+   * @param input 更新する内容
+   * @returns 更新後のタスクの出力データ。タスクが存在しない場合は `null`
+   */
   execute(publicId: string, input: UpdateTaskInput): Promise<UpdateTaskOutput | null>;
 }
 
+/**
+ * タスク更新ユースケースの実装クラス。
+ * 入力データをタスク更新用データ型に変換してリポジトリに渡す。
+ */
 export class UpdateTaskUseCase implements IUpdateTaskUseCase {
+  /**
+   * @param taskRepository タスクリポジトリ
+   */
   constructor(private readonly taskRepository: ITaskRepository) {}
 
+  /**
+   * タスクを更新する。
+   * @param publicId 更新対象のタスクの公開ID
+   * @param input 更新する内容
+   * @returns 更新後のタスクの出力データ。タスクが存在しない場合は `null`
+   */
   async execute(publicId: string, input: UpdateTaskInput): Promise<UpdateTaskOutput | null> {
     const data: TaskUpdateData = {};
 
