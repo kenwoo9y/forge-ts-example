@@ -51,18 +51,18 @@
   },
   "postCreateCommand": "rm -f pnpm-lock.yaml && pnpm install && node_modules/.bin/lefthook install || true && git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets && (cd /tmp/git-secrets && sudo make install) && sudo chmod 755 \"$(command -v git-secrets || echo /usr/local/bin/git-secrets)\" || true && rm -rf /tmp/git-secrets",
   "postStartCommand": "pnpm run type-check",
-  "forwardPorts": [3000, 3001, 8080, 5432],
+  "forwardPorts": [3000, 3001, 8081, 5432],
   "portsAttributes": {
     "3000": {
-      "label": "Next.js Web App",
+      "label": "Hono API Server",
       "onAutoForward": "notify"
     },
     "3001": {
-      "label": "React Native Expo",
+      "label": "Next.js Web App",
       "onAutoForward": "notify"
     },
-    "8080": {
-      "label": "Hono API Server",
+    "8081": {
+      "label": "React Native Expo",
       "onAutoForward": "notify"
     },
     "5432": {
