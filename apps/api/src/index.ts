@@ -3,6 +3,7 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
+import { cors } from 'hono/cors';
 import { pinoLogger } from 'hono-pino';
 import { CreateTaskUseCase } from './application/task/command/createTaskUseCase.js';
 import { DeleteTaskUseCase } from './application/task/command/deleteTaskUseCase.js';
@@ -51,6 +52,7 @@ const getTasksByUsernameUseCase = new GetTasksByUsernameUseCase(taskQueryService
 
 const app = new OpenAPIHono();
 
+app.use(cors({ origin: 'http://localhost:3001' }));
 app.use(pinoLogger({ pino: logger }));
 
 app.get('/', (c) => {
