@@ -14,7 +14,7 @@
     "@hono/swagger-ui": "^0.5.3",
     "@hono/zod-openapi": "^1.2.2",
     "@prisma/adapter-pg": "^7.3.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/client": "^7.4.1",
     "db": "workspace:*",
     "hono": "^4.11.9",
     "hono-pino": "^0.10.3",
