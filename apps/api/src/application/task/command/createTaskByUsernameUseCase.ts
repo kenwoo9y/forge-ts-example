@@ -6,14 +6,14 @@ import type { ICreateTaskUseCase } from './createTaskUseCase.js';
  * ユーザー名でタスクを作成するユースケースの入力データ型。
  */
 export type CreateTaskByUsernameInput = {
-  /** タスクのタイトル。未指定の場合は `null` */
-  title: string | null;
+  /** タスクのタイトル */
+  title: string;
   /** タスクの説明。未指定の場合は `null` */
   description: string | null;
   /** 期日。未指定の場合は `null` */
   dueDate: Date | null;
-  /** ステータス文字列（'todo' | 'doing' | 'done'）。未指定の場合は `null` */
-  status: string | null;
+  /** ステータス文字列（'todo' | 'doing' | 'done'） */
+  status: string;
 };
 
 /**

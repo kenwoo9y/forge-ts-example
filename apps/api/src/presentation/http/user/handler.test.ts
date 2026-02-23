@@ -476,7 +476,7 @@ describe('User Endpoints', () => {
       expect(body.dueDate).toBe('2025-01-01T00:00:00.000Z');
     });
 
-    it('オプションフィールドを省略してタスクを作成する場合：201を返しnullになる', async () => {
+    it('オプションフィールドを省略してタスクを作成する場合：201を返しオプション項目がnull', async () => {
       vi.mocked(mockUserQueryService.findByUsername).mockResolvedValue({
         id: BigInt(1),
         username: 'testuser',
@@ -490,10 +490,10 @@ describe('User Endpoints', () => {
         new Task(
           BigInt(1),
           'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          'Min Task',
           null,
           null,
-          null,
-          null,
+          TaskStatus.create('todo'),
           BigInt(1),
           now,
           now
@@ -503,15 +503,15 @@ describe('User Endpoints', () => {
       const res = await app.request('/users/testuser/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ title: 'Min Task', status: 'todo' }),
       });
 
       expect(res.status).toBe(201);
       const body = await res.json();
-      expect(body.title).toBeNull();
+      expect(body.title).toBe('Min Task');
       expect(body.description).toBeNull();
       expect(body.dueDate).toBeNull();
-      expect(body.status).toBeNull();
+      expect(body.status).toBe('todo');
       expect(body.ownerId).toBe('1');
     });
 

@@ -167,7 +167,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
           description: task.description,
           dueDate: task.dueDate?.toISOString() ?? null,
           status: task.status,
-          ownerId: task.ownerId?.toString() ?? null,
+          ownerId: task.ownerId.toString(),
           createdAt: task.createdAt.toISOString(),
           updatedAt: task.updatedAt.toISOString(),
         }))
@@ -183,16 +183,16 @@ export function createUserHandler(deps: UserHandlerDeps) {
     createUserTask: async (c: Context) => {
       const username = c.req.param('username');
       const validated = await c.req.json<{
-        title?: string | null;
+        title: string;
         description?: string | null;
         dueDate?: string | null;
-        status?: string | null;
+        status: string;
       }>();
       const task = await deps.createTaskByUsernameUseCase.execute(username, {
-        title: validated.title ?? null,
+        title: validated.title,
         description: validated.description ?? null,
         dueDate: validated.dueDate ? new Date(validated.dueDate) : null,
-        status: validated.status ?? null,
+        status: validated.status,
       });
       if (!task) {
         return c.json({ error: 'User not found' }, 404);
@@ -204,7 +204,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
           description: task.description,
           dueDate: task.dueDate?.toISOString() ?? null,
           status: task.status,
-          ownerId: task.ownerId?.toString() ?? null,
+          ownerId: task.ownerId.toString(),
           createdAt: task.createdAt.toISOString(),
           updatedAt: task.updatedAt.toISOString(),
         },

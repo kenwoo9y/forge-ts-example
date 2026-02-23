@@ -2,16 +2,16 @@
  * タスク作成ユースケースの入力データ型。
  */
 export type CreateTaskInput = {
-  /** タスクのタイトル。未指定の場合は `null` */
-  title: string | null;
+  /** タスクのタイトル */
+  title: string;
   /** タスクの説明。未指定の場合は `null` */
   description: string | null;
   /** 期日。未指定の場合は `null` */
   dueDate: Date | null;
-  /** ステータス文字列（'todo' | 'doing' | 'done'）。未指定の場合は `null` */
-  status: string | null;
-  /** 所有ユーザーのID。未指定の場合は `null` */
-  ownerId: bigint | null;
+  /** ステータス文字列（'todo' | 'doing' | 'done'） */
+  status: string;
+  /** 所有ユーザーのID */
+  ownerId: bigint;
 };
 
 /**
@@ -20,16 +20,16 @@ export type CreateTaskInput = {
 export type CreateTaskOutput = {
   /** 外部公開用のUUID */
   publicId: string;
-  /** タスクのタイトル。未設定の場合は `null` */
-  title: string | null;
+  /** タスクのタイトル */
+  title: string;
   /** タスクの説明。未設定の場合は `null` */
   description: string | null;
   /** 期日。未設定の場合は `null` */
   dueDate: Date | null;
-  /** ステータス文字列。未設定の場合は `null` */
-  status: string | null;
-  /** 所有ユーザーのID。未設定の場合は `null` */
-  ownerId: bigint | null;
+  /** ステータス文字列 */
+  status: string;
+  /** 所有ユーザーのID */
+  ownerId: bigint;
   /** 作成日時 */
   createdAt: Date;
   /** 更新日時 */
@@ -38,19 +38,19 @@ export type CreateTaskOutput = {
 
 /**
  * タスク更新ユースケースの入力データ型。
- * 各フィールドはオプショナルで、`null` を渡すとその値をクリアする。
+ * 各フィールドはオプショナルで、指定したフィールドのみ更新する。
  */
 export type UpdateTaskInput = {
-  /** 新しいタスクのタイトル。`null` でクリア */
-  title?: string | null;
+  /** 新しいタスクのタイトル */
+  title?: string;
   /** 新しいタスクの説明。`null` でクリア */
   description?: string | null;
   /** 新しい期日。`null` でクリア */
   dueDate?: Date | null;
-  /** 新しいステータス文字列。`null` でクリア */
-  status?: string | null;
-  /** 新しい所有ユーザーのID。`null` でクリア */
-  ownerId?: bigint | null;
+  /** 新しいステータス文字列 */
+  status?: string;
+  /** 新しい所有ユーザーのID */
+  ownerId?: bigint;
 };
 
 /**
@@ -59,16 +59,16 @@ export type UpdateTaskInput = {
 export type UpdateTaskOutput = {
   /** 外部公開用のUUID */
   publicId: string;
-  /** タスクのタイトル。未設定の場合は `null` */
-  title: string | null;
+  /** タスクのタイトル */
+  title: string;
   /** タスクの説明。未設定の場合は `null` */
   description: string | null;
   /** 期日。未設定の場合は `null` */
   dueDate: Date | null;
-  /** ステータス文字列。未設定の場合は `null` */
-  status: string | null;
-  /** 所有ユーザーのID。未設定の場合は `null` */
-  ownerId: bigint | null;
+  /** ステータス文字列 */
+  status: string;
+  /** 所有ユーザーのID */
+  ownerId: bigint;
   /** 作成日時 */
   createdAt: Date;
   /** 更新日時 */
@@ -82,16 +82,16 @@ export type UpdateTaskOutput = {
 export type TaskReadModel = {
   /** 外部公開用のUUID */
   publicId: string;
-  /** タスクのタイトル。未設定の場合は `null` */
-  title: string | null;
+  /** タスクのタイトル */
+  title: string;
   /** タスクの説明。未設定の場合は `null` */
   description: string | null;
   /** 期日。未設定の場合は `null` */
   dueDate: Date | null;
-  /** ステータス文字列。未設定の場合は `null` */
-  status: string | null;
-  /** 所有ユーザーのID。未設定の場合は `null` */
-  ownerId: bigint | null;
+  /** ステータス文字列 */
+  status: string;
+  /** 所有ユーザーのID */
+  ownerId: bigint;
   /** 作成日時 */
   createdAt: Date;
   /** 更新日時 */

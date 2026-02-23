@@ -36,11 +36,11 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     createTask: async (c: Context) => {
       const validated = await c.req.json<CreateTaskInput>();
       const task = await deps.createTaskUseCase.execute({
-        title: validated.title ?? null,
+        title: validated.title,
         description: validated.description ?? null,
         dueDate: validated.dueDate ? new Date(validated.dueDate) : null,
-        status: validated.status ?? null,
-        ownerId: validated.ownerId ? BigInt(validated.ownerId) : null,
+        status: validated.status,
+        ownerId: BigInt(validated.ownerId),
       });
       return c.json(
         {
@@ -49,7 +49,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
           description: task.description,
           dueDate: task.dueDate?.toISOString() ?? null,
           status: task.status,
-          ownerId: task.ownerId?.toString() ?? null,
+          ownerId: task.ownerId.toString(),
           createdAt: task.createdAt.toISOString(),
           updatedAt: task.updatedAt.toISOString(),
         },
@@ -75,7 +75,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
         description: task.description,
         dueDate: task.dueDate?.toISOString() ?? null,
         status: task.status,
-        ownerId: task.ownerId?.toString() ?? null,
+        ownerId: task.ownerId.toString(),
         createdAt: task.createdAt.toISOString(),
         updatedAt: task.updatedAt.toISOString(),
       });
@@ -91,13 +91,12 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
       const publicId = c.req.param('publicId');
       const validated = await c.req.json<UpdateTaskInput>();
       const input: Record<string, unknown> = {};
-      if ('title' in validated) input.title = validated.title ?? null;
+      if ('title' in validated) input.title = validated.title;
       if ('description' in validated) input.description = validated.description ?? null;
       if ('dueDate' in validated)
         input.dueDate = validated.dueDate ? new Date(validated.dueDate) : null;
-      if ('status' in validated) input.status = validated.status ?? null;
-      if ('ownerId' in validated)
-        input.ownerId = validated.ownerId ? BigInt(validated.ownerId) : null;
+      if ('status' in validated) input.status = validated.status;
+      if ('ownerId' in validated) input.ownerId = BigInt(validated.ownerId as string | number);
 
       const task = await deps.updateTaskUseCase.execute(publicId, input);
       if (!task) {
@@ -109,7 +108,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
         description: task.description,
         dueDate: task.dueDate?.toISOString() ?? null,
         status: task.status,
-        ownerId: task.ownerId?.toString() ?? null,
+        ownerId: task.ownerId.toString(),
         createdAt: task.createdAt.toISOString(),
         updatedAt: task.updatedAt.toISOString(),
       });

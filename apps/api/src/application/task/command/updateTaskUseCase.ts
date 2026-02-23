@@ -34,13 +34,11 @@ export class UpdateTaskUseCase implements IUpdateTaskUseCase {
   async execute(publicId: string, input: UpdateTaskInput): Promise<UpdateTaskOutput | null> {
     const data: TaskUpdateData = {};
 
-    if ('title' in input) data.title = input.title ?? null;
+    if ('title' in input) data.title = input.title;
     if ('description' in input) data.description = input.description ?? null;
     if ('dueDate' in input) data.dueDate = input.dueDate ?? null;
-    if ('status' in input) {
-      data.status = input.status ? TaskStatus.create(input.status) : null;
-    }
-    if ('ownerId' in input) data.ownerId = input.ownerId ?? null;
+    if ('status' in input) data.status = TaskStatus.create(input.status as string);
+    if ('ownerId' in input) data.ownerId = input.ownerId;
 
     try {
       const saved = await this.taskRepository.update(publicId, data);
@@ -49,7 +47,7 @@ export class UpdateTaskUseCase implements IUpdateTaskUseCase {
         title: saved.title,
         description: saved.description,
         dueDate: saved.dueDate,
-        status: saved.status?.toString() ?? null,
+        status: saved.status.toString(),
         ownerId: saved.ownerId,
         createdAt: saved.createdAt,
         updatedAt: saved.updatedAt,
