@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { createTaskSchema, taskStatusEnum, updateTaskSchema } from 'schemas';
+import { createTaskSchema, taskStatusEnum, updateTaskSchema } from 'schema';
 import { createTaskHandler, type TaskHandlerDeps } from './handler.js';
 
 const taskResponseSchema = z.object({

@@ -1,4 +1,4 @@
-import { createTaskSchema } from "schemas";
+import { createTaskSchema } from "schema";
 import { z } from "zod";
 
 export const todoFormSchema = createTaskSchema

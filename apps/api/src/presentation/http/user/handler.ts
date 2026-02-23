@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { CreateUserInput, UpdateUserInput } from 'schemas';
+import type { CreateUserInput, UpdateUserInput } from 'schema';
 import type { ICreateTaskByUsernameUseCase } from '../../../application/task/command/createTaskByUsernameUseCase.js';
 import type { IGetTasksByUsernameUseCase } from '../../../application/task/query/getTasksByUsernameUseCase.js';
 import type { ICreateUserUseCase } from '../../../application/user/command/createUserUseCase.js';
