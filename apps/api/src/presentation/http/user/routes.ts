@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { createUserSchema, taskStatusEnum, updateUserSchema } from 'schemas';
+import { createTaskSchema, createUserSchema, taskStatusEnum, updateUserSchema } from 'schemas';
 import { createUserHandler, type UserHandlerDeps } from './handler.js';
 
 const userResponseSchema = z.object({
@@ -190,6 +190,43 @@ const getUserTasksRoute = createRoute({
   },
 });
 
+const createUserTaskRoute = createRoute({
+  method: 'post',
+  path: '/users/{username}/tasks',
+  tags: ['User'],
+  summary: 'Create a task for a user',
+  request: {
+    params: z.object({
+      username: z.string(),
+    }),
+    body: {
+      content: {
+        'application/json': {
+          schema: createTaskSchema.omit({ ownerId: true }),
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Task created',
+      content: {
+        'application/json': {
+          schema: taskResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: 'User not found',
+      content: {
+        'application/json': {
+          schema: errorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
 export function createUserRoutes(deps: UserHandlerDeps) {
   const app = new OpenAPIHono();
   const handler = createUserHandler(deps);
@@ -199,6 +236,7 @@ export function createUserRoutes(deps: UserHandlerDeps) {
   app.openapi(updateUserRoute, handler.updateUser as never);
   app.openapi(deleteUserRoute, handler.deleteUser as never);
   app.openapi(getUserTasksRoute, handler.getUserTasks as never);
+  app.openapi(createUserTaskRoute, handler.createUserTask as never);
 
   return app;
 }

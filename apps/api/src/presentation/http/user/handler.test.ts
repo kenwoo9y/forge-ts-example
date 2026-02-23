@@ -1,5 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { CreateTaskByUsernameUseCase } from '../../../application/task/command/createTaskByUsernameUseCase.js';
+import { CreateTaskUseCase } from '../../../application/task/command/createTaskUseCase.js';
 import { GetTasksByUsernameUseCase } from '../../../application/task/query/getTasksByUsernameUseCase.js';
 import type { ITaskQueryService } from '../../../application/task/query/queryService.js';
 import { CreateUserUseCase } from '../../../application/user/command/createUserUseCase.js';
@@ -7,6 +9,9 @@ import { DeleteUserUseCase } from '../../../application/user/command/deleteUserU
 import { UpdateUserUseCase } from '../../../application/user/command/updateUserUseCase.js';
 import { GetUserUseCase } from '../../../application/user/query/getUserUseCase.js';
 import type { IUserQueryService } from '../../../application/user/query/queryService.js';
+import { Task } from '../../../domain/task/entity.js';
+import type { ITaskRepository } from '../../../domain/task/repository.js';
+import { TaskStatus } from '../../../domain/task/value/taskStatus.js';
 import { User } from '../../../domain/user/entity.js';
 import type { IUserRepository } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
@@ -32,6 +37,12 @@ const mockTaskQueryService: ITaskQueryService = {
   findByOwnerId: vi.fn(),
 };
 
+const mockTaskRepository: ITaskRepository = {
+  save: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+};
+
 function createApp() {
   const app = new OpenAPIHono();
   app.route(
@@ -43,6 +54,10 @@ function createApp() {
       deleteUserUseCase: new DeleteUserUseCase(mockUserRepository),
       getTasksByUsernameUseCase: new GetTasksByUsernameUseCase(
         mockTaskQueryService,
+        mockUserQueryService
+      ),
+      createTaskByUsernameUseCase: new CreateTaskByUsernameUseCase(
+        new CreateTaskUseCase(mockTaskRepository),
         mockUserQueryService
       ),
     })
@@ -408,6 +423,106 @@ describe('User Endpoints', () => {
       vi.mocked(mockUserQueryService.findByUsername).mockResolvedValue(null);
 
       const res = await app.request('/users/nonexistent/tasks');
+
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body.error).toBe('User not found');
+    });
+  });
+
+  describe('POST /users/:username/tasks', () => {
+    it('全フィールドを指定してタスクを作成する場合：201を返しタスク情報が正しい', async () => {
+      vi.mocked(mockUserQueryService.findByUsername).mockResolvedValue({
+        id: BigInt(1),
+        username: 'testuser',
+        email: null,
+        firstName: null,
+        lastName: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      vi.mocked(mockTaskRepository.save).mockResolvedValue(
+        new Task(
+          BigInt(1),
+          'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          'Test Task',
+          'Description',
+          now,
+          TaskStatus.create('todo'),
+          BigInt(1),
+          now,
+          now
+        )
+      );
+
+      const res = await app.request('/users/testuser/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Test Task',
+          description: 'Description',
+          dueDate: '2025-01-01T00:00:00.000Z',
+          status: 'todo',
+        }),
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.publicId).toBe('a1b2c3d4-e5f6-7890-abcd-ef1234567890');
+      expect(body.title).toBe('Test Task');
+      expect(body.description).toBe('Description');
+      expect(body.status).toBe('todo');
+      expect(body.ownerId).toBe('1');
+      expect(body.dueDate).toBe('2025-01-01T00:00:00.000Z');
+    });
+
+    it('オプションフィールドを省略してタスクを作成する場合：201を返しnullになる', async () => {
+      vi.mocked(mockUserQueryService.findByUsername).mockResolvedValue({
+        id: BigInt(1),
+        username: 'testuser',
+        email: null,
+        firstName: null,
+        lastName: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      vi.mocked(mockTaskRepository.save).mockResolvedValue(
+        new Task(
+          BigInt(1),
+          'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          null,
+          null,
+          null,
+          null,
+          BigInt(1),
+          now,
+          now
+        )
+      );
+
+      const res = await app.request('/users/testuser/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      expect(res.status).toBe(201);
+      const body = await res.json();
+      expect(body.title).toBeNull();
+      expect(body.description).toBeNull();
+      expect(body.dueDate).toBeNull();
+      expect(body.status).toBeNull();
+      expect(body.ownerId).toBe('1');
+    });
+
+    it('ユーザーが存在しない場合：404を返す', async () => {
+      vi.mocked(mockUserQueryService.findByUsername).mockResolvedValue(null);
+
+      const res = await app.request('/users/nonexistent/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Test Task' }),
+      });
 
       expect(res.status).toBe(404);
       const body = await res.json();

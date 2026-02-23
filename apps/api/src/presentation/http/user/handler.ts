@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import type { CreateUserInput, UpdateUserInput } from 'schemas';
+import type { ICreateTaskByUsernameUseCase } from '../../../application/task/command/createTaskByUsernameUseCase.js';
 import type { IGetTasksByUsernameUseCase } from '../../../application/task/query/getTasksByUsernameUseCase.js';
 import type { ICreateUserUseCase } from '../../../application/user/command/createUserUseCase.js';
 import type { IDeleteUserUseCase } from '../../../application/user/command/deleteUserUseCase.js';
@@ -22,6 +23,8 @@ export interface UserHandlerDeps {
   deleteUserUseCase: IDeleteUserUseCase;
   /** ユーザー名でタスク一覧を取得するユースケース */
   getTasksByUsernameUseCase: IGetTasksByUsernameUseCase;
+  /** ユーザー名でタスクを作成するユースケース */
+  createTaskByUsernameUseCase: ICreateTaskByUsernameUseCase;
 }
 
 /**
@@ -168,6 +171,44 @@ export function createUserHandler(deps: UserHandlerDeps) {
           createdAt: task.createdAt.toISOString(),
           updatedAt: task.updatedAt.toISOString(),
         }))
+      );
+    },
+
+    /**
+     * ユーザーのタスクを作成するハンドラー。
+     * POST /users/:username/tasks に対応する。
+     * @param c Honoのコンテキスト
+     * @returns 作成されたタスク情報（201）、またはエラー（404）
+     */
+    createUserTask: async (c: Context) => {
+      const username = c.req.param('username');
+      const validated = await c.req.json<{
+        title?: string | null;
+        description?: string | null;
+        dueDate?: string | null;
+        status?: string | null;
+      }>();
+      const task = await deps.createTaskByUsernameUseCase.execute(username, {
+        title: validated.title ?? null,
+        description: validated.description ?? null,
+        dueDate: validated.dueDate ? new Date(validated.dueDate) : null,
+        status: validated.status ?? null,
+      });
+      if (!task) {
+        return c.json({ error: 'User not found' }, 404);
+      }
+      return c.json(
+        {
+          publicId: task.publicId,
+          title: task.title,
+          description: task.description,
+          dueDate: task.dueDate?.toISOString() ?? null,
+          status: task.status,
+          ownerId: task.ownerId?.toString() ?? null,
+          createdAt: task.createdAt.toISOString(),
+          updatedAt: task.updatedAt.toISOString(),
+        },
+        201
       );
     },
   };

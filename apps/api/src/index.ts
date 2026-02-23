@@ -5,6 +5,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
 import { cors } from 'hono/cors';
 import { pinoLogger } from 'hono-pino';
+import { CreateTaskByUsernameUseCase } from './application/task/command/createTaskByUsernameUseCase.js';
 import { CreateTaskUseCase } from './application/task/command/createTaskUseCase.js';
 import { DeleteTaskUseCase } from './application/task/command/deleteTaskUseCase.js';
 import { UpdateTaskUseCase } from './application/task/command/updateTaskUseCase.js';
@@ -44,6 +45,10 @@ const taskRepository = new PrismaTaskRepository(prisma);
 const createTaskUseCase = new CreateTaskUseCase(taskRepository);
 const updateTaskUseCase = new UpdateTaskUseCase(taskRepository);
 const deleteTaskUseCase = new DeleteTaskUseCase(taskRepository);
+const createTaskByUsernameUseCase = new CreateTaskByUsernameUseCase(
+  createTaskUseCase,
+  userQueryService
+);
 
 // Task - Query side
 const taskQueryService = new PrismaTaskQueryService(prisma);
@@ -76,6 +81,7 @@ app.route(
     updateUserUseCase,
     deleteUserUseCase,
     getTasksByUsernameUseCase,
+    createTaskByUsernameUseCase,
   })
 );
 
