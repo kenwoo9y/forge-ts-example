@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
-import { createTaskSchema, createUserSchema, taskStatusEnum, updateUserSchema } from 'schemas';
+import { createTaskSchema, createUserSchema, taskStatusEnum, updateUserSchema } from 'schema';
 import { createUserHandler, type UserHandlerDeps } from './handler.js';
 
 const userResponseSchema = z.object({

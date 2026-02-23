@@ -19,7 +19,7 @@
     "hono": "^4.11.9",
     "hono-pino": "^0.10.3",
     "pino": "^10.3.1",
-    "schemas": "workspace:*"
+    "schema": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.2.3",

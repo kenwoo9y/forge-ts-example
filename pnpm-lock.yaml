@@ -72,9 +72,9 @@ importers:
       pino:
         specifier: ^10.3.1
         version: 10.3.1
-      schemas:
+      schema:
         specifier: workspace:*
-        version: link:../../packages/schemas
+        version: link:../../packages/schema
     devDependencies:
       '@types/node':
         specifier: ^25.2.3
@@ -146,9 +146,9 @@ importers:
       react-hook-form:
         specifier: ^7.56.4
         version: 7.71.2(react@19.2.4)
-      schemas:
+      schema:
         specifier: workspace:*
-        version: link:../../packages/schemas
+        version: link:../../packages/schema
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.5.0
@@ -200,7 +200,7 @@ importers:
         specifier: ^7.4.0
         version: 7.4.1(@types/react@19.2.14)(magicast@0.3.5)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
 
-  packages/schemas:
+  packages/schema:
     dependencies:
       zod:
         specifier: ^4.0.0
