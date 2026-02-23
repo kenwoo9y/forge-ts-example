@@ -11,14 +11,16 @@ type CreateTodoInput = {
   status: TodoStatus | null;
 };
 
-const createTodo = (input: CreateTodoInput): Promise<Todo> =>
-  api.post<Todo>("/tasks", input);
+const createTodo =
+  (username: string) =>
+  (input: CreateTodoInput): Promise<Todo> =>
+    api.post<Todo>(`/users/${username}/tasks`, input);
 
 export const useCreateTodo = (username: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createTodo,
+    mutationFn: createTodo(username),
     onSuccess: () => {
       queryClient.invalidateQueries(getTodosQueryOptions(username));
     },
