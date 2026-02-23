@@ -91,21 +91,33 @@ describe('Task Endpoints', () => {
 
     it('最小限のフィールドでタスクを作成する場合：201を返しオプション項目がnull', async () => {
       const { Task } = await import('../../../domain/task/entity.js');
+      const { TaskStatus } = await import('../../../domain/task/value/taskStatus.js');
       vi.mocked(mockTaskRepository.save).mockResolvedValue(
-        new Task(BigInt(1), taskPublicId2, null, null, null, null, null, now, now)
+        new Task(
+          BigInt(1),
+          taskPublicId2,
+          'Min Task',
+          null,
+          null,
+          TaskStatus.create('todo'),
+          BigInt(1),
+          now,
+          now
+        )
       );
 
       const res = await app.request('/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ title: 'Min Task', status: 'todo', ownerId: '1' }),
       });
 
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.publicId).toBe(taskPublicId2);
-      expect(body.title).toBeNull();
-      expect(body.ownerId).toBeNull();
+      expect(body.title).toBe('Min Task');
+      expect(body.description).toBeNull();
+      expect(body.ownerId).toBe('1');
     });
   });
 
@@ -117,7 +129,7 @@ describe('Task Endpoints', () => {
         description: null,
         dueDate: null,
         status: 'doing',
-        ownerId: null,
+        ownerId: BigInt(1),
         createdAt: now,
         updatedAt: now,
       });
@@ -174,7 +186,7 @@ describe('Task Endpoints', () => {
           null,
           null,
           TaskStatus.create('done'),
-          null,
+          BigInt(1),
           now,
           now
         )
@@ -230,8 +242,19 @@ describe('Task Endpoints', () => {
 
     it('オプションフィールドをnullでクリアする場合：200を返しnullが設定される', async () => {
       const { Task } = await import('../../../domain/task/entity.js');
+      const { TaskStatus } = await import('../../../domain/task/value/taskStatus.js');
       vi.mocked(mockTaskRepository.update).mockResolvedValue(
-        new Task(BigInt(1), taskPublicId, null, null, null, null, null, now, now)
+        new Task(
+          BigInt(1),
+          taskPublicId,
+          'Task',
+          null,
+          null,
+          TaskStatus.create('todo'),
+          BigInt(1),
+          now,
+          now
+        )
       );
 
       const res = await app.request(`/tasks/${taskPublicId}`, {
@@ -240,8 +263,6 @@ describe('Task Endpoints', () => {
         body: JSON.stringify({
           description: null,
           dueDate: null,
-          status: null,
-          ownerId: null,
         }),
       });
 
@@ -249,8 +270,6 @@ describe('Task Endpoints', () => {
       const body = await res.json();
       expect(body.description).toBeNull();
       expect(body.dueDate).toBeNull();
-      expect(body.status).toBeNull();
-      expect(body.ownerId).toBeNull();
     });
 
     it('タスクが存在しない場合：404を返す', async () => {

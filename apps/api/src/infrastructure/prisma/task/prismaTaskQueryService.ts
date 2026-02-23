@@ -46,11 +46,11 @@ export class PrismaTaskQueryService implements ITaskQueryService {
    */
   private toReadModel(record: {
     publicId: string;
-    title: string | null;
+    title: string;
     description: string | null;
     dueDate: Date | null;
-    status: string | null;
-    ownerId: bigint | null;
+    status: string;
+    ownerId: bigint;
     createdAt: Date;
     updatedAt: Date;
   }): TaskReadModel {

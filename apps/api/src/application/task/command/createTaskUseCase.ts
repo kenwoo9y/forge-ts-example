@@ -31,7 +31,7 @@ export class CreateTaskUseCase implements ICreateTaskUseCase {
    * @returns 作成されたタスクの出力データ
    */
   async execute(input: CreateTaskInput): Promise<CreateTaskOutput> {
-    const status = input.status ? TaskStatus.create(input.status) : null;
+    const status = TaskStatus.create(input.status);
     const task = new Task(
       BigInt(0),
       '',
@@ -49,7 +49,7 @@ export class CreateTaskUseCase implements ICreateTaskUseCase {
       title: saved.title,
       description: saved.description,
       dueDate: saved.dueDate,
-      status: saved.status?.toString() ?? null,
+      status: saved.status.toString(),
       ownerId: saved.ownerId,
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,

@@ -13,11 +13,11 @@ const userResponseSchema = z.object({
 
 const taskResponseSchema = z.object({
   publicId: z.string(),
-  title: z.string().nullable(),
+  title: z.string(),
   description: z.string().nullable(),
   dueDate: z.string().nullable(),
-  status: taskStatusEnum.nullable(),
-  ownerId: z.string().nullable(),
+  status: taskStatusEnum,
+  ownerId: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

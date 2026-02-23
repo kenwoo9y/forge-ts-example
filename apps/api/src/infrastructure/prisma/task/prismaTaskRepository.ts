@@ -24,7 +24,7 @@ export class PrismaTaskRepository implements ITaskRepository {
         title: task.title,
         description: task.description,
         dueDate: task.dueDate,
-        status: task.status?.toString() ?? null,
+        status: task.status.toString(),
         ownerId: task.ownerId,
       },
     });
@@ -43,7 +43,7 @@ export class PrismaTaskRepository implements ITaskRepository {
     if ('title' in data) prismaData.title = data.title;
     if ('description' in data) prismaData.description = data.description;
     if ('dueDate' in data) prismaData.dueDate = data.dueDate;
-    if ('status' in data) prismaData.status = data.status?.toString() ?? null;
+    if ('status' in data) prismaData.status = data.status?.toString();
     if ('ownerId' in data) prismaData.ownerId = data.ownerId;
 
     try {
@@ -84,11 +84,11 @@ export class PrismaTaskRepository implements ITaskRepository {
   private toEntity(record: {
     id: bigint;
     publicId: string;
-    title: string | null;
+    title: string;
     description: string | null;
     dueDate: Date | null;
-    status: string | null;
-    ownerId: bigint | null;
+    status: string;
+    ownerId: bigint;
     createdAt: Date;
     updatedAt: Date;
   }): Task {
@@ -98,7 +98,7 @@ export class PrismaTaskRepository implements ITaskRepository {
       record.title,
       record.description,
       record.dueDate,
-      record.status ? TaskStatus.create(record.status) : null,
+      TaskStatus.create(record.status),
       record.ownerId,
       record.createdAt,
       record.updatedAt
