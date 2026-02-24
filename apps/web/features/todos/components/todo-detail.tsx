@@ -27,9 +27,10 @@ function DetailRow({ label, children }: DetailRowProps) {
 
 type TodoDetailProps = {
   publicId: string;
+  username?: string;
 };
 
-export function TodoDetail({ publicId }: TodoDetailProps) {
+export function TodoDetail({ publicId, username }: TodoDetailProps) {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -95,12 +96,17 @@ export function TodoDetail({ publicId }: TodoDetailProps) {
           </div>
 
           {isEditOpen && (
-            <EditTodoDialog todo={todo} onClose={() => setIsEditOpen(false)} />
+            <EditTodoDialog
+              todo={todo}
+              username={username}
+              onClose={() => setIsEditOpen(false)}
+            />
           )}
 
           {isDeleteOpen && (
             <DeleteTodoDialog
               todo={todo}
+              username={username}
               onClose={() => setIsDeleteOpen(false)}
               onSuccess={() => router.push("/todos")}
             />
