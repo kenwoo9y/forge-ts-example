@@ -23,7 +23,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         aria-label="メニューを閉じる"
         onClick={onClose}
       />
-      <div className="fixed top-14 bottom-0 left-0 z-50 w-80 bg-white shadow-xl">
+      <div className="fixed top-14 bottom-12 left-0 z-50 w-80 bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <span className="font-semibold text-gray-900">メニュー</span>
           <button
