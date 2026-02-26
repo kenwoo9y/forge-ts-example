@@ -1,8 +1,26 @@
 "use client";
 
-import { ArrowUpDown, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +39,14 @@ import { DeleteTodoDialog } from "./delete-todo-dialog";
 import { EditTodoDialog } from "./edit-todo-dialog";
 import { StatusBadge } from "./status-badge";
 
+const STATUS_ORDER: Record<string, number> = {
+  todo: 0,
+  doing: 1,
+  done: 2,
+};
+
+const PAGE_SIZE = 10;
+
 type TodoTableProps = {
   todos: Todo[];
   onEditClick: (todo: Todo) => void;
@@ -29,79 +55,197 @@ type TodoTableProps = {
 
 function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
   const router = useRouter();
+  const [sorting, setSorting] = useState<SortingState>([]);
+
+  const columns = useMemo<ColumnDef<Todo>[]>(
+    () => [
+      {
+        accessorKey: "title",
+        header: "タイトル",
+        cell: ({ getValue }) => getValue<string>() ?? "-",
+      },
+      {
+        accessorKey: "dueDate",
+        header: "期日",
+        cell: ({ getValue }) => (
+          <span className="text-gray-600">
+            {formatDate(getValue<string>())}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: "ステータス",
+        cell: ({ getValue }) => (
+          <StatusBadge status={getValue<Todo["status"]>()} />
+        ),
+        sortingFn: (rowA, rowB) => {
+          const a = STATUS_ORDER[rowA.original.status ?? ""] ?? 0;
+          const b = STATUS_ORDER[rowB.original.status ?? ""] ?? 0;
+          return a - b;
+        },
+      },
+      {
+        id: "actions",
+        header: "操作",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="編集"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditClick(row.original);
+              }}
+              className="text-orange-400 hover:text-orange-500 transition-colors"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="削除"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteClick(row.original);
+              }}
+              className="text-red-400 hover:text-red-500 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ),
+        enableSorting: false,
+      },
+    ],
+    [onEditClick, onDeleteClick],
+  );
+
+  const table = useReactTable({
+    data: todos,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: { pagination: { pageSize: PAGE_SIZE } },
+  });
+
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const totalRows = table.getFilteredRowModel().rows.length;
+  const totalPages = table.getPageCount();
 
   return (
     <div className="rounded-lg border bg-white shadow-sm">
       <Table>
         <TableHeader>
-          <TableRow className="border-b border-gray-200 bg-white hover:bg-white">
-            <TableHead className="w-12 text-gray-500">#</TableHead>
-            <TableHead className="text-gray-500">
-              <span className="inline-flex items-center gap-1">
-                タイトル
-                <ArrowUpDown className="h-3.5 w-3.5" />
-              </span>
-            </TableHead>
-            <TableHead className="w-44 text-gray-500">
-              <span className="inline-flex items-center gap-1">
-                期日
-                <ArrowUpDown className="h-3.5 w-3.5" />
-              </span>
-            </TableHead>
-            <TableHead className="w-36 text-gray-500">
-              <span className="inline-flex items-center gap-1">
-                ステータス
-                <ArrowUpDown className="h-3.5 w-3.5" />
-              </span>
-            </TableHead>
-            <TableHead className="w-28 text-gray-500">操作</TableHead>
-          </TableRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow
+              key={headerGroup.id}
+              className="border-b border-gray-200 bg-white hover:bg-white"
+            >
+              <TableHead className="w-12 text-gray-500">#</TableHead>
+              {headerGroup.headers.map((header) => {
+                const sorted = header.column.getIsSorted();
+                const canSort = header.column.getCanSort();
+                return (
+                  <TableHead
+                    key={header.id}
+                    className="text-gray-500"
+                    style={{ width: header.getSize() }}
+                  >
+                    {canSort ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 hover:text-gray-700 transition-colors"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                        {sorted === "asc" ? (
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        ) : sorted === "desc" ? (
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    ) : (
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )
+                    )}
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
-          {todos.map((todo, index) => (
+          {table.getRowModel().rows.map((row, rowIndex) => (
             <TableRow
-              key={todo.publicId}
+              key={row.id}
               className="border-b border-gray-100 cursor-pointer"
-              onClick={() => router.push(`/todos/${todo.publicId}`)}
+              onClick={() => router.push(`/todos/${row.original.publicId}`)}
             >
-              <TableCell className="text-gray-400">{index + 1}</TableCell>
-              <TableCell>{todo.title ?? "-"}</TableCell>
-              <TableCell className="text-gray-600">
-                {formatDate(todo.dueDate)}
+              <TableCell className="text-gray-400">
+                {pageIndex * pageSize + rowIndex + 1}
               </TableCell>
-              <TableCell>
-                <StatusBadge status={todo.status} />
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-label="編集"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditClick(todo);
-                    }}
-                    className="text-orange-400 hover:text-orange-500 transition-colors"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="削除"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteClick(todo);
-                    }}
-                    className="text-red-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </TableCell>
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+              ))}
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {
+        <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
+          <p className="text-sm text-gray-500">
+            {totalRows}件中 {pageIndex * pageSize + 1}〜
+            {Math.min((pageIndex + 1) * pageSize, totalRows)}件を表示
+          </p>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="前のページ"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="rounded p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => table.setPageIndex(page - 1)}
+                className={`h-7 w-7 rounded text-sm transition-colors ${
+                  page === pageIndex + 1
+                    ? "bg-blue-600 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label="次のページ"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="rounded p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      }
     </div>
   );
 }
