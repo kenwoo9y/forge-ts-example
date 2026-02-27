@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -297,7 +298,44 @@ export function TodoList({ username }: TodoListProps) {
       )}
 
       {isLoading && (
-        <div className="py-20 text-center text-gray-400">読み込み中...</div>
+        <div className="rounded-lg border bg-white shadow-sm">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-gray-200 bg-white hover:bg-white">
+                <TableHead className="w-12 text-gray-500">#</TableHead>
+                <TableHead className="text-gray-500">タイトル</TableHead>
+                <TableHead className="text-gray-500">期日</TableHead>
+                <TableHead className="text-gray-500">ステータス</TableHead>
+                <TableHead className="text-gray-500">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no meaningful key
+                <TableRow key={i} className="border-b border-gray-100">
+                  <TableCell>
+                    <Skeleton className="h-4 w-4" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-4 w-4" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
 
       {isError && (

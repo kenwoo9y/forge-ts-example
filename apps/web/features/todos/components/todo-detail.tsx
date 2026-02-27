@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTodo } from "../api/get-todo";
 import { formatDate, formatDateTime } from "../utils";
 import { DeleteTodoDialog } from "./delete-todo-dialog";
@@ -69,7 +70,28 @@ export function TodoDetail({ publicId, username }: TodoDetailProps) {
       </div>
 
       {isLoading && (
-        <div className="py-20 text-center text-gray-400">読み込み中...</div>
+        <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+          {[
+            "タイトル",
+            "詳細",
+            "期日",
+            "ステータス",
+            "作成日時",
+            "更新日時",
+          ].map((label) => (
+            <div
+              key={label}
+              className="grid grid-cols-[200px_1fr] border-b border-gray-200 last:border-0"
+            >
+              <div className="bg-gray-50 px-6 py-4 text-sm text-gray-600">
+                {label}
+              </div>
+              <div className="px-6 py-4">
+                <Skeleton className="h-4 w-48" />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {isError && (
