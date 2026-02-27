@@ -35,6 +35,7 @@ export class PrismaTaskQueryService implements ITaskQueryService {
   async findByOwnerId(ownerId: bigint): Promise<TaskReadModel[]> {
     const tasks = await this.prisma.task.findMany({
       where: { ownerId },
+      orderBy: { createdAt: 'desc' },
     });
     return tasks.map((task) => this.toReadModel(task));
   }
