@@ -1,8 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@/lib/zodResolver";
 
 import { useUpdateTodo } from "../api/update-todo";
 import { type TodoFormValues, todoFormSchema } from "../schemas";
