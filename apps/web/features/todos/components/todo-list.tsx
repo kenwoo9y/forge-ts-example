@@ -20,7 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,6 +57,7 @@ type TodoTableProps = {
 function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
   const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [isPending, startTransition] = useTransition();
 
   const columns = useMemo<ColumnDef<Todo>[]>(
     () => [
@@ -137,7 +138,9 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
   const totalPages = table.getPageCount();
 
   return (
-    <div className="rounded-lg border bg-white shadow-sm">
+    <div
+      className={`rounded-lg border bg-white shadow-sm transition-opacity ${isPending ? "opacity-50 pointer-events-none" : ""}`}
+    >
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
@@ -190,7 +193,11 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
             <TableRow
               key={row.id}
               className="border-b border-gray-100 cursor-pointer"
-              onClick={() => router.push(`/todos/${row.original.publicId}`)}
+              onClick={() =>
+                startTransition(() =>
+                  router.push(`/todos/${row.original.publicId}`),
+                )
+              }
             >
               <TableCell className="text-gray-400">
                 {pageIndex * pageSize + rowIndex + 1}
