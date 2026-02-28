@@ -26,6 +26,7 @@ export class PrismaUserRepository implements IUserRepository {
         email: user.email?.toString() ?? null,
         firstName: user.firstName,
         lastName: user.lastName,
+        passwordHash: user.passwordHash,
       },
     });
     return this.toEntity(created);
@@ -71,6 +72,7 @@ export class PrismaUserRepository implements IUserRepository {
     if ('email' in data) prismaData.email = data.email?.toString() ?? null;
     if ('firstName' in data) prismaData.firstName = data.firstName;
     if ('lastName' in data) prismaData.lastName = data.lastName;
+    if ('passwordHash' in data) prismaData.passwordHash = data.passwordHash;
 
     const updated = await this.prisma.user.update({
       where: { username },
@@ -103,6 +105,7 @@ export class PrismaUserRepository implements IUserRepository {
     email: string | null;
     firstName: string | null;
     lastName: string | null;
+    passwordHash: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): User {
@@ -112,6 +115,7 @@ export class PrismaUserRepository implements IUserRepository {
       record.email ? Email.create(record.email) : null,
       record.firstName,
       record.lastName,
+      record.passwordHash,
       record.createdAt,
       record.updatedAt
     );

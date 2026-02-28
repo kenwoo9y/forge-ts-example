@@ -20,6 +20,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useMemo, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -258,11 +259,9 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
   );
 }
 
-type TodoListProps = {
-  username: string;
-};
-
-export function TodoList({ username }: TodoListProps) {
+export function TodoList() {
+  const { data: session } = useSession();
+  const username = session?.user?.name ?? "";
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [deletingTodo, setDeletingTodo] = useState<Todo | null>(null);

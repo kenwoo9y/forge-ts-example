@@ -10,6 +10,8 @@ export type CreateUserInput = {
   firstName: string | null;
   /** 姓。未指定の場合は `null` */
   lastName: string | null;
+  /** 平文パスワード */
+  password: string;
 };
 
 /**
@@ -43,6 +45,8 @@ export type UpdateUserInput = {
   firstName?: string | null;
   /** 新しい姓。`null` でクリア */
   lastName?: string | null;
+  /** 新しい平文パスワード。指定時にハッシュ化して更新する */
+  password?: string;
 };
 
 /**
