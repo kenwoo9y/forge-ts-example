@@ -7,11 +7,16 @@
 ![Biome](https://img.shields.io/badge/Biome-60A5FA.svg?style=for-the-badge&logo=Biome&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Shadcn/ui](https://img.shields.io/badge/shadcn/ui-%23000000?style=for-the-badge&logo=shadcnui&logoColor=white)
+![React Hook Form](https://img.shields.io/badge/React%20Hook%20Form-%23EC5990.svg?style=for-the-badge&logo=reacthookform&logoColor=white)
+![TanStack](https://img.shields.io/badge/TanStack-000000.svg?style=for-the-badge&logo=TanStack&logoColor=white)
+![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=authjs&logoColor=white)
 ![React Native](https://img.shields.io/badge/react_native-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Expo](https://img.shields.io/badge/Expo-1B1F23?style=for-the-badge&logo=expo&logoColor=white)
-![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=authjs&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Hono](https://img.shields.io/badge/Hono-E36002.svg?style=for-the-badge&logo=Hono&logoColor=white)
+![pino](https://img.shields.io/badge/pino-687634.svg?style=for-the-badge&logo=pino&logoColor=white)
+![Zod](https://img.shields.io/badge/zod-%233068b7.svg?style=for-the-badge&logo=zod&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Vitest](https://img.shields.io/badge/-Vitest-252529?style=for-the-badge&logo=vitest&logoColor=FCC72B)
@@ -21,6 +26,9 @@
 ![AWS CDK](https://img.shields.io/badge/AWS_CDK-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+![Dependabot](https://img.shields.io/badge/dependabot-025E8C?style=for-the-badge&logo=dependabot&logoColor=white)
+![Lefthook](https://img.shields.io/badge/Lefthook-FF1E1E.svg?style=for-the-badge&logo=Lefthook&logoColor=white)
+![commitlint](https://img.shields.io/badge/commitlint-000000.svg?style=for-the-badge&logo=commitlint&logoColor=white)
 
 ## 🧠 共通設定・言語
 - **言語**: TypeScript（全体で統一）
@@ -34,13 +42,16 @@
 
 ## 🖥 フロントエンド（Web）
 - **フレームワーク**: Next.js（App Router）
-- **CSSフレームワーク**: TailwindCSS
-- **UIライブラリ**: shadcn/ui
-- **認証**: Auth.js（NextAuth.js）+ Prisma Adapter
+- **CSSフレームワーク**: TailwindCSS v4
+- **UIライブラリ**: shadcn/ui（Radix UI + class-variance-authority）
+- **フォーム**: React Hook Form + Zod
+- **データフェッチ**: TanStack Query
+- **テーブル**: TanStack Table
+- **認証**: Auth.js（NextAuth v5）Credentials プロバイダー
 - **テスト**:
-  - 単体テスト: Vitest
-  - E2Eテスト: Playwright
-  - UIドキュメント: Storybook
+  - 単体テスト: Vitest（予定）
+  - E2Eテスト: Playwright（予定）
+  - UIドキュメント: Storybook（予定）
 
 ---
 
@@ -53,8 +64,9 @@
 ---
 
 ## 🌐 バックエンド（API）
-- **フレームワーク**: Hono
-- **認証**: Auth.js を共有ロジックで統合
+- **フレームワーク**: Hono（@hono/zod-openapi、@hono/swagger-ui）
+- **認証**: bcryptjs（パスワードハッシュ化）+ jose（JWT 署名・検証）
+- **ロギング**: pino + hono-pino
 - **Docker対応**: ECSデプロイ用Dockerfileあり
 - **テスト**: Vitest
 
@@ -101,8 +113,9 @@
 - `apps/mobile`：React Native + Expo
 - `apps/api`：Hono API
 - `packages/db`：Prisma ORM / DBクライアント
-- `packages/auth`：Auth.js関連のロジック共通化
-- `packages/config`：Biome / tsconfig 設定
+- `packages/auth`：bcryptjs + Zod による認証バリデーション共通ロジック
+- `packages/schema`：Zod スキーマ共有（API・Web 間）
+- `packages/config`：Biome / tsconfig / vitest 設定
 
 ---
 
@@ -113,83 +126,85 @@
 
 ## ディレクトリ構成
 ```
-forge-ts/
+forge-ts-example/
 ├── apps/
 │   ├── web/                          # Next.js (Webフロントエンド)
-│   │   ├── app/                      # App Router構成
+│   │   ├── app/                      # App Router
+│   │   ├── components/               # 共通コンポーネント（shadcn/ui 含む）
+│   │   ├── features/                 # 機能単位のモジュール
+│   │   ├── lib/                      # ユーティリティ・API クライアント
+│   │   ├── types/
 │   │   ├── public/
-│   │   ├── tests/                    # Playwrightテスト
-│   │   ├── vitest.config.ts
-│   │   ├── playwright.config.ts
-|   |   ├── biome.json
-|   |   ├── next.config.ts
-|   |   ├── package.json
+│   │   ├── auth.ts                   # Auth.js 設定
+│   │   ├── biome.json
+│   │   ├── next.config.ts
+│   │   ├── package.json
 │   │   └── tsconfig.json
 │   ├── mobile/                       # Expo + React Native
 │   │   ├── assets/
-│   │   ├── tests/
-│   │   ├── vitest.config.ts
-|   |   ├── app.json
-|   |   ├── package.json
+│   │   ├── app.json
+│   │   ├── package.json
 │   │   └── tsconfig.json
 │   └── api/                          # Hono（APIサーバー）
 │       ├── src/
-│       ├── tests/
+│       │   ├── application/
+│       │   ├── domain/
+│       │   ├── infrastructure/
+│       │   └── presentation/
 │       ├── .dockerignore
 │       ├── compose.yaml
 │       ├── Dockerfile
 │       ├── vitest.config.ts
 │       ├── package.json
 │       └── tsconfig.json
-
+│
 ├── packages/
 │   ├── db/                           # Prisma + PostgreSQL定義
+│   │   ├── generated/prisma/         # 生成された Prisma クライアント
 │   │   ├── prisma/
+│   │   │   ├── migrations/
 │   │   │   └── schema.prisma
-│   │   ├── src/
-│   │   │   └── client.ts
+│   │   ├── prisma.config.ts
 │   │   └── package.json
-│   ├── config/                       # 各種共有設定
-│   │   ├── biome/
-│   │   │   └── biome.json            # Biome設定
-│   │   ├── tsconfig/
-│   │   │   └── tsconfig.base.json
-│   │   └── vitest/
-│   │       └── vitest.config.ts
-│   └── auth/                         # Auth.js共有設定など
-│       └── src/
-
-├── infra/                            # AWS CDKによるインフラコード
+│   ├── auth/                         # 認証共通ロジック（bcryptjs + Zod）
+│   │   └── src/
+│   ├── schema/                       # Zod スキーマ共有（API・Web 間）
+│   │   └── src/
+│   └── config/                       # 各種共有設定
+│       ├── biome/
+│       ├── tsconfig/
+│       └── vitest/
+│
+├── infra/                            # AWS CDK によるインフラコード（予定）
 │   ├── bin/
-│   │   └── infra.ts
 │   ├── lib/
-│   │   ├── ecs-fargate.ts
-│   │   ├── s3-cloudfront.ts
-│   │   └── rds-postgres.ts
 │   ├── test/
 │   ├── cdk.json
 │   ├── package.json
 │   └── tsconfig.json
-
+│
+├── docs/
+│
 ├── .github/
-│   ├── workflows/
-│   │   ├── ci.yml                    # lint, test, build
-│   │   ├── deploy.yml                # CDKデプロイ or ECSデプロイ
-│   │   ├── e2e.yml
-│   └── dependabot.yml
-
-├── .devcontainer/                    # 開発環境定義（VS Code Remote Container）
+│   ├── ISSUE_TEMPLATE/
+│   ├── dependabot.yaml
+│   └── pull_request_template.md
+│
+├── .devcontainer/                    # 開発環境定義（VS Code Dev Container）
+│   ├── compose.yaml
+│   ├── compose.override.yaml
 │   ├── devcontainer.json
-│   ├── Dockerfile
-│   └── compose.yaml
-
+│   └── Dockerfile
+│
 ├── .biomeignore
 ├── .gitignore
 ├── .lefthook.yaml
 ├── .npmrc
 ├── biome.json
+├── commitlint.config.js
+├── cspell.json
 ├── Makefile
-├── turbo.json                       # Turborepo設定
+├── turbo.json
 ├── package.json
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml
