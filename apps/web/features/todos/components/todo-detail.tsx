@@ -3,6 +3,7 @@
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,11 +29,12 @@ function DetailRow({ label, children }: DetailRowProps) {
 
 type TodoDetailProps = {
   publicId: string;
-  username?: string;
 };
 
-export function TodoDetail({ publicId, username }: TodoDetailProps) {
+export function TodoDetail({ publicId }: TodoDetailProps) {
   const router = useRouter();
+  const { data: session } = useSession();
+  const username = session?.user?.name ?? "";
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const { data: todo, isLoading, isError } = useTodo(publicId);
