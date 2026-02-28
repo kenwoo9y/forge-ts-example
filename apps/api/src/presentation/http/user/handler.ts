@@ -53,6 +53,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
           email: validated.email ?? null,
           firstName: validated.firstName ?? null,
           lastName: validated.lastName ?? null,
+          password: validated.password,
         });
         return c.json(
           {
@@ -110,6 +111,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
       if ('email' in validated) input.email = validated.email ?? null;
       if ('firstName' in validated) input.firstName = validated.firstName ?? null;
       if ('lastName' in validated) input.lastName = validated.lastName ?? null;
+      if ('password' in validated) input.password = validated.password;
 
       try {
         const user = await deps.updateUserUseCase.execute(username, input);

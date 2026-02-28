@@ -1,3 +1,4 @@
+import { hash } from 'bcryptjs';
 import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 import type { IUserRepository, UserUpdateData } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
@@ -66,6 +67,9 @@ export class UpdateUserUseCase implements IUpdateUserUseCase {
     }
     if ('firstName' in input) data.firstName = input.firstName ?? null;
     if ('lastName' in input) data.lastName = input.lastName ?? null;
+    if ('password' in input && input.password) {
+      data.passwordHash = await hash(input.password, 12);
+    }
 
     try {
       const saved = await this.userRepository.update(username, data);

@@ -1,3 +1,4 @@
+import { hash } from 'bcryptjs';
 import { User } from '../../../domain/user/entity.js';
 import { EmailDuplicateError, UsernameDuplicateError } from '../../../domain/user/error.js';
 import type { IUserRepository } from '../../../domain/user/repository.js';
@@ -47,12 +48,14 @@ export class CreateUserUseCase implements ICreateUserUseCase {
         throw new EmailDuplicateError(email.toString());
       }
     }
+    const passwordHash = await hash(input.password, 12);
     const user = new User(
       BigInt(0),
       username,
       email,
       input.firstName,
       input.lastName,
+      passwordHash,
       new Date(),
       new Date()
     );

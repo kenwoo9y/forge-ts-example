@@ -84,6 +84,7 @@ describe('User Endpoints', () => {
           Email.create('test@example.com'),
           'Test',
           'User',
+          null,
           now,
           now
         )
@@ -97,6 +98,7 @@ describe('User Endpoints', () => {
           email: 'test@example.com',
           firstName: 'Test',
           lastName: 'User',
+          password: 'password123',
         }),
       });
 
@@ -115,13 +117,13 @@ describe('User Endpoints', () => {
     it('最小限のフィールドでユーザーを作成する場合：201を返しオプション項目がnull', async () => {
       vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(null);
       vi.mocked(mockUserRepository.save).mockResolvedValue(
-        new User(BigInt(1), Username.create('testuser'), null, null, null, now, now)
+        new User(BigInt(1), Username.create('testuser'), null, null, null, null, now, now)
       );
 
       const res = await app.request('/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'testuser' }),
+        body: JSON.stringify({ username: 'testuser', password: 'password123' }),
       });
 
       expect(res.status).toBe(201);
@@ -132,13 +134,13 @@ describe('User Endpoints', () => {
 
     it('ユーザー名が重複する場合：409を返す', async () => {
       vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(
-        new User(BigInt(1), Username.create('testuser'), null, null, null, now, now)
+        new User(BigInt(1), Username.create('testuser'), null, null, null, null, now, now)
       );
 
       const res = await app.request('/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'testuser' }),
+        body: JSON.stringify({ username: 'testuser', password: 'password123' }),
       });
 
       expect(res.status).toBe(409);
@@ -155,6 +157,7 @@ describe('User Endpoints', () => {
           Email.create('test@example.com'),
           null,
           null,
+          null,
           now,
           now
         )
@@ -163,7 +166,11 @@ describe('User Endpoints', () => {
       const res = await app.request('/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'testuser', email: 'test@example.com' }),
+        body: JSON.stringify({
+          username: 'testuser',
+          email: 'test@example.com',
+          password: 'password123',
+        }),
       });
 
       expect(res.status).toBe(409);
@@ -211,6 +218,7 @@ describe('User Endpoints', () => {
         Email.create('old@example.com'),
         'Test',
         'User',
+        null,
         now,
         now
       );
@@ -226,6 +234,7 @@ describe('User Endpoints', () => {
           Email.create('updated@example.com'),
           'Updated',
           'User',
+          null,
           now,
           now
         )
@@ -251,12 +260,13 @@ describe('User Endpoints', () => {
           Email.create('old@example.com'),
           null,
           null,
+          null,
           now,
           now
         )
       );
       vi.mocked(mockUserRepository.update).mockResolvedValue(
-        new User(BigInt(1), Username.create('testuser'), null, null, null, now, now)
+        new User(BigInt(1), Username.create('testuser'), null, null, null, null, now, now)
       );
 
       const res = await app.request('/users/testuser', {
@@ -286,7 +296,7 @@ describe('User Endpoints', () => {
 
     it('重複するユーザー名に更新する場合：409を返す', async () => {
       vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(
-        new User(BigInt(2), Username.create('taken'), null, null, null, now, now)
+        new User(BigInt(2), Username.create('taken'), null, null, null, null, now, now)
       );
 
       const res = await app.request('/users/testuser', {
@@ -308,6 +318,7 @@ describe('User Endpoints', () => {
           Email.create('old@example.com'),
           null,
           null,
+          null,
           now,
           now
         )
@@ -317,6 +328,7 @@ describe('User Endpoints', () => {
           BigInt(2),
           Username.create('otheruser'),
           Email.create('taken@example.com'),
+          null,
           null,
           null,
           now,
