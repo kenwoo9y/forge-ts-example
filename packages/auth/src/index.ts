@@ -1,3 +1,4 @@
+export { hashPassword, verifyPassword } from './password.js';
 export {
   type SigninInput,
   type SignupInput,
