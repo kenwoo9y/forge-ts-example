@@ -5,6 +5,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
 import { cors } from 'hono/cors';
 import { pinoLogger } from 'hono-pino';
+import { SignInUseCase } from './application/auth/signInUseCase.js';
 import { CreateTaskByUsernameUseCase } from './application/task/command/createTaskByUsernameUseCase.js';
 import { CreateTaskUseCase } from './application/task/command/createTaskUseCase.js';
 import { DeleteTaskUseCase } from './application/task/command/deleteTaskUseCase.js';
@@ -15,17 +16,24 @@ import { CreateUserUseCase } from './application/user/command/createUserUseCase.
 import { DeleteUserUseCase } from './application/user/command/deleteUserUseCase.js';
 import { UpdateUserUseCase } from './application/user/command/updateUserUseCase.js';
 import { GetUserUseCase } from './application/user/query/getUserUseCase.js';
+import { jwtAuth } from './infrastructure/auth/jwtMiddleware.js';
 import { logger } from './infrastructure/logger/index.js';
 import { PrismaTaskQueryService } from './infrastructure/prisma/task/prismaTaskQueryService.js';
 import { PrismaTaskRepository } from './infrastructure/prisma/task/prismaTaskRepository.js';
 import { PrismaUserQueryService } from './infrastructure/prisma/user/prismaUserQueryService.js';
 import { PrismaUserRepository } from './infrastructure/prisma/user/prismaUserRepository.js';
+import { createAuthRoutes } from './presentation/http/auth/routes.js';
 import { createTaskRoutes } from './presentation/http/task/routes.js';
 import { createUserRoutes } from './presentation/http/user/routes.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
   throw new Error('DATABASE_URL environment variable is required');
+}
+
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error('JWT_SECRET environment variable is required');
 }
 const adapter = new PrismaPg({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter });
@@ -55,6 +63,9 @@ const taskQueryService = new PrismaTaskQueryService(prisma);
 const getTaskUseCase = new GetTaskUseCase(taskQueryService);
 const getTasksByUsernameUseCase = new GetTasksByUsernameUseCase(taskQueryService, userQueryService);
 
+// Auth
+const signInUseCase = new SignInUseCase(userRepository, jwtSecret);
+
 const app = new OpenAPIHono();
 
 app.use(cors({ origin: 'http://localhost:3001' }));
@@ -64,15 +75,15 @@ app.get('/', (c) => {
   return c.text('Hello Hono!');
 });
 
-app.route(
-  '/',
-  createTaskRoutes({
-    createTaskUseCase,
-    getTaskUseCase,
-    updateTaskUseCase,
-    deleteTaskUseCase,
-  })
-);
+// JWT middleware for protected routes (must be registered before routes)
+app.use('/tasks', jwtAuth(jwtSecret));
+app.use('/tasks/*', jwtAuth(jwtSecret));
+app.use('/users/:username/tasks', jwtAuth(jwtSecret));
+
+// Public routes
+app.route('/', createAuthRoutes({ signInUseCase }));
+
+// User routes (POST /users and GET /users/:username are public; task sub-routes are protected above)
 app.route(
   '/',
   createUserRoutes({
@@ -82,6 +93,17 @@ app.route(
     deleteUserUseCase,
     getTasksByUsernameUseCase,
     createTaskByUsernameUseCase,
+  })
+);
+
+// Task routes (all protected by JWT middleware above)
+app.route(
+  '/',
+  createTaskRoutes({
+    createTaskUseCase,
+    getTaskUseCase,
+    updateTaskUseCase,
+    deleteTaskUseCase,
   })
 );
 
