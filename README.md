@@ -1,5 +1,17 @@
 # forge-ts-example
 
+## 起動
+
+```bash
+pnpm install
+pnpm dev
+```
+
+| アプリ | URL |
+|---|---|
+| API | http://localhost:3000 |
+| Web | http://localhost:3001 |
+
 ## 開発環境 (Codespaces / ローカル)
 
 このリポジトリでは PostgreSQL の接続情報を環境変数で渡す必要があります。
@@ -25,11 +37,36 @@ Prisma が DB に接続するために `packages/db/.env` が必要です。テ�
 cp packages/db/.env.example packages/db/.env
 ```
 
-`packages/db/.env` を編集し、`DATABASE_URL` に実際の接続情報を設定します。
+`packages/db/.env` を編集し、各変数に実際の値を設定します。
 
 ```
-DATABASE_URL="postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>"
+DATABASE_URL="postgresql://<POSTGRES_USER>:<POSTGRES_PASSWORD>@postgres:5432/<POSTGRES_DB>"  
+JWT_SECRET="your-secret-key"
 ```
+
+`JWT_SECRET` は Hono API が JWT の署名・検証に使用するシークレットです。安全なランダム文字列を設定してください。
+
+```bash
+# 生成例
+openssl rand -base64 32
+```
+
+### Web アプリ用環境変数ファイルの作成
+
+`apps/web/.env.local` が必要です。テンプレートをコピーし、各変数を設定してください。
+
+```bash
+cp apps/web/.env.local.example apps/web/.env.local
+```
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3000
+API_URL=http://localhost:3000
+AUTH_SECRET="your-secret-key"
+```
+
+- `API_URL` — Auth.js のサインイン処理（サーバーサイド）が Hono API を呼び出すための URL です。
+- `AUTH_SECRET` — Auth.js が JWT セッションを暗号化するためのシークレットです。`JWT_SECRET` とは別の値を設定してください。
 
 ## データベース
 
