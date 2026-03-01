@@ -71,7 +71,7 @@
 
 ### JWT 検証ミドルウェア
 
-保護ルートへのリクエストには `Authorization: Bearer <token>` ヘッダーが必要です。トークンが無効または期限切れ（デフォルト 7 日）の場合は `401 Unauthorized` を返します。
+保護ルートへのリクエストには `Authorization: Bearer <token>` ヘッダーが必要です。トークンが無効または期限切れ（24時間）の場合は `401 Unauthorized` を返します。
 
 ## Web ページ
 

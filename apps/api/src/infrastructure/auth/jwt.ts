@@ -15,7 +15,7 @@ export interface TokenPayload extends JWTPayload {
 export async function signToken(
   payload: TokenPayload,
   secret: string,
-  expiresIn = '7d'
+  expiresIn = '24h'
 ): Promise<string> {
   const key = new TextEncoder().encode(secret);
   return new SignJWT(payload)
