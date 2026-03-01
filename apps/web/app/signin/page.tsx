@@ -3,12 +3,14 @@
 import { type SigninInput, signinSchema } from "auth";
 import { Lock, LogIn, User } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@/lib/zodResolver";
 
 export default function SigninPage() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -29,7 +31,7 @@ export default function SigninPage() {
     if (result?.error) {
       setError("ユーザー名またはパスワードが正しくありません");
     } else {
-      window.location.href = "/todos";
+      router.push("/todos");
     }
   }
 
