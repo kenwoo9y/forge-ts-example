@@ -1,4 +1,7 @@
+/// <reference path="../declarations.d.ts" />
 import type { Preview } from "@storybook/nextjs-vite";
+
+import "../app/globals.css";
 
 const preview: Preview = {
   parameters: {
