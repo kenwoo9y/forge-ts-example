@@ -37,11 +37,11 @@ export const Submitting: Story = {
     const canvas = within(canvasElement);
     await userEvent.type(
       canvas.getByLabelText(/新しいパスワード \*/),
-      "newpassword123",
+      "new-password-123",
     );
     await userEvent.type(
       canvas.getByLabelText(/パスワード（確認）/),
-      "newpassword123",
+      "new-password-123",
     );
     await userEvent.click(canvas.getByRole("button", { name: "変更する" }));
   },
