@@ -47,10 +47,9 @@ jobs:
         run: pnpm --filter schema run build
 
       - name: Generate Prisma client
-        run: pnpm exec prisma generate --schema=packages/db/prisma/schema.prisma
+        run: pnpm --filter db run generate
         env:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-          NODE_PATH: ${{ github.workspace }}/node_modules
 
       - name: Run type check
         run: pnpm --filter api run type-check
@@ -75,10 +74,9 @@ jobs:
         run: pnpm --filter schema run build
 
       - name: Generate Prisma client
-        run: pnpm exec prisma generate --schema=packages/db/prisma/schema.prisma
+        run: pnpm --filter db run generate
         env:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-          NODE_PATH: ${{ github.workspace }}/node_modules
 
       - name: Run tests
         run: pnpm --filter api run test:coverage
