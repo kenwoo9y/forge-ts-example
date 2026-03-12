@@ -48,6 +48,8 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter db exec prisma generate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
       - name: Run type check
         run: pnpm --filter api run type-check
@@ -73,6 +75,8 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter db exec prisma generate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
       - name: Run tests
         run: pnpm --filter api run test:coverage
