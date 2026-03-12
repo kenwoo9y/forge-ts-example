@@ -43,6 +43,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build schema package
+        run: pnpm --filter schema run build
+
+      - name: Generate Prisma client
+        run: pnpm --filter db exec prisma generate
+
       - name: Run type check
         run: pnpm --filter api run type-check
 
@@ -61,6 +67,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Build schema package
+        run: pnpm --filter schema run build
+
+      - name: Generate Prisma client
+        run: pnpm --filter db exec prisma generate
 
       - name: Run tests
         run: pnpm --filter api run test:coverage
