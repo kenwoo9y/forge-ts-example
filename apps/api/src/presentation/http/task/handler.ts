@@ -65,6 +65,9 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
      */
     getTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
+      if (!publicId) {
+        return c.json({ error: 'publicId is required' }, 400);
+      }
       const task = await deps.getTaskUseCase.execute(publicId);
       if (!task) {
         return c.json({ error: 'Task not found' }, 404);
@@ -89,6 +92,9 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
      */
     updateTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
+      if (!publicId) {
+        return c.json({ error: 'publicId is required' }, 400);
+      }
       const validated = await c.req.json<UpdateTaskInput>();
       const input: Record<string, unknown> = {};
       if ('title' in validated) input.title = validated.title;
@@ -122,6 +128,9 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
      */
     deleteTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
+      if (!publicId) {
+        return c.json({ error: 'publicId is required' }, 400);
+      }
       const deleted = await deps.deleteTaskUseCase.execute(publicId);
       if (!deleted) {
         return c.json({ error: 'Task not found' }, 404);

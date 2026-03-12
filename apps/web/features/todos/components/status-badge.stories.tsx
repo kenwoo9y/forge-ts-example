@@ -37,6 +37,7 @@ export const Empty: Story = {
 };
 
 export const AllStatuses: Story = {
+  args: { status: "todo" },
   render: () => (
     <div className="flex items-center gap-3">
       <StatusBadge status="todo" />

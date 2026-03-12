@@ -83,6 +83,9 @@ export function createUserHandler(deps: UserHandlerDeps) {
      */
     getUser: async (c: Context) => {
       const username = c.req.param('username');
+      if (!username) {
+        return c.json({ error: 'username is required' }, 400);
+      }
       const user = await deps.getUserUseCase.execute(username);
       if (!user) {
         return c.json({ error: 'User not found' }, 404);
@@ -105,6 +108,9 @@ export function createUserHandler(deps: UserHandlerDeps) {
      */
     updateUser: async (c: Context) => {
       const username = c.req.param('username');
+      if (!username) {
+        return c.json({ error: 'username is required' }, 400);
+      }
       const validated = await c.req.json<UpdateUserInput>();
       const input: Record<string, unknown> = {};
       if ('username' in validated) input.username = validated.username ?? null;
@@ -143,6 +149,9 @@ export function createUserHandler(deps: UserHandlerDeps) {
      */
     deleteUser: async (c: Context) => {
       const username = c.req.param('username');
+      if (!username) {
+        return c.json({ error: 'username is required' }, 400);
+      }
       const deleted = await deps.deleteUserUseCase.execute(username);
       if (!deleted) {
         return c.json({ error: 'User not found' }, 404);
@@ -158,6 +167,9 @@ export function createUserHandler(deps: UserHandlerDeps) {
      */
     getUserTasks: async (c: Context) => {
       const username = c.req.param('username');
+      if (!username) {
+        return c.json({ error: 'username is required' }, 400);
+      }
       const tasks = await deps.getTasksByUsernameUseCase.execute(username);
       if (!tasks) {
         return c.json({ error: 'User not found' }, 404);
@@ -184,6 +196,9 @@ export function createUserHandler(deps: UserHandlerDeps) {
      */
     createUserTask: async (c: Context) => {
       const username = c.req.param('username');
+      if (!username) {
+        return c.json({ error: 'username is required' }, 400);
+      }
       const validated = await c.req.json<{
         title: string;
         description?: string | null;
