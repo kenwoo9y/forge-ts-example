@@ -47,7 +47,10 @@ jobs:
         run: pnpm --filter schema run build
 
       - name: Generate Prisma client
-        run: pnpm --filter db run generate
+        run: |
+          mkdir -p packages/db/node_modules/@prisma
+          ln -sf ${GITHUB_WORKSPACE}/node_modules/@prisma/client packages/db/node_modules/@prisma/client
+          pnpm --filter db run generate
         env:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
@@ -74,7 +77,10 @@ jobs:
         run: pnpm --filter schema run build
 
       - name: Generate Prisma client
-        run: pnpm --filter db run generate
+        run: |
+          mkdir -p packages/db/node_modules/@prisma
+          ln -sf ${GITHUB_WORKSPACE}/node_modules/@prisma/client packages/db/node_modules/@prisma/client
+          pnpm --filter db run generate
         env:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
