@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateTaskUseCase } from '../../../application/task/command/createTaskUseCase.js';
 import { DeleteTaskUseCase } from '../../../application/task/command/deleteTaskUseCase.js';
@@ -6,6 +7,7 @@ import { UpdateTaskUseCase } from '../../../application/task/command/updateTaskU
 import { GetTaskUseCase } from '../../../application/task/query/getTaskUseCase.js';
 import type { ITaskQueryService } from '../../../application/task/query/queryService.js';
 import type { ITaskRepository } from '../../../domain/task/repository.js';
+import { createTaskHandler } from './handler.js';
 import { createTaskRoutes } from './routes.js';
 
 const now = new Date('2025-01-01T00:00:00.000Z');
@@ -307,5 +309,42 @@ describe('Task Endpoints', () => {
       const body = await res.json();
       expect(body.error).toBe('Task not found');
     });
+  });
+});
+
+describe('Task Handler ガード節', () => {
+  const mockDeps = {
+    createTaskUseCase: { execute: vi.fn() },
+    getTaskUseCase: { execute: vi.fn() },
+    updateTaskUseCase: { execute: vi.fn() },
+    deleteTaskUseCase: { execute: vi.fn() },
+  };
+
+  function makeMockContext() {
+    return {
+      req: { param: vi.fn().mockReturnValue(undefined), json: vi.fn() },
+      json: vi.fn(),
+    } as unknown as Context;
+  }
+
+  it('getTask: publicIdが未設定の場合：400を返す', async () => {
+    const handler = createTaskHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.getTask(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'publicId is required' }, 400);
+  });
+
+  it('updateTask: publicIdが未設定の場合：400を返す', async () => {
+    const handler = createTaskHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.updateTask(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'publicId is required' }, 400);
+  });
+
+  it('deleteTask: publicIdが未設定の場合：400を返す', async () => {
+    const handler = createTaskHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.deleteTask(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'publicId is required' }, 400);
   });
 });

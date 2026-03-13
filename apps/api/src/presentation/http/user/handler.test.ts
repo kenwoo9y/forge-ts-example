@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateTaskByUsernameUseCase } from '../../../application/task/command/createTaskByUsernameUseCase.js';
 import { CreateTaskUseCase } from '../../../application/task/command/createTaskUseCase.js';
@@ -16,6 +17,7 @@ import { User } from '../../../domain/user/entity.js';
 import type { IUserRepository } from '../../../domain/user/repository.js';
 import { Email } from '../../../domain/user/value/email.js';
 import { Username } from '../../../domain/user/value/username.js';
+import { createUserHandler } from './handler.js';
 import { createUserRoutes } from './routes.js';
 
 const now = new Date('2025-01-01T00:00:00.000Z');
@@ -346,6 +348,22 @@ describe('User Endpoints', () => {
       const body = await res.json();
       expect(body.error).toContain('taken@example.com');
     });
+
+    it('パスワードを更新する場合：200を返す', async () => {
+      vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(null);
+      vi.mocked(mockUserRepository.update).mockResolvedValue(
+        new User(BigInt(1), Username.create('testuser'), null, null, null, 'newHash', now, now)
+      );
+
+      const res = await app.request('/users/testuser', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: 'new-password123' }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(mockUserRepository.update).toHaveBeenCalled();
+    });
   });
 
   describe('DELETE /users/:username', () => {
@@ -540,5 +558,58 @@ describe('User Endpoints', () => {
       const body = await res.json();
       expect(body.error).toBe('User not found');
     });
+  });
+});
+
+describe('User Handler ガード節', () => {
+  const mockDeps = {
+    createUserUseCase: { execute: vi.fn() },
+    getUserUseCase: { execute: vi.fn() },
+    updateUserUseCase: { execute: vi.fn() },
+    deleteUserUseCase: { execute: vi.fn() },
+    getTasksByUsernameUseCase: { execute: vi.fn() },
+    createTaskByUsernameUseCase: { execute: vi.fn() },
+  };
+
+  function makeMockContext() {
+    return {
+      req: { param: vi.fn().mockReturnValue(undefined), json: vi.fn() },
+      json: vi.fn(),
+    } as unknown as Context;
+  }
+
+  it('getUser: usernameが未設定の場合：400を返す', async () => {
+    const handler = createUserHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.getUser(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+  });
+
+  it('updateUser: usernameが未設定の場合：400を返す', async () => {
+    const handler = createUserHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.updateUser(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+  });
+
+  it('deleteUser: usernameが未設定の場合：400を返す', async () => {
+    const handler = createUserHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.deleteUser(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+  });
+
+  it('getUserTasks: usernameが未設定の場合：400を返す', async () => {
+    const handler = createUserHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.getUserTasks(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+  });
+
+  it('createUserTask: usernameが未設定の場合：400を返す', async () => {
+    const handler = createUserHandler(mockDeps);
+    const c = makeMockContext();
+    await handler.createUserTask(c);
+    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
   });
 });
