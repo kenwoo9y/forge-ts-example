@@ -52,7 +52,7 @@ jobs:
       - name: Run type check
         run: pnpm --filter web run type-check
 
-  test:
+  unit-test:
     name: Unit Test
     runs-on: ubuntu-latest
     steps:
