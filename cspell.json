@@ -58,6 +58,7 @@
     "turbo",
     "turbopack",
     "turborepo",
+    "unstub",
     "updateduser",
     "vitest",
     "weakref"
