@@ -9,6 +9,9 @@
     "lint": "biome check",
     "format": "biome format --write",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
