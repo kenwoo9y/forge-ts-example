@@ -18,10 +18,12 @@ export function DeleteTodoDialog({
   onClose,
   onSuccess,
 }: DeleteTodoDialogProps) {
-  const { mutate: deleteTodo, isPending } = useDeleteTodo(
-    todo.publicId,
-    username,
-  );
+  const {
+    mutate: deleteTodo,
+    isPending,
+    isError,
+    error,
+  } = useDeleteTodo(todo.publicId, username);
 
   const handleDelete = () => {
     deleteTodo(undefined, {
@@ -65,6 +67,13 @@ export function DeleteTodoDialog({
         <p className="mb-6 text-sm text-gray-700">
           このToDoを削除してもよろしいですか？この操作は取り消せません。
         </p>
+
+        {/* エラーメッセージ */}
+        {isError && (
+          <p className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+            {error?.message ?? "削除に失敗しました"}
+          </p>
+        )}
 
         {/* ボタン */}
         <div className="flex gap-3">
