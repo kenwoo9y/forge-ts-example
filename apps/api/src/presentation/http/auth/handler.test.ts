@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { hashSync } from 'bcryptjs';
+import { ErrorCode } from 'error';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignInUseCase } from '../../../application/auth/signInUseCase.js';
 import { User } from '../../../domain/user/entity.js';
@@ -67,7 +68,7 @@ describe('Auth Endpoints', () => {
 
       expect(res.status).toBe(401);
       const body = await res.json();
-      expect(body.error).toBe('Invalid credentials');
+      expect(body.code).toBe(ErrorCode.INVALID_CREDENTIALS);
     });
 
     it('パスワードが誤っている場合：401を返しエラーメッセージが含まれる', async () => {
@@ -84,7 +85,7 @@ describe('Auth Endpoints', () => {
 
       expect(res.status).toBe(401);
       const body = await res.json();
-      expect(body.error).toBe('Invalid credentials');
+      expect(body.code).toBe(ErrorCode.INVALID_CREDENTIALS);
     });
 
     it('passwordHashがnullのユーザーの場合：401を返す', async () => {
@@ -100,7 +101,7 @@ describe('Auth Endpoints', () => {
 
       expect(res.status).toBe(401);
       const body = await res.json();
-      expect(body.error).toBe('Invalid credentials');
+      expect(body.code).toBe(ErrorCode.INVALID_CREDENTIALS);
     });
 
     it('usernameが空の場合：400または422を返す', async () => {

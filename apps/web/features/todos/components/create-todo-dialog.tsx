@@ -28,7 +28,12 @@ export function CreateTodoDialog({ username, onClose }: CreateTodoDialogProps) {
     defaultValues: { status: "todo" },
   });
 
-  const { mutate: createTodo, isPending } = useCreateTodo(username);
+  const {
+    mutate: createTodo,
+    isPending,
+    isError,
+    error,
+  } = useCreateTodo(username);
 
   const onSubmit = (values: TodoFormValues) => {
     createTodo(
@@ -144,6 +149,12 @@ export function CreateTodoDialog({ username, onClose }: CreateTodoDialogProps) {
               </p>
             )}
           </div>
+
+          {isError && (
+            <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+              {error?.message ?? "エラーが発生しました"}
+            </p>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button

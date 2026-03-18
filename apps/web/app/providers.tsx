@@ -18,6 +18,11 @@ export function Providers({ children, session }: ProvidersProps) {
           queries: {
             staleTime: 60 * 1000,
           },
+          mutations: {
+            onError: (error) => {
+              console.error("[QueryClient] Unhandled mutation error:", error);
+            },
+          },
         },
       }),
   );

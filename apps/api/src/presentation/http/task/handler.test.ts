@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { ErrorCode } from 'error';
 import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateTaskUseCase } from '../../../application/task/command/createTaskUseCase.js';
@@ -172,7 +173,7 @@ describe('Task Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('Task not found');
+      expect(body.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
   });
 
@@ -285,7 +286,7 @@ describe('Task Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('Task not found');
+      expect(body.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
   });
 
@@ -307,7 +308,7 @@ describe('Task Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('Task not found');
+      expect(body.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
   });
 });
@@ -331,20 +332,20 @@ describe('Task Handler ガード節', () => {
     const handler = createTaskHandler(mockDeps);
     const c = makeMockContext();
     await handler.getTask(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'publicId is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.PUBLIC_ID_REQUIRED }, 400);
   });
 
   it('updateTask: publicIdが未設定の場合：400を返す', async () => {
     const handler = createTaskHandler(mockDeps);
     const c = makeMockContext();
     await handler.updateTask(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'publicId is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.PUBLIC_ID_REQUIRED }, 400);
   });
 
   it('deleteTask: publicIdが未設定の場合：400を返す', async () => {
     const handler = createTaskHandler(mockDeps);
     const c = makeMockContext();
     await handler.deleteTask(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'publicId is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.PUBLIC_ID_REQUIRED }, 400);
   });
 });

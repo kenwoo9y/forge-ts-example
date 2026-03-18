@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
+import { ErrorCode } from 'error';
 import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateTaskByUsernameUseCase } from '../../../application/task/command/createTaskByUsernameUseCase.js';
@@ -147,7 +148,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(409);
       const body = await res.json();
-      expect(body.error).toContain('testuser');
+      expect(body.code).toBe(ErrorCode.USERNAME_DUPLICATE);
     });
 
     it('メールアドレスが重複する場合：409を返す', async () => {
@@ -177,7 +178,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(409);
       const body = await res.json();
-      expect(body.error).toContain('test@example.com');
+      expect(body.code).toBe(ErrorCode.EMAIL_DUPLICATE);
     });
   });
 
@@ -208,7 +209,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('User not found');
+      expect(body.code).toBe(ErrorCode.USER_NOT_FOUND);
     });
   });
 
@@ -293,7 +294,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('User not found');
+      expect(body.code).toBe(ErrorCode.USER_NOT_FOUND);
     });
 
     it('重複するユーザー名に更新する場合：409を返す', async () => {
@@ -309,7 +310,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(409);
       const body = await res.json();
-      expect(body.error).toContain('taken');
+      expect(body.code).toBe(ErrorCode.USERNAME_DUPLICATE);
     });
 
     it('重複するメールアドレスに更新する場合：409を返す', async () => {
@@ -346,7 +347,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(409);
       const body = await res.json();
-      expect(body.error).toContain('taken@example.com');
+      expect(body.code).toBe(ErrorCode.EMAIL_DUPLICATE);
     });
 
     it('パスワードを更新する場合：200を返す', async () => {
@@ -382,7 +383,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('User not found');
+      expect(body.code).toBe(ErrorCode.USER_NOT_FOUND);
     });
   });
 
@@ -456,7 +457,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('User not found');
+      expect(body.code).toBe(ErrorCode.USER_NOT_FOUND);
     });
   });
 
@@ -556,7 +557,7 @@ describe('User Endpoints', () => {
 
       expect(res.status).toBe(404);
       const body = await res.json();
-      expect(body.error).toBe('User not found');
+      expect(body.code).toBe(ErrorCode.USER_NOT_FOUND);
     });
   });
 });
@@ -582,34 +583,34 @@ describe('User Handler ガード節', () => {
     const handler = createUserHandler(mockDeps);
     const c = makeMockContext();
     await handler.getUser(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.USERNAME_REQUIRED }, 400);
   });
 
   it('updateUser: usernameが未設定の場合：400を返す', async () => {
     const handler = createUserHandler(mockDeps);
     const c = makeMockContext();
     await handler.updateUser(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.USERNAME_REQUIRED }, 400);
   });
 
   it('deleteUser: usernameが未設定の場合：400を返す', async () => {
     const handler = createUserHandler(mockDeps);
     const c = makeMockContext();
     await handler.deleteUser(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.USERNAME_REQUIRED }, 400);
   });
 
   it('getUserTasks: usernameが未設定の場合：400を返す', async () => {
     const handler = createUserHandler(mockDeps);
     const c = makeMockContext();
     await handler.getUserTasks(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.USERNAME_REQUIRED }, 400);
   });
 
   it('createUserTask: usernameが未設定の場合：400を返す', async () => {
     const handler = createUserHandler(mockDeps);
     const c = makeMockContext();
     await handler.createUserTask(c);
-    expect(c.json).toHaveBeenCalledWith({ error: 'username is required' }, 400);
+    expect(c.json).toHaveBeenCalledWith({ code: ErrorCode.USERNAME_REQUIRED }, 400);
   });
 });

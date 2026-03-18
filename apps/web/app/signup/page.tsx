@@ -37,11 +37,8 @@ export default function SignupPage() {
       await api.post<SignupInput>("/users", data);
       router.push("/signin");
     } catch (e) {
-      const message = e instanceof Error ? e.message : "エラーが発生しました";
       setError(
-        message.includes("already")
-          ? "ユーザー名またはメールアドレスはすでに使用されています"
-          : message,
+        e instanceof Error ? e.message : "予期しないエラーが発生しました",
       );
     }
   }

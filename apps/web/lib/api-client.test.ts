@@ -1,3 +1,4 @@
+import { ErrorCode, errorMessages } from "error";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./api-client";
 
@@ -49,23 +50,32 @@ describe("api client", () => {
       );
     });
 
-    it("レスポンスが ok でない場合：ボディの error メッセージを投げる", async () => {
-      mockFetch.mockReturnValue(jsonResponse(404, { error: "Not found" }));
-
-      await expect(api.get("/todos/unknown")).rejects.toThrow("Not found");
-    });
-
-    it("レスポンスボディに error フィールドがない場合：statusText を投げる", async () => {
+    it("レスポンスが ok でない場合：code に対応する日本語メッセージを投げる", async () => {
       mockFetch.mockReturnValue(
-        Promise.resolve(
-          new Response(null, {
-            status: 500,
-            statusText: "Internal Server Error",
-          }),
-        ),
+        jsonResponse(404, { code: ErrorCode.TASK_NOT_FOUND }),
       );
 
-      await expect(api.get("/todos")).rejects.toThrow("Internal Server Error");
+      await expect(api.get("/todos/unknown")).rejects.toThrow(
+        errorMessages.TASK_NOT_FOUND,
+      );
+    });
+
+    it("レスポンスボディに code フィールドがない場合：INTERNAL_SERVER_ERROR メッセージを投げる", async () => {
+      mockFetch.mockReturnValue(
+        Promise.resolve(new Response(null, { status: 500 })),
+      );
+
+      await expect(api.get("/todos")).rejects.toThrow(
+        errorMessages.INTERNAL_SERVER_ERROR,
+      );
+    });
+
+    it("レスポンスボディの code が未知の値の場合：INTERNAL_SERVER_ERROR メッセージを投げる", async () => {
+      mockFetch.mockReturnValue(jsonResponse(500, { code: "UNKNOWN_CODE" }));
+
+      await expect(api.get("/todos")).rejects.toThrow(
+        errorMessages.INTERNAL_SERVER_ERROR,
+      );
     });
   });
 

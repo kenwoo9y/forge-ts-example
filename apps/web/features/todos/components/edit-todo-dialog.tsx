@@ -39,10 +39,12 @@ export function EditTodoDialog({
     },
   });
 
-  const { mutate: updateTodo, isPending } = useUpdateTodo(
-    todo.publicId,
-    username,
-  );
+  const {
+    mutate: updateTodo,
+    isPending,
+    isError,
+    error,
+  } = useUpdateTodo(todo.publicId, username);
 
   const onSubmit = (values: TodoFormValues) => {
     updateTodo(
@@ -158,6 +160,12 @@ export function EditTodoDialog({
               </p>
             )}
           </div>
+
+          {isError && (
+            <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+              {error?.message ?? "エラーが発生しました"}
+            </p>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button

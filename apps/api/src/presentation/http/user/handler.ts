@@ -1,3 +1,4 @@
+import { ErrorCode } from 'error';
 import type { Context } from 'hono';
 import type { CreateUserInput, UpdateUserInput } from 'schema';
 import type { ICreateTaskByUsernameUseCase } from '../../../application/task/command/createTaskByUsernameUseCase.js';
@@ -45,7 +46,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
       const { username } = validated;
       /* c8 ignore next 3 -- Zod validates username before handler */
       if (!username) {
-        return c.json({ error: 'Username is required' }, 400);
+        return c.json({ code: ErrorCode.USERNAME_REQUIRED }, 400);
       }
       try {
         const user = await deps.createUserUseCase.execute({
@@ -67,8 +68,11 @@ export function createUserHandler(deps: UserHandlerDeps) {
           201
         );
       } catch (e) {
-        if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
-          return c.json({ error: e.message }, 409);
+        if (e instanceof UsernameDuplicateError) {
+          return c.json({ code: ErrorCode.USERNAME_DUPLICATE }, 409);
+        }
+        if (e instanceof EmailDuplicateError) {
+          return c.json({ code: ErrorCode.EMAIL_DUPLICATE }, 409);
         }
         /* c8 ignore next */
         throw e;
@@ -84,11 +88,11 @@ export function createUserHandler(deps: UserHandlerDeps) {
     getUser: async (c: Context) => {
       const username = c.req.param('username');
       if (!username) {
-        return c.json({ error: 'username is required' }, 400);
+        return c.json({ code: ErrorCode.USERNAME_REQUIRED }, 400);
       }
       const user = await deps.getUserUseCase.execute(username);
       if (!user) {
-        return c.json({ error: 'User not found' }, 404);
+        return c.json({ code: ErrorCode.USER_NOT_FOUND }, 404);
       }
       return c.json({
         username: user.username,
@@ -109,7 +113,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
     updateUser: async (c: Context) => {
       const username = c.req.param('username');
       if (!username) {
-        return c.json({ error: 'username is required' }, 400);
+        return c.json({ code: ErrorCode.USERNAME_REQUIRED }, 400);
       }
       const validated = await c.req.json<UpdateUserInput>();
       const input: Record<string, unknown> = {};
@@ -122,7 +126,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
       try {
         const user = await deps.updateUserUseCase.execute(username, input);
         if (!user) {
-          return c.json({ error: 'User not found' }, 404);
+          return c.json({ code: ErrorCode.USER_NOT_FOUND }, 404);
         }
         return c.json({
           username: user.username,
@@ -133,8 +137,11 @@ export function createUserHandler(deps: UserHandlerDeps) {
           updatedAt: user.updatedAt.toISOString(),
         });
       } catch (e) {
-        if (e instanceof UsernameDuplicateError || e instanceof EmailDuplicateError) {
-          return c.json({ error: e.message }, 409);
+        if (e instanceof UsernameDuplicateError) {
+          return c.json({ code: ErrorCode.USERNAME_DUPLICATE }, 409);
+        }
+        if (e instanceof EmailDuplicateError) {
+          return c.json({ code: ErrorCode.EMAIL_DUPLICATE }, 409);
         }
         /* c8 ignore next */
         throw e;
@@ -150,11 +157,11 @@ export function createUserHandler(deps: UserHandlerDeps) {
     deleteUser: async (c: Context) => {
       const username = c.req.param('username');
       if (!username) {
-        return c.json({ error: 'username is required' }, 400);
+        return c.json({ code: ErrorCode.USERNAME_REQUIRED }, 400);
       }
       const deleted = await deps.deleteUserUseCase.execute(username);
       if (!deleted) {
-        return c.json({ error: 'User not found' }, 404);
+        return c.json({ code: ErrorCode.USER_NOT_FOUND }, 404);
       }
       return c.body(null, 204);
     },
@@ -168,11 +175,11 @@ export function createUserHandler(deps: UserHandlerDeps) {
     getUserTasks: async (c: Context) => {
       const username = c.req.param('username');
       if (!username) {
-        return c.json({ error: 'username is required' }, 400);
+        return c.json({ code: ErrorCode.USERNAME_REQUIRED }, 400);
       }
       const tasks = await deps.getTasksByUsernameUseCase.execute(username);
       if (!tasks) {
-        return c.json({ error: 'User not found' }, 404);
+        return c.json({ code: ErrorCode.USER_NOT_FOUND }, 404);
       }
       return c.json(
         tasks.map((task) => ({
@@ -197,7 +204,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
     createUserTask: async (c: Context) => {
       const username = c.req.param('username');
       if (!username) {
-        return c.json({ error: 'username is required' }, 400);
+        return c.json({ code: ErrorCode.USERNAME_REQUIRED }, 400);
       }
       const validated = await c.req.json<{
         title: string;
@@ -212,7 +219,7 @@ export function createUserHandler(deps: UserHandlerDeps) {
         status: validated.status,
       });
       if (!task) {
-        return c.json({ error: 'User not found' }, 404);
+        return c.json({ code: ErrorCode.USER_NOT_FOUND }, 404);
       }
       return c.json(
         {
