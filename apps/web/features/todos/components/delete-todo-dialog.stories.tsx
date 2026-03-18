@@ -1,6 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { fn, userEvent, within } from "storybook/test";
 
+function jsonResponse(data: unknown, status = 200) {
+  return Promise.resolve(
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+}
+
 import { DeleteTodoDialog } from "./delete-todo-dialog";
 
 const sampleTodo = {
@@ -37,6 +46,21 @@ export const Pending: Story = {
   beforeEach() {
     const originalFetch = globalThis.fetch;
     globalThis.fetch = () => new Promise(() => {});
+    return () => {
+      globalThis.fetch = originalFetch;
+    };
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "削除する" }));
+  },
+};
+
+export const FetchError: Story = {
+  beforeEach() {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = () =>
+      jsonResponse({ error: "Internal Server Error" }, 500);
     return () => {
       globalThis.fetch = originalFetch;
     };
