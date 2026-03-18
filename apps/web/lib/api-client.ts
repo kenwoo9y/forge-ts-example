@@ -1,3 +1,5 @@
+import { type ErrorCode, errorMessages } from "error";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 type RequestOptions = {
@@ -20,10 +22,11 @@ async function fetchApi<T>(
   });
 
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ error: response.statusText }));
-    throw new Error(error.error ?? response.statusText);
+    const body = await response.json().catch(() => ({}));
+    const code = body.code as ErrorCode | undefined;
+    const message =
+      (code && errorMessages[code]) ?? errorMessages.INTERNAL_SERVER_ERROR;
+    throw new Error(message);
   }
 
   if (response.status === 204) {

@@ -1,3 +1,4 @@
+import { ErrorCode } from 'error';
 import type { Context } from 'hono';
 import type { CreateTaskInput, UpdateTaskInput } from 'schema';
 import type { ICreateTaskUseCase } from '../../../application/task/command/createTaskUseCase.js';
@@ -66,11 +67,11 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     getTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
       if (!publicId) {
-        return c.json({ error: 'publicId is required' }, 400);
+        return c.json({ code: ErrorCode.PUBLIC_ID_REQUIRED }, 400);
       }
       const task = await deps.getTaskUseCase.execute(publicId);
       if (!task) {
-        return c.json({ error: 'Task not found' }, 404);
+        return c.json({ code: ErrorCode.TASK_NOT_FOUND }, 404);
       }
       return c.json({
         publicId: task.publicId,
@@ -93,7 +94,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     updateTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
       if (!publicId) {
-        return c.json({ error: 'publicId is required' }, 400);
+        return c.json({ code: ErrorCode.PUBLIC_ID_REQUIRED }, 400);
       }
       const validated = await c.req.json<UpdateTaskInput>();
       const input: Record<string, unknown> = {};
@@ -106,7 +107,7 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
 
       const task = await deps.updateTaskUseCase.execute(publicId, input);
       if (!task) {
-        return c.json({ error: 'Task not found' }, 404);
+        return c.json({ code: ErrorCode.TASK_NOT_FOUND }, 404);
       }
       return c.json({
         publicId: task.publicId,
@@ -129,11 +130,11 @@ export function createTaskHandler(deps: TaskHandlerDeps) {
     deleteTask: async (c: Context) => {
       const publicId = c.req.param('publicId');
       if (!publicId) {
-        return c.json({ error: 'publicId is required' }, 400);
+        return c.json({ code: ErrorCode.PUBLIC_ID_REQUIRED }, 400);
       }
       const deleted = await deps.deleteTaskUseCase.execute(publicId);
       if (!deleted) {
-        return c.json({ error: 'Task not found' }, 404);
+        return c.json({ code: ErrorCode.TASK_NOT_FOUND }, 404);
       }
       return c.body(null, 204);
     },

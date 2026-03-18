@@ -1,3 +1,4 @@
+import { ErrorCode } from 'error';
 import type { Context } from 'hono';
 import type { ISignInUseCase } from '../../../application/auth/signInUseCase.js';
 
@@ -20,7 +21,7 @@ export function createAuthHandler(deps: AuthHandlerDeps) {
       const body = await c.req.json<{ username: string; password: string }>();
       const result = await deps.signInUseCase.execute(body);
       if (!result) {
-        return c.json({ error: 'Invalid credentials' }, 401);
+        return c.json({ code: ErrorCode.INVALID_CREDENTIALS }, 401);
       }
       return c.json({ token: result.token, username: result.username });
     },
