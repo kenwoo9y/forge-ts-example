@@ -1,23 +1,39 @@
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const TOKEN_KEY = 'api_token';
 const USERNAME_KEY = 'username';
 
+const get = (key: string): Promise<string | null> => {
+  if (Platform.OS === 'web') {
+    return Promise.resolve(localStorage.getItem(key));
+  }
+  return SecureStore.getItemAsync(key);
+};
+
+const set = (key: string, value: string): Promise<void> => {
+  if (Platform.OS === 'web') {
+    localStorage.setItem(key, value);
+    return Promise.resolve();
+  }
+  return SecureStore.setItemAsync(key, value);
+};
+
+const remove = (key: string): Promise<void> => {
+  if (Platform.OS === 'web') {
+    localStorage.removeItem(key);
+    return Promise.resolve();
+  }
+  return SecureStore.deleteItemAsync(key);
+};
+
 export const storage = {
-  async getToken(): Promise<string | null> {
-    return SecureStore.getItemAsync(TOKEN_KEY);
-  },
-  async setToken(token: string): Promise<void> {
-    await SecureStore.setItemAsync(TOKEN_KEY, token);
-  },
-  async getUsername(): Promise<string | null> {
-    return SecureStore.getItemAsync(USERNAME_KEY);
-  },
-  async setUsername(username: string): Promise<void> {
-    await SecureStore.setItemAsync(USERNAME_KEY, username);
-  },
+  getToken: () => get(TOKEN_KEY),
+  setToken: (token: string) => set(TOKEN_KEY, token),
+  getUsername: () => get(USERNAME_KEY),
+  setUsername: (username: string) => set(USERNAME_KEY, username),
   async clear(): Promise<void> {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USERNAME_KEY);
+    await remove(TOKEN_KEY);
+    await remove(USERNAME_KEY);
   },
 };
