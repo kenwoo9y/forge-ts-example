@@ -24,6 +24,9 @@ export default function AppLayout() {
         headerTintColor: '#111827',
         headerTitleStyle: { fontWeight: '600' },
       }}
-    />
+    >
+      <Stack.Screen name="todos/index" options={{ title: 'ToDoリスト' }} />
+      <Stack.Screen name="todos/[publicId]" options={{ title: 'ToDo詳細' }} />
+    </Stack>
   );
 }
