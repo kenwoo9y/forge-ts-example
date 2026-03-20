@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useDeleteTodo } from '../api/delete-todo';
 import { useTodo } from '../api/get-todo';
+import type { Todo } from '../types';
 import { formatDate, formatDateTime } from '../utils';
 import { StatusBadge } from './status-badge';
 
@@ -41,7 +42,7 @@ function DetailSkeleton() {
 
 type TodoDetailProps = {
   publicId: string;
-  onEditPress: () => void;
+  onEditPress: (todo: Todo) => void;
 };
 
 export function TodoDetail({ publicId, onEditPress }: TodoDetailProps) {
@@ -103,7 +104,7 @@ export function TodoDetail({ publicId, onEditPress }: TodoDetailProps) {
         <View className="flex-row gap-3 px-4 pb-8 pt-3 bg-white border-t border-gray-100">
           <TouchableOpacity
             className="flex-1 h-11 rounded-lg border border-orange-400 items-center justify-center"
-            onPress={onEditPress}
+            onPress={() => todo && onEditPress(todo)}
           >
             <Text className="text-orange-500 text-sm font-medium">編集</Text>
           </TouchableOpacity>
