@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useDeleteTodo } from '../api/delete-todo';
 import { useTodo } from '../api/get-todo';
 import type { Todo } from '../types';
@@ -51,18 +51,25 @@ export function TodoDetail({ publicId, onEditPress }: TodoDetailProps) {
   const { mutate: deleteTodo, isPending: isDeleting } = useDeleteTodo(publicId);
 
   function handleDelete() {
-    Alert.alert('削除確認', 'このToDoを削除しますか？', [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '削除',
-        style: 'destructive',
-        onPress: () => {
-          deleteTodo(undefined, {
-            onSuccess: () => router.replace('/(app)/todos'),
-          });
+    const doDelete = () => {
+      deleteTodo(undefined, {
+        onSuccess: () => router.replace('/(app)/todos'),
+        onError: (error) => {
+          Alert.alert('削除失敗', error.message ?? 'エラーが発生しました');
         },
-      },
-    ]);
+      });
+    };
+
+    if (Platform.OS === 'web') {
+      if (window.confirm('このToDoを削除しますか？')) {
+        doDelete();
+      }
+    } else {
+      Alert.alert('削除確認', 'このToDoを削除しますか？', [
+        { text: 'キャンセル', style: 'cancel' },
+        { text: '削除', style: 'destructive', onPress: doDelete },
+      ]);
+    }
   }
 
   return (
