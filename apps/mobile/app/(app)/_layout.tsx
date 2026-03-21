@@ -20,8 +20,8 @@ export default function AppLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#ffffff' },
-        headerTintColor: '#111827',
+        headerStyle: { backgroundColor: '#2563eb' },
+        headerTintColor: '#ffffff',
         headerTitleStyle: { fontWeight: '600' },
       }}
     >
