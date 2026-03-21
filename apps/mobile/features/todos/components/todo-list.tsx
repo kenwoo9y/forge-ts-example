@@ -80,7 +80,7 @@ export function TodoList({ onCreatePress }: TodoListProps) {
           renderItem={({ item }) => (
             <TodoItem todo={item} onPress={() => router.push(`/(app)/todos/${item.publicId}`)} />
           )}
-          className="bg-white mx-4 mt-4 rounded-lg shadow-sm overflow-hidden"
+          className="flex-1 bg-white mx-4 mt-4 rounded-lg shadow-sm"
           contentContainerStyle={{ flexGrow: 1 }}
         />
       )}
