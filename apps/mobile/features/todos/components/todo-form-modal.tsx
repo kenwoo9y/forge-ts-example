@@ -1,4 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   KeyboardAvoidingView,
@@ -60,6 +62,8 @@ export function TodoFormModal({
   onSubmit,
   onClose,
 }: TodoFormModalProps) {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const {
     control,
     handleSubmit,
@@ -148,20 +152,61 @@ export function TodoFormModal({
           </FormField>
 
           {/* 期日 */}
-          <FormField label="期日 (YYYY-MM-DD)" error={errors.dueDate?.message}>
+          <FormField label="期日" error={errors.dueDate?.message}>
             <Controller
               control={control}
               name="dueDate"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="border border-gray-300 rounded-lg px-4 py-3 text-sm text-gray-900"
-                  placeholder="例: 2025-12-31"
-                  keyboardType="numeric"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value ?? ''}
-                />
-              )}
+              render={({ field: { onChange, value } }) =>
+                Platform.OS === 'web' ? (
+                  <input
+                    type="date"
+                    value={value ?? ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    style={{
+                      border: '1px solid #d1d5db',
+                      borderRadius: 8,
+                      padding: '12px 16px',
+                      fontSize: 14,
+                      color: value ? '#111827' : '#9ca3af',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      outline: 'none',
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                ) : (
+                  <View>
+                    <TouchableOpacity
+                      className="border border-gray-300 rounded-lg px-4 py-3 flex-row justify-between items-center"
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Text className={`text-sm ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {value || '日付を選択'}
+                      </Text>
+                      {value && (
+                        <TouchableOpacity
+                          onPress={() => onChange('')}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Text className="text-sm text-gray-400">✕</Text>
+                        </TouchableOpacity>
+                      )}
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                      <DateTimePicker
+                        value={value ? new Date(value) : new Date()}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                        onValueChange={(_, selectedDate) => {
+                          if (Platform.OS === 'android') setShowDatePicker(false);
+                          onChange(selectedDate.toISOString().split('T')[0]);
+                        }}
+                        onDismiss={() => setShowDatePicker(false)}
+                      />
+                    )}
+                  </View>
+                )
+              }
             />
           </FormField>
 
