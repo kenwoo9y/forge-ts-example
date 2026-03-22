@@ -68,7 +68,7 @@ const signInUseCase = new SignInUseCase(userRepository, jwtSecret);
 
 const app = new OpenAPIHono();
 
-app.use(cors({ origin: 'http://localhost:3001' }));
+app.use(cors({ origin: ['http://localhost:3001', 'http://localhost:8081'] }));
 app.use(pinoLogger({ pino: logger }));
 
 app.get('/', (c) => {
