@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
@@ -197,11 +197,14 @@ export function TodoFormModal({
                         value={value ? new Date(value) : new Date()}
                         mode="date"
                         display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                        onValueChange={(_, selectedDate) => {
+                        onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                          if (event.type === 'dismissed') {
+                            setShowDatePicker(false);
+                            return;
+                          }
                           if (Platform.OS === 'android') setShowDatePicker(false);
-                          onChange(selectedDate.toISOString().split('T')[0]);
+                          if (selectedDate) onChange(selectedDate.toISOString().split('T')[0]);
                         }}
-                        onDismiss={() => setShowDatePicker(false)}
                       />
                     )}
                   </View>
