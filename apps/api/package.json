@@ -19,7 +19,7 @@
     "error": "workspace:*",
     "bcryptjs": "^3.0.3",
     "hono": "^4.12.8",
-    "jose": "^6.2.0",
+    "jose": "^6.2.2",
     "hono-pino": "^0.10.3",
     "pino": "^10.3.1",
     "schema": "workspace:*"
