@@ -7,7 +7,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "storybook": "storybook dev -p 6007",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.6",
@@ -38,6 +40,7 @@
     "@storybook/react-vite": "^10.2.19",
     "@types/react": "~19.2.14",
     "@vitejs/plugin-react": "^4.7.0",
+    "storybook": "^10.2.19",
     "typescript": "~5.9.2",
     "vite": "^6.4.1"
   },
