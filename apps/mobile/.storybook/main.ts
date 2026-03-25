@@ -28,8 +28,10 @@ const config: StorybookConfig = {
     // @storybook/react-vite adds @vitejs/plugin-react, which picks up the
     // project's babel.config.js. The mobile babel config sets
     // jsxImportSource:'nativewind' which breaks JSX in the Storybook context
-    // (causing "React is not defined"). Replace it with a version that
-    // ignores the babel config file so Vite uses esbuild's automatic runtime.
+    // (causing "React is not defined"). Replace it with a version that:
+    //   1. Ignores the project babel config (avoids expo-specific transforms)
+    //   2. Sets jsxImportSource:'nativewind' via the plugin option so that
+    //      NativeWind's CSS interop correctly handles className on web.
     const plugins = (config.plugins ?? [])
       .flat()
       .filter(
@@ -44,7 +46,10 @@ const config: StorybookConfig = {
     return mergeConfig(
       { ...config, plugins },
       {
-        plugins: react({ babel: { configFile: false } }),
+        plugins: react({ babel: { configFile: false }, jsxImportSource: 'nativewind' }),
+        define: {
+          'process.env': {},
+        },
         resolve: {
           alias: [
             // Exact match only — prevents 'react-native/Libraries/...' deep imports
@@ -65,6 +70,13 @@ const config: StorybookConfig = {
               find: 'react-native-safe-area-context',
               replacement: resolve(__dirname, './__mocks__/react-native-safe-area-context.ts'),
             },
+            // Mock @/providers to avoid expo-secure-store and other native deps
+            {
+              find: '@/providers',
+              replacement: resolve(__dirname, './__mocks__/providers.tsx'),
+            },
+            // Resolve @/* path alias to the app root
+            { find: '@', replacement: resolve(__dirname, '..') },
           ],
         },
       }
