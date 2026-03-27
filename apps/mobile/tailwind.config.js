@@ -4,6 +4,7 @@ module.exports = {
     './app/**/*.{js,jsx,ts,tsx}',
     './components/**/*.{js,jsx,ts,tsx}',
     './features/**/*.{js,jsx,ts,tsx}',
+    './.storybook/**/*.{js,jsx,ts,tsx}',
   ],
   presets: [require('nativewind/preset')],
   darkMode: 'class',
