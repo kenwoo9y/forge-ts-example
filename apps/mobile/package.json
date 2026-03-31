@@ -9,7 +9,9 @@
     "web": "expo start --web",
     "type-check": "tsc --noEmit",
     "storybook": "storybook dev -p 6007",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.7",
