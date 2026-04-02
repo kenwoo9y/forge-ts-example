@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     sudo \
     postgresql-client \
+    libnspr4 \
+    libnss3 \
     && rm -rf /var/lib/apt/lists/*
 
 # nodeユーザーにsudo権限を付与
@@ -18,7 +20,7 @@ RUN mkdir -p /home/node && \
     chown -R node:node /home/node
 
 # pnpmのインストール
-RUN npm install -g pnpm@10.14.0
+RUN npm install -g pnpm@10.33.0
 
 # pnpmのパスを確認して設定
 RUN which pnpm && pnpm --version

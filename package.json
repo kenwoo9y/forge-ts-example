@@ -34,6 +34,13 @@
     "next-auth": "5.0.0-beta.30"
   },
   "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "lefthook",
+      "prisma",
+      "sharp"
+    ],
     "peerDependencyRules": {
       "allowedVersions": {
         "@expo/require-utils>typescript": "6",
