@@ -49,17 +49,21 @@
 - **テーブル**: TanStack Table
 - **認証**: Auth.js（NextAuth v5）Credentials プロバイダー
 - **テスト**:
-  - 単体テスト: Vitest（予定）
-  - E2Eテスト: Playwright（予定）
-  - UIドキュメント: Storybook（予定）
+  - 単体テスト: Vitest
+  - E2Eテスト: Playwright
+  - UIドキュメント: Storybook
 
 ---
 
 ## 📱 モバイル
 - **フレームワーク**: React Native + Expo
+- **ルーティング**: Expo Router（ファイルベース）
+- **CSSフレームワーク**: NativeWind（Tailwind CSS ベース）
+- **フォーム**: React Hook Form + Zod
+- **データフェッチ**: TanStack Query
 - **テスト**:
   - 単体テスト: Vitest
-  - UIドキュメント: Storybook（任意）
+  - UIドキュメント: Storybook
 
 ---
 
@@ -83,7 +87,7 @@
 ---
 
 ## ☁️ インフラ / デプロイ
-- **IaC**: AWS CDK
+- **IaC**: AWS CDK（`infra/` に定義）
 - **構成**:
   - Web: S3 + CloudFront
   - API: ECS + Fargate
@@ -96,7 +100,7 @@
 - **単体テスト**: Vitest（Web / Mobile / API / Packages）
 - **E2Eテスト**: Playwright（主にWeb UI対象）
 - **CI/CD**:
-  - GitHub Actions: lint / test / deploy / e2e
+  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile`（lint / type-check / test）
   - Dependabot: 依存パッケージの自動更新
 
 ---
@@ -115,6 +119,7 @@
 - `packages/db`：Prisma ORM / DBクライアント
 - `packages/auth`：bcryptjs + Zod による認証バリデーション共通ロジック
 - `packages/schema`：Zod スキーマ共有（API・Web 間）
+- `packages/error`：共通エラー型定義
 - `packages/config`：Biome / tsconfig / vitest 設定
 
 ---
@@ -135,22 +140,36 @@ forge-ts-example/
 │   │   ├── lib/                      # ユーティリティ・API クライアント
 │   │   ├── types/
 │   │   ├── public/
+│   │   ├── .storybook/               # Storybook 設定
 │   │   ├── auth.ts                   # Auth.js 設定
+│   │   ├── proxy.ts                  # API プロキシ設定
 │   │   ├── biome.json
+│   │   ├── components.json           # shadcn/ui 設定
 │   │   ├── next.config.ts
+│   │   ├── postcss.config.mjs
+│   │   ├── tailwind.config.ts
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   ├── mobile/                       # Expo + React Native
-│   │   ├── assets/
-│   │   ├── app.json
+│   │   ├── app/                      # Expo Router（ファイルベースルーティング）
+│   │   ├── assets/                   # 画像・アイコン
+│   │   ├── features/                 # 機能単位のモジュール
+│   │   ├── lib/                      # ユーティリティ・API クライアント
+│   │   ├── .storybook/               # Storybook 設定
+│   │   ├── providers.tsx             # React コンテキストプロバイダー
+│   │   ├── global.css                # NativeWind グローバルスタイル
+│   │   ├── app.json                  # Expo 設定
+│   │   ├── babel.config.js
+│   │   ├── metro.config.js
+│   │   ├── tailwind.config.js
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   └── api/                          # Hono（APIサーバー）
 │       ├── src/
-│       │   ├── application/
-│       │   ├── domain/
-│       │   ├── infrastructure/
-│       │   └── presentation/
+│       │   ├── application/          # ユースケース層
+│       │   ├── domain/               # ドメイン層（エンティティ・値オブジェクト・リポジトリ）
+│       │   ├── infrastructure/       # インフラ層（Prisma・JWT・ロガー）
+│       │   └── presentation/         # プレゼンテーション層（HTTPルーター・ハンドラー）
 │       ├── .dockerignore
 │       ├── compose.yaml
 │       ├── Dockerfile
@@ -170,6 +189,8 @@ forge-ts-example/
 │   │   └── src/
 │   ├── schema/                       # Zod スキーマ共有（API・Web 間）
 │   │   └── src/
+│   ├── error/                        # 共通エラー型定義
+│   │   └── src/
 │   └── config/                       # 各種共有設定
 │       ├── biome/
 │       ├── tsconfig/
@@ -187,6 +208,10 @@ forge-ts-example/
 │
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
+│   ├── workflows/
+│   │   ├── ci-api.yaml
+│   │   ├── ci-web.yaml
+│   │   └── ci-mobile.yaml
 │   ├── dependabot.yaml
 │   └── pull_request_template.md
 │
