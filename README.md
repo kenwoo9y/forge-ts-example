@@ -1,5 +1,19 @@
 # forge-ts-example
 
+TypeScript モノレポのテンプレート実装例。Hono API・Next.js Web・Expo モバイルの3アプリを Turborepo で管理する。
+
+## ドキュメント
+
+- [技術スタック](docs/tech-stack.md)
+- [認証](docs/auth.md)
+
+## 動作要件
+
+| ツール | バージョン |
+|---|---|
+| Node.js | 22 |
+| pnpm | 10.14.0 |
+
 ## 起動
 
 ```bash
@@ -68,6 +82,28 @@ AUTH_SECRET="your-secret-key"
 
 - `API_URL` — Auth.js のサインイン処理（サーバーサイド）が Hono API を呼び出すための URL です。
 - `AUTH_SECRET` — Auth.js が JWT セッションを暗号化するためのシークレットです。`JWT_SECRET` とは別の値を設定してください。
+
+## テスト
+
+```bash
+pnpm test
+```
+
+## make コマンド
+
+| コマンド | 内容 |
+|---|---|
+| `make lint-check` | リントチェック |
+| `make lint-fix` | リント自動修正 |
+| `make format-check` | フォーマットチェック |
+| `make format-fix` | フォーマット自動修正 |
+| `make check` | リント + フォーマットチェック |
+| `make check-fix` | リント + フォーマット自動修正 |
+| `make type-check` | 型チェック |
+| `make secrets-scan` | シークレットスキャン |
+| `make migrate-generate` | マイグレーションファイル生成 |
+| `make migrate` | マイグレーション実行 |
+| `make psql` | PostgreSQL に接続 |
 
 ## データベース
 
