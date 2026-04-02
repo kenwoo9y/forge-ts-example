@@ -11,6 +11,7 @@ pnpm dev
 |---|---|
 | API | http://localhost:3000 |
 | Web | http://localhost:3001 |
+| Mobile | http://localhost:8081 |
 
 ## 開発環境 (Codespaces / ローカル)
 
