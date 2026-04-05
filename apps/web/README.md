@@ -31,7 +31,42 @@ pnpm dev
 | `pnpm test` | テスト実行 |
 | `pnpm test:coverage` | カバレッジ付きテスト実行 |
 | `pnpm test:storybook` | Storybook のテスト実行 |
+| `pnpm test:e2e` | E2E テスト実行 |
+| `pnpm test:e2e:ui` | E2E テストを UI モードで実行 |
+| `pnpm test:e2e:debug` | E2E テストをデバッグモードで実行 |
 | `pnpm storybook` | Storybook 起動 |
+
+## E2E テスト
+
+[Playwright](https://playwright.dev) を使った E2E テストが `e2e/` ディレクトリに格納されています。
+
+### 事前準備
+
+テスト用ユーザーをあらかじめ DB に作成し、環境変数を設定します。
+
+```bash
+export E2E_USERNAME=your_test_user
+export E2E_PASSWORD=your_password
+```
+
+Web アプリと API サーバーを起動した状態でテストを実行します。
+
+```bash
+# モノレポルートで全アプリを起動
+pnpm dev
+
+# 別ターミナルで E2E テストを実行
+cd apps/web
+pnpm test:e2e
+```
+
+### テスト構成
+
+| ファイル | 内容 |
+|---|---|
+| `e2e/global.setup.ts` | 認証セットアップ（ログイン状態を保存） |
+| `e2e/auth.spec.ts` | 認証フロー（ログイン・アカウント作成・アクセス保護） |
+| `e2e/todos.spec.ts` | Todo の CRUD 操作・詳細ページ |
 
 ## 主要な依存関係
 
