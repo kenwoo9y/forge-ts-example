@@ -5,10 +5,28 @@ on:
     paths:
       - 'apps/web/**'
       - 'apps/api/**'
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: forge_ts_dev
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/forge_ts_dev
+      JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -18,17 +36,44 @@ jobs:
       run: npm install -g pnpm && pnpm install
     - name: Build internal packages
       run: pnpm --filter auth --filter error --filter schema build
-    - name: Install Playwright Browsers
-      run: cd apps/web && pnpm exec playwright install --with-deps
-    - name: Run Playwright tests
-      run: cd apps/web && pnpm exec playwright test
+    - name: Generate Prisma client
+      run: pnpm --filter db exec prisma generate
+    - name: Run database migrations
+      run: pnpm --filter db exec prisma migrate deploy
+    - name: Start API server
+      working-directory: apps/api
+      run: pnpm exec tsx src/index.ts &
+    - name: Wait for API to be ready
+      run: |
+        for i in $(seq 1 30); do
+          curl -sf http://localhost:3000 && break
+          echo "Waiting for API... ($i/30)"
+          sleep 2
+        done
+    - name: Create E2E test user
       env:
         E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
         E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
-        BASE_URL: ${{ vars.E2E_BASE_URL || 'http://localhost:3001' }}
+      run: |
+        curl -sf -X POST http://localhost:3000/users \
+          -H "Content-Type: application/json" \
+          -d "{\"username\":\"${E2E_USERNAME}\",\"password\":\"${E2E_PASSWORD}\"}" || true
+    - name: Install Playwright Browsers
+      run: cd apps/web && pnpm exec playwright install --with-deps
+    - name: Run Playwright tests
+      working-directory: apps/web
+      run: pnpm exec playwright test
+      env:
+        CI: true
+        E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+        E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        BASE_URL: http://localhost:3001
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+        API_URL: http://localhost:3000
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret' }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
-        path: playwright-report/
+        path: apps/web/playwright-report/
         retention-days: 30
