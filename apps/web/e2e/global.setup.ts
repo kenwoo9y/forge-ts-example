@@ -6,8 +6,8 @@ const authFile = path.join(
   "../playwright/.auth/user.json",
 );
 
-const E2E_USERNAME = process.env.E2E_USERNAME ?? "e2e_test_user";
-const E2E_PASSWORD = process.env.E2E_PASSWORD ?? "Password123!";
+const E2E_USERNAME = process.env.E2E_USERNAME || "e2e_test_user";
+const E2E_PASSWORD = process.env.E2E_PASSWORD || "Password123!";
 
 setup("authenticate", async ({ page }) => {
   await page.goto("/signin");
