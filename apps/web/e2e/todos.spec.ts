@@ -58,7 +58,7 @@ test.describe("ToDoリスト", () => {
     await page.fill("#description", "E2Eテストで作成したTodo");
     await page.fill("#dueDate", "2026-12-31");
     await page.selectOption("#status", "doing");
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
 
     await expect(
       page.getByRole("heading", { name: "新しいToDoを追加" }),
@@ -73,7 +73,7 @@ test.describe("ToDoリスト", () => {
     // まず新規Todoを作成
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     // 編集ボタンをクリック
@@ -100,7 +100,7 @@ test.describe("ToDoリスト", () => {
     // まず新規Todoを作成
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     // 削除ボタンをクリック
@@ -110,7 +110,9 @@ test.describe("ToDoリスト", () => {
     await expect(
       page.getByRole("heading", { name: "ToDoを削除" }),
     ).toBeVisible();
-    await expect(page.getByText(todoTitle)).toBeVisible();
+    await expect(
+      page.getByRole("paragraph").filter({ hasText: todoTitle }),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "削除する" }).click();
 
@@ -128,7 +130,7 @@ test.describe("ToDoリスト", () => {
     // まず新規Todoを作成
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     // 削除ボタンをクリックしてキャンセル
@@ -145,7 +147,7 @@ test.describe("ToDoリスト", () => {
     // まず新規Todoを作成
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     // 行をクリック（操作ボタン以外）
@@ -169,7 +171,7 @@ test.describe("ToDo詳細ページ", () => {
     await page.fill("#description", todoDescription);
     await page.fill("#dueDate", "2026-12-31");
     await page.selectOption("#status", "todo");
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     const row = page.getByRole("row").filter({ hasText: todoTitle });
@@ -189,7 +191,7 @@ test.describe("ToDo詳細ページ", () => {
 
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     const row = page.getByRole("row").filter({ hasText: todoTitle });
@@ -211,7 +213,7 @@ test.describe("ToDo詳細ページ", () => {
 
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     const row = page.getByRole("row").filter({ hasText: todoTitle });
@@ -238,7 +240,7 @@ test.describe("ToDo詳細ページ", () => {
 
     await page.getByRole("button", { name: "新規追加" }).click();
     await page.fill("#title", todoTitle);
-    await page.getByRole("button", { name: "追加" }).click();
+    await page.getByRole("button", { name: "追加", exact: true }).click();
     await expect(page.getByText(todoTitle)).toBeVisible();
 
     const row = page.getByRole("row").filter({ hasText: todoTitle });
