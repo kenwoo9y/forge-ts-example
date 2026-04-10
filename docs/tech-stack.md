@@ -140,12 +140,14 @@ forge-ts-example/
 │   │   ├── lib/                      # ユーティリティ・API クライアント
 │   │   ├── types/
 │   │   ├── public/
+│   │   ├── e2e/                      # Playwright E2Eテスト
 │   │   ├── .storybook/               # Storybook 設定
 │   │   ├── auth.ts                   # Auth.js 設定
 │   │   ├── proxy.ts                  # API プロキシ設定
 │   │   ├── biome.json
 │   │   ├── components.json           # shadcn/ui 設定
 │   │   ├── next.config.ts
+│   │   ├── playwright.config.ts      # Playwright 設定
 │   │   ├── postcss.config.mjs
 │   │   ├── tailwind.config.ts
 │   │   ├── package.json
@@ -211,7 +213,8 @@ forge-ts-example/
 │   ├── workflows/
 │   │   ├── ci-api.yaml
 │   │   ├── ci-web.yaml
-│   │   └── ci-mobile.yaml
+│   │   ├── ci-mobile.yaml
+│   │   └── e2e.yaml
 │   ├── dependabot.yaml
 │   └── pull_request_template.md
 │
