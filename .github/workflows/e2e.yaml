@@ -10,6 +10,7 @@ jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    environment: ${{ github.base_ref }}
     services:
       postgres:
         image: postgres:16
