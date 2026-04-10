@@ -14,7 +14,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: forge_ts_dev
+          POSTGRES_DB: test_db
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
@@ -25,24 +25,31 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/forge_ts_dev
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
     steps:
     - uses: actions/checkout@v4
+    
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+    
     - name: Install dependencies
       run: npm install -g pnpm && pnpm install
+    
     - name: Build internal packages
       run: pnpm --filter auth --filter error --filter schema build
+    
     - name: Generate Prisma client
       run: pnpm --filter db exec prisma generate
+    
     - name: Run database migrations
       run: pnpm --filter db exec prisma migrate deploy
+    
     - name: Start API server
       working-directory: apps/api
       run: pnpm exec tsx src/index.ts &
+    
     - name: Wait for API to be ready
       run: |
         for i in $(seq 1 30); do
@@ -50,6 +57,7 @@ jobs:
           echo "Waiting for API... ($i/30)"
           sleep 2
         done
+    
     - name: Create E2E test user
       env:
         E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
@@ -58,8 +66,10 @@ jobs:
         curl -sf -X POST http://localhost:3000/users \
           -H "Content-Type: application/json" \
           -d "{\"username\":\"${E2E_USERNAME}\",\"password\":\"${E2E_PASSWORD}\"}" || true
+    
     - name: Install Playwright Browsers
       run: cd apps/web && pnpm exec playwright install --with-deps
+    
     - name: Run Playwright tests
       working-directory: apps/web
       run: pnpm exec playwright test
@@ -71,6 +81,8 @@ jobs:
         NEXT_PUBLIC_API_URL: http://localhost:3000
         API_URL: http://localhost:3000
         AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret' }}
+        AUTH_TRUST_HOST: true
+    
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
