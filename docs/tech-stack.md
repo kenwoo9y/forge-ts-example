@@ -198,10 +198,22 @@ forge-ts-example/
 │       ├── tsconfig/
 │       └── vitest/
 │
-├── infra/                            # AWS CDK によるインフラコード（予定）
+├── infra/                            # AWS CDK によるインフラコード
 │   ├── bin/
 │   ├── lib/
+│   │   ├── constructs/               # 再利用可能なCDKコンストラクト
+│   │   │   ├── ecs-fargate-service.ts
+│   │   │   └── s3-cloudfront-site.ts
+│   │   └── stacks/                   # CDKスタック定義
+│   │       ├── api-stack.ts
+│   │       ├── database-stack.ts
+│   │       ├── network-stack.ts
+│   │       └── web-stack.ts
 │   ├── test/
+│   │   ├── api-stack.test.ts
+│   │   ├── database-stack.test.ts
+│   │   ├── network-stack.test.ts
+│   │   └── web-stack.test.ts
 │   ├── cdk.json
 │   ├── package.json
 │   └── tsconfig.json
