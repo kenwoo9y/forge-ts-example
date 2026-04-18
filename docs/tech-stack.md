@@ -89,8 +89,10 @@
 ## ☁️ インフラ / デプロイ
 - **IaC**: AWS CDK（`infra/` に定義）
 - **構成**:
-  - Web: S3 + CloudFront
+  - Web: ECS + Fargate（Next.js / Auth.js のSSRに対応）
   - API: ECS + Fargate
+  - DB: RDS PostgreSQL（プライベートサブネット）
+  - ネットワーク: VPC / ALB / セキュリティグループ
 - **Docker**: Dev用・本番用をそれぞれ定義
 - **CI/CD**: GitHub Actions
 
@@ -202,8 +204,7 @@ forge-ts-example/
 │   ├── bin/
 │   ├── lib/
 │   │   ├── constructs/               # 再利用可能なCDKコンストラクト
-│   │   │   ├── ecs-fargate-service.ts
-│   │   │   └── s3-cloudfront-site.ts
+│   │   │   └── ecs-fargate-service.ts
 │   │   └── stacks/                   # CDKスタック定義
 │   │       ├── api-stack.ts
 │   │       ├── database-stack.ts
