@@ -26,10 +26,13 @@ import { createAuthRoutes } from './presentation/http/auth/routes.js';
 import { createTaskRoutes } from './presentation/http/task/routes.js';
 import { createUserRoutes } from './presentation/http/user/routes.js';
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is required');
+const { DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD } = process.env;
+if (!DB_HOST || !DB_PORT || !DB_NAME || !DB_USERNAME || !DB_PASSWORD) {
+  throw new Error(
+    'DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD environment variables are required'
+  );
 }
+const databaseUrl = `postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`;
 
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
