@@ -21,7 +21,7 @@
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-slot": "^1.2.4",
-    "@tanstack/react-query": "^5.95.2",
+    "@tanstack/react-query": "^5.99.1",
     "@tanstack/react-table": "^8.21.3",
     "auth": "workspace:*",
     "class-variance-authority": "^0.7.1",
