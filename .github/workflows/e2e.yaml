@@ -27,6 +27,11 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: test_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-jwt-secret' }}
     steps:
     - uses: actions/checkout@v4

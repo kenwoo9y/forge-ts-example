@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "vitest",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "cdk": "cdk"
   },
   "devDependencies": {
