@@ -3,8 +3,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import type { Construct } from 'constructs';
 
 export interface NetworkStackProps extends cdk.StackProps {
-  /** NAT インスタンスタイプ（デフォルト: t4g.nano） */
-  natInstanceType?: ec2.InstanceType;
   /** 使用する AZ 数（デフォルト: 2） */
   maxAzs?: number;
 }
@@ -26,17 +24,10 @@ export class NetworkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: NetworkStackProps) {
     super(scope, id, props);
 
-    const natInstanceType = props?.natInstanceType ?? new ec2.InstanceType('t4g.nano');
-
-    const natProvider = ec2.NatProvider.instanceV2({
-      instanceType: natInstanceType,
-    });
-
-    // VPC: パブリック/プライベートサブネット各AZ、NATインスタンス1つ
+    // VPC: パブリック/プライベートサブネット各AZ、NATゲートウェイ1つ
     this.vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: props?.maxAzs ?? 2,
       natGateways: 1,
-      natGatewayProvider: natProvider,
       subnetConfiguration: [
         {
           cidrMask: 24,
