@@ -27,7 +27,7 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-      DB_HOST: postgresql
+      DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME: test_db
       DB_USERNAME: postgres
