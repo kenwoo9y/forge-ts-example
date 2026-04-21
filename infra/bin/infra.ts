@@ -21,7 +21,6 @@ const env = {
 
 const networkStack = new NetworkStack(app, 'NetworkStack', {
   env,
-  natInstanceType: new ec2.InstanceType(process.env.NAT_INSTANCE_TYPE ?? 't4g.nano'),
   maxAzs: envInt('MAX_AZS', 2),
 });
 
