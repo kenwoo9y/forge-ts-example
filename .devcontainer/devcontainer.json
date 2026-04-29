@@ -8,31 +8,23 @@
       "extensions": [
         "ms-vscode.vscode-typescript-next",
         "bradlc.vscode-tailwindcss",
-        "esbenp.prettier-vscode",
-        "ms-vscode.vscode-json",
-        "ms-vscode.vscode-yaml",
+        "biomejs.biome",
+        "redhat.vscode-yaml",
         "ms-azuretools.vscode-docker",
-        "ms-vscode.remote-containers",
+        "ms-vscode-remote.remote-containers",
         "github.copilot",
         "github.copilot-chat",
-        "ms-vscode.vscode-github",
-        "ms-vscode.vscode-github-pullrequest-github",
-        "ms-vscode.vscode-github-issue-notebooks",
-        "ms-vscode.vscode-github-pullrequest-github-insiders",
-        "ms-vscode.vscode-github-pullrequest-github",
-        "ms-vscode.vscode-github-issue-notebooks",
-        "ms-vscode.vscode-github-pullrequest-github-insiders"
+        "GitHub.vscode-pull-request-github"
       ],
       "settings": {
-        "typescript.preferences.includePackageJsonAutoImports": "on",
-        "typescript.suggest.autoImports": true,
-        "typescript.updateImportsOnFileMove.enabled": "always",
+        "js/ts.preferences.includePackageJsonAutoImports": "on",
+        "js/ts.suggest.autoImports": true,
+        "js/ts.updateImportsOnFileMove.enabled": "always",
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
           "source.fixAll": "explicit",
           "source.organizeImports": "explicit"
         },
-        "editor.defaultFormatter": "biomejs.biome",
         "files.associations": {
           "*.ts": "typescript",
           "*.tsx": "typescriptreact",
