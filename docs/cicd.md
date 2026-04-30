@@ -1,5 +1,90 @@
 # CI/CD
 
+## CI - API (`.github/workflows/ci-api.yaml`)
+
+### 概要
+
+`main` ブランチへの Pull Request で `apps/api/**` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+
+### ジョブ一覧
+
+| ジョブ | 内容 |
+|---|---|
+| `lint-and-format` | `biome check apps/api` でコードスタイルを検証 |
+| `type-check` | `error` / `schema` パッケージのビルドと Prisma クライアント生成後に `tsc` を実行 |
+| `unit-test` | 同上の前準備後に `pnpm --filter api run test:coverage` でカバレッジ付きテストを実行 |
+
+---
+
+## CI - Web (`.github/workflows/ci-web.yaml`)
+
+### 概要
+
+`main` ブランチへの Pull Request で `apps/web/**` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+
+### ジョブ一覧
+
+| ジョブ | 内容 |
+|---|---|
+| `lint-and-format` | `pnpm --filter web run lint` で Next.js の ESLint ルールを検証 |
+| `type-check` | `error` / `schema` / `auth` パッケージのビルド後に `tsc` を実行 |
+| `unit-test` | 同上の前準備後に `pnpm --filter web run test:coverage` でカバレッジ付きテストを実行 |
+
+---
+
+## CI - Mobile (`.github/workflows/ci-mobile.yaml`)
+
+### 概要
+
+`main` ブランチへの Pull Request で `apps/mobile/**` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+
+### ジョブ一覧
+
+| ジョブ | 内容 |
+|---|---|
+| `lint-and-format` | `pnpm --filter web run lint` で Lint チェックを実行 |
+| `type-check` | `pnpm --filter mobile run type-check` で型検証 |
+| `unit-test` | `pnpm --filter mobile run test:coverage` でカバレッジ付きテストを実行 |
+
+---
+
+## CI - Infra (`.github/workflows/ci-infra.yaml`)
+
+### 概要
+
+`main` ブランチへの Pull Request で `infra/**` に変更があった場合に実行されるワークフロー。AWS CDK コードを対象に Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+
+### ジョブ一覧
+
+| ジョブ | 内容 |
+|---|---|
+| `lint-and-format` | `biome check infra` でコードスタイルを検証 |
+| `type-check` | `pnpm --filter infra run type-check` で型検証 |
+| `unit-test` | `pnpm --filter infra run test:coverage` でカバレッジ付きテストを実行 |
+
+---
+
+## Dependabot (`.github/dependabot.yaml`)
+
+### 概要
+
+依存パッケージを毎週自動で更新する Pull Request を作成する。各ディレクトリごとに `open-pull-requests-limit` を設定して PR が溜まりすぎないよう制御している。
+
+### 対象ディレクトリ一覧
+
+| ディレクトリ | パッケージエコシステム | PR 上限 |
+|---|---|---|
+| `/` (ルート) | npm (pnpm ワークスペース) | 5 |
+| `/apps/api` | npm | 3 |
+| `/apps/api` | docker | 2 |
+| `/apps/web` | npm | 3 |
+| `/apps/mobile` | npm | 3 |
+| `/infra` | npm | 2 |
+| `/packages/db` | npm | 2 |
+| `/` | github-actions | 2 |
+
+---
+
 ## E2E テスト (`.github/workflows/e2e.yaml`)
 
 ### 概要
