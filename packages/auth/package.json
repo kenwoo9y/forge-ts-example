@@ -1,9 +1,6 @@
 {
   "name": "auth",
-  "version": "1.0.0",
-  "description": "",
   "type": "module",
-  "main": "./dist/index.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -14,10 +11,6 @@
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.33.3",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "zod": "^4.0.0"
