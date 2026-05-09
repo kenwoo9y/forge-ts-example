@@ -25,6 +25,7 @@
     "biomejs",
     "bradlc",
     "esbenp",
+    "esbuild",
     "pullrequest",
     "commitlint",
     "cspell",
