@@ -27,7 +27,7 @@
     "nativewind": "^4.2.3",
     "react": "19.2.5",
     "react-dom": "19.2.5",
-    "react-hook-form": "^7.71.2",
+    "react-hook-form": "^7.75.0",
     "react-native": "0.85.2",
     "react-native-css-interop": "^0.2.3",
     "react-native-safe-area-context": "~5.7.0",
