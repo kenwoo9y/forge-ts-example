@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:25-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 
 # 依存関係をコピーしてインストール
@@ -14,7 +14,7 @@ COPY tsconfig.json ./
 RUN tsc
 
 # Stage 2: Runtime
-FROM node:25-alpine AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 # 実行に必要なファイルのみコピー
