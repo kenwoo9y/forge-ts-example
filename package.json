@@ -20,7 +20,7 @@
   "packageManager": "pnpm@11.0.8",
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
-    "@commitlint/cli": "^20.5.2",
+    "@commitlint/cli": "^21.0.0",
     "@commitlint/config-conventional": "^20.4.3",
     "@types/node": "25.5.2",
     "@vitest/coverage-v8": "4.1.2",
