@@ -56,7 +56,7 @@
     "@vitest/coverage-v8": "4.1.5",
     "vitest": "4.1.5",
     "autoprefixer": "^10.5.0",
-    "playwright": "^1.59.1",
+    "playwright": "^1.60.0",
     "postcss": "^8.5.14",
     "storybook": "^10.3.6",
     "tailwindcss": "^4.2.4",
