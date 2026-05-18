@@ -1,6 +1,6 @@
 -include .devcontainer/.env
 
-.PHONY: help lint-check lint-fix format-check format-fix check check-fix type-check secrets-scan psql migrate-generate migrate
+.PHONY: help lint-check lint-fix format-check format-fix check check-fix type-check secrets-scan psql migrate-generate migrate api-up api-down web-up web-down
 .DEFAULT_GOAL := help
 
 lint-check: ## Run lint check
@@ -35,6 +35,18 @@ migrate-generate:  ## Generate migration
 
 migrate:  ## Execute migration
 	cd packages/db && npx prisma migrate dev
+
+api-up: ## Build and start API container (docker compose)
+	docker compose -f apps/api/compose.yaml up --build
+
+api-down: ## Stop API container (docker compose)
+	docker compose -f apps/api/compose.yaml down
+
+web-up: ## Build and start Web container (docker compose)
+	docker compose -f apps/web/compose.yaml up --build
+
+web-down: ## Stop Web container (docker compose)
+	docker compose -f apps/web/compose.yaml down
 
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
