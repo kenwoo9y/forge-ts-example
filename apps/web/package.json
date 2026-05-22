@@ -51,7 +51,7 @@
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/browser": "4.1.6",
+    "@vitest/browser": "4.1.7",
     "@vitest/browser-playwright": "4.1.6",
     "@vitest/coverage-v8": "4.1.6",
     "vitest": "4.1.6",
