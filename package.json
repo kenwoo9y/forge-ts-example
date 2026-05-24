@@ -28,7 +28,7 @@
     "lefthook": "^2.1.6",
     "turbo": "^2.9.14",
     "typescript": "^6.0.3",
-    "vitest": "4.1.2"
+    "vitest": "4.1.7"
   },
   "dependencies": {
     "next-auth": "5.0.0-beta.30"
