@@ -44,6 +44,7 @@
     "isready",
     "lefthook",
     "logomark",
+    "msgpackr",
     "nativewind",
     "nextauth",
     "nodegroup",
