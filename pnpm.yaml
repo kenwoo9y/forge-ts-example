@@ -1,0 +1,10 @@
+overrides:
+  playwright: "^1.59.1"
+  "@types/node": "25.5.2"
+  "@react-native/metro-config": "0.85.2"
+  uuid: "^9.0.0"
+
+peerDependencyRules:
+  allowedVersions:
+    "@expo/require-utils>typescript": "6"
+    "tsconfck>typescript": "6"

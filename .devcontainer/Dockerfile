@@ -20,7 +20,7 @@ RUN mkdir -p /home/node && \
     chown -R node:node /home/node
 
 # pnpmのインストール
-RUN npm install -g pnpm@11.1.2
+RUN npm install -g pnpm@11.3.0
 
 # pnpmのパスを確認して設定
 RUN which pnpm && pnpm --version
