@@ -25,6 +25,8 @@ export interface ApiStackProps extends cdk.StackProps {
   memoryLimitMiB?: number;
   /** 起動タスク数（デフォルト: 1） */
   desiredCount?: number;
+  /** デプロイコントローラー（デフォルト: ECS） */
+  deploymentController?: ecs.DeploymentControllerType;
 }
 
 /**
@@ -48,6 +50,7 @@ export class ApiStack extends cdk.Stack {
       cpu = 256,
       memoryLimitMiB = 512,
       desiredCount = 1,
+      deploymentController,
     } = props;
 
     this.ecsFargateService = new EcsFargateService(this, 'ApiService', {
@@ -61,8 +64,6 @@ export class ApiStack extends cdk.Stack {
         NODE_ENV: 'production',
       },
       secrets: {
-        // DB_USERNAME / DB_PASSWORD は起動時にSecrets Managerから注入される
-        // アプリ側でこれらを使いDATABASE_URLを構築する
         DB_USERNAME: ecs.Secret.fromSecretsManager(databaseCredentials, 'username'),
         DB_PASSWORD: ecs.Secret.fromSecretsManager(databaseCredentials, 'password'),
         JWT_SECRET: ecs.Secret.fromSecretsManager(jwtSecret),
@@ -70,22 +71,20 @@ export class ApiStack extends cdk.Stack {
       cpu,
       memoryLimitMiB,
       desiredCount,
+      deploymentController,
     });
 
     // ECSサービスのSG → RDSのSG へのポート5432インバウンドルールを追加
-    // CfnSecurityGroupIngressを直接作成することでスタック間の循環依存を回避する
-    // （rdsSecurityGroup.securityGroupIdを文字列参照として取得し、ApiStack内のリソースとして定義）
     new ec2.CfnSecurityGroupIngress(this, 'EcsToRdsIngress', {
       groupId: rdsSecurityGroup.securityGroupId,
       ipProtocol: 'tcp',
       fromPort: 5432,
       toPort: 5432,
       sourceSecurityGroupId:
-        this.ecsFargateService.service.service.connections.securityGroups[0].securityGroupId,
+        this.ecsFargateService.fargateService.connections.securityGroups[0].securityGroupId,
     });
 
-    // ECSタスクにDB認証情報・JWTシークレットの読み取り権限を付与
-    databaseCredentials.grantRead(this.ecsFargateService.service.taskDefinition.taskRole);
-    jwtSecret.grantRead(this.ecsFargateService.service.taskDefinition.taskRole);
+    databaseCredentials.grantRead(this.ecsFargateService.taskDefinition.taskRole);
+    jwtSecret.grantRead(this.ecsFargateService.taskDefinition.taskRole);
   }
 }
