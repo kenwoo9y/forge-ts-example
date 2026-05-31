@@ -26,6 +26,7 @@ function buildPipelineStack() {
   const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
   const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
 
+  // DEV のみ作成（enableStg/enableProd は指定しない）
   const ecrStack = new EcrStack(app, 'TestEcrStack', { env: TEST_ENV });
 
   const image = ecs.ContainerImage.fromRegistry('nginx');
@@ -55,10 +56,8 @@ function buildPipelineStack() {
     githubRepo: 'forge',
     codestarConnectionArn:
       'arn:aws:codestar-connections:ap-northeast-1:123456789012:connection/test-connection',
-    apiStack,
-    webStack,
-    apiRepository: ecrStack.apiRepository,
-    webRepository: ecrStack.webRepository,
+    ecrStack,
+    dev: { apiStack, webStack },
   });
 
   return Template.fromStack(pipelineStack);
@@ -241,13 +240,13 @@ describe('PipelineStack', () => {
       });
     });
 
-    it('アプリパイプラインが3ステージで構成される（Source→Generate→Deploy）', () => {
+    it('アプリパイプラインがDEVの3ステージで構成される（Source→GenerateDev→DeployDev）', () => {
       template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
         Name: 'ApiAppPipeline',
         Stages: Match.arrayWith([
           Match.objectLike({ Name: 'Source' }),
-          Match.objectLike({ Name: 'Generate' }),
-          Match.objectLike({ Name: 'Deploy' }),
+          Match.objectLike({ Name: 'GenerateDev' }),
+          Match.objectLike({ Name: 'DeployDev' }),
         ]),
       });
     });
@@ -353,6 +352,110 @@ describe('PipelineStack', () => {
           DeploymentType: 'BLUE_GREEN',
         },
       });
+    });
+  });
+});
+
+// ─── STG 昇格ありのテスト ──────────────────────────────────────────────────────
+
+describe('PipelineStack (enableStg=true)', () => {
+  const template = (() => {
+    const app = new cdk.App();
+    const networkStack = new NetworkStack(app, 'TestNetworkStack', { env: TEST_ENV });
+    const databaseStack = new DatabaseStack(app, 'TestDatabaseStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    });
+    const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
+    const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
+
+    const stgNetworkStack = new NetworkStack(app, 'StgNetworkStack', { env: TEST_ENV });
+    const stgDatabaseStack = new DatabaseStack(app, 'StgDatabaseStack', {
+      env: TEST_ENV,
+      vpc: stgNetworkStack.vpc,
+      rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
+    });
+    const stgSharedStack = new cdk.Stack(app, 'StgSharedStack', { env: TEST_ENV });
+    const stgJwtSecret = new secretsmanager.Secret(stgSharedStack, 'StgJwtSecret');
+
+    const ecrStack = new EcrStack(app, 'TestEcrStack', { env: TEST_ENV, enableStg: true });
+    const image = ecs.ContainerImage.fromRegistry('nginx');
+
+    const apiStack = new ApiStack(app, 'TestApiStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      database: databaseStack.database,
+      databaseCredentials: databaseStack.credentials,
+      jwtSecret,
+      image,
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+    const webStack = new WebStack(app, 'TestWebStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      apiUrl: 'http://api.example.com',
+      image,
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+    const stgApiStack = new ApiStack(app, 'StgApiStack', {
+      env: TEST_ENV,
+      vpc: stgNetworkStack.vpc,
+      rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
+      database: stgDatabaseStack.database,
+      databaseCredentials: stgDatabaseStack.credentials,
+      jwtSecret: stgJwtSecret,
+      image,
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+    const stgWebStack = new WebStack(app, 'StgWebStack', {
+      env: TEST_ENV,
+      vpc: stgNetworkStack.vpc,
+      apiUrl: 'http://stg-api.example.com',
+      image,
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+
+    const pipelineStack = new PipelineStack(app, 'TestPipelineStack', {
+      env: TEST_ENV,
+      githubOrg: 'acme',
+      githubRepo: 'forge',
+      codestarConnectionArn:
+        'arn:aws:codestar-connections:ap-northeast-1:123456789012:connection/test-connection',
+      ecrStack,
+      dev: { apiStack, webStack },
+      stg: { apiStack: stgApiStack, webStack: stgWebStack },
+    });
+    return Template.fromStack(pipelineStack);
+  })();
+
+  it('APIパイプラインにSTG承認・昇格・デプロイステージが追加される', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({ Name: 'Source' }),
+        Match.objectLike({ Name: 'GenerateDev' }),
+        Match.objectLike({ Name: 'DeployDev' }),
+        Match.objectLike({ Name: 'ApproveStg' }),
+        Match.objectLike({ Name: 'PromoteToStg' }),
+        Match.objectLike({ Name: 'GenerateStg' }),
+        Match.objectLike({ Name: 'DeployStg' }),
+      ]),
+    });
+  });
+
+  it('DEV+STGで4つのデプロイメントグループが作成される（API×2・Web×2）', () => {
+    const groups = template.findResources('AWS::CodeDeploy::DeploymentGroup');
+    expect(Object.keys(groups).length).toBe(4);
+  });
+
+  it('DEV→STG昇格用の CodeBuild プロジェクトが作成される', () => {
+    template.hasResourceProperties('AWS::CodeBuild::Project', {
+      Name: 'ApiPromoteToStg',
+    });
+    template.hasResourceProperties('AWS::CodeBuild::Project', {
+      Name: 'WebPromoteToStg',
     });
   });
 });

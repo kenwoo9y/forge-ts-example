@@ -12,15 +12,15 @@ describe('EcrStack', () => {
     template.resourceCountIs('AWS::ECR::Repository', 2);
   });
 
-  it('APIリポジトリが正しい名前で作成される', () => {
+  it('DEV APIリポジトリが正しい名前で作成される', () => {
     template.hasResourceProperties('AWS::ECR::Repository', {
-      RepositoryName: 'forge-ts/api',
+      RepositoryName: 'forge-ts/api-dev',
     });
   });
 
-  it('Webリポジトリが正しい名前で作成される', () => {
+  it('DEV Webリポジトリが正しい名前で作成される', () => {
     template.hasResourceProperties('AWS::ECR::Repository', {
-      RepositoryName: 'forge-ts/web',
+      RepositoryName: 'forge-ts/web-dev',
     });
   });
 
@@ -49,6 +49,50 @@ describe('EcrStack', () => {
   it('タグのミュータビリティがMUTABLEに設定される', () => {
     template.hasResourceProperties('AWS::ECR::Repository', {
       ImageTagMutability: 'MUTABLE',
+    });
+  });
+});
+
+describe('EcrStack (enableStg=true)', () => {
+  const app = new cdk.App();
+  const stack = new EcrStack(app, 'TestEcrStackWithStg', { enableStg: true });
+  const template = Template.fromStack(stack);
+
+  it('DEV+STGで4つのリポジトリが作成される', () => {
+    template.resourceCountIs('AWS::ECR::Repository', 4);
+  });
+
+  it('STG APIリポジトリが作成される', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/api-stg',
+    });
+  });
+
+  it('STG Webリポジトリが作成される', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/web-stg',
+    });
+  });
+});
+
+describe('EcrStack (enableStg=true, enableProd=true)', () => {
+  const app = new cdk.App();
+  const stack = new EcrStack(app, 'TestEcrStackFull', { enableStg: true, enableProd: true });
+  const template = Template.fromStack(stack);
+
+  it('DEV+STG+PRODで6つのリポジトリが作成される', () => {
+    template.resourceCountIs('AWS::ECR::Repository', 6);
+  });
+
+  it('PROD APIリポジトリが作成される', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/api-prod',
+    });
+  });
+
+  it('PROD Webリポジトリが作成される', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/web-prod',
     });
   });
 });
