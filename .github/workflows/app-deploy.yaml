@@ -1,0 +1,105 @@
+name: App Deploy
+
+on:
+  workflow_run:
+    workflows: ["CI - API", "CI - Web", "Playwright Tests"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: app-deploy-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Check All CI Passed ──────────────────────────────────────────────────────
+  check-all-ci:
+    name: Check All CI Passed
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Verify all required workflows succeeded
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const required = ['CI - API', 'CI - Web', 'Playwright Tests'];
+            const sha = context.payload.workflow_run.head_sha;
+
+            const { data: { workflow_runs } } = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head_sha: sha,
+              per_page: 100,
+            });
+
+            for (const name of required) {
+              const run = workflow_runs.find(r => r.name === name && r.conclusion === 'success');
+              if (!run) {
+                core.setFailed(`Required workflow "${name}" has not completed successfully`);
+                return;
+              }
+            }
+
+  # ─── Docker Build / ECR Push / Scan ─────────────────────────────────────────
+  build-push-scan:
+    name: Build, Push & Scan (${{ matrix.app }})
+    needs: [check-all-ci]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - app: api
+            ecr_repository: forge-ts/api-dev
+            dockerfile: apps/api/Dockerfile
+          - app: web
+            ecr_repository: forge-ts/web-dev
+            dockerfile: apps/web/Dockerfile
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_APP_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ matrix.ecr_repository }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "$REGISTRY/$REPOSITORY:$IMAGE_TAG" -f "${{ matrix.dockerfile }}" .
+          docker tag "$REGISTRY/$REPOSITORY:$IMAGE_TAG" "$REGISTRY/$REPOSITORY:latest"
+          docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          docker push "$REGISTRY/$REPOSITORY:latest"
+
+      - name: Check ECR image scan results
+        env:
+          REPOSITORY: ${{ matrix.ecr_repository }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Waiting for image scan to complete..."
+          aws ecr wait image-scan-complete \
+            --repository-name "$REPOSITORY" \
+            --image-id "imageTag=$IMAGE_TAG" \
+            --region "${{ vars.AWS_REGION }}"
+
+          CRITICAL=$(aws ecr describe-image-scan-findings \
+            --repository-name "$REPOSITORY" \
+            --image-id "imageTag=$IMAGE_TAG" \
+            --region "${{ vars.AWS_REGION }}" \
+            --query 'imageScanFindings.findingSeverityCounts.CRITICAL' \
+            --output text)
+
+          if [ "$CRITICAL" != "None" ] && [ -n "$CRITICAL" ] && [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Found $CRITICAL CRITICAL vulnerability(ies) in ${{ matrix.app }} image. Deployment blocked."
+            exit 1
+          fi
+          echo "No CRITICAL vulnerabilities found. Proceeding."
