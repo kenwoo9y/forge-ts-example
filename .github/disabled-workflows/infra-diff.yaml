@@ -1,0 +1,92 @@
+name: Infra Diff
+
+on:
+  workflow_run:
+    workflows: ["CI - Infra"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  cdk-diff:
+    name: CDK Diff
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_INFRA_DIFF_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: CDK Synth
+        working-directory: infra
+        run: npx cdk synth --no-notices
+
+      - name: CDK Diff
+        id: cdk-diff
+        working-directory: infra
+        run: npx cdk diff --no-notices --no-color 2>&1 | tee /tmp/cdk-diff.txt
+        continue-on-error: true
+
+      - name: Post diff as PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.payload.workflow_run.pull_requests[0]?.number;
+            if (!issue_number) return;
+
+            const fs = require('fs');
+            const rawDiff = fs.readFileSync('/tmp/cdk-diff.txt', 'utf8');
+            const diff = rawDiff.length > 60000
+              ? rawDiff.substring(0, 60000) + '\n...(truncated)'
+              : rawDiff;
+
+            const body = [
+              '## CDK Diff Results',
+              '',
+              '```',
+              diff,
+              '```',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+            });
+
+            const existing = comments.find(
+              c => c.user?.type === 'Bot' && c.body?.includes('CDK Diff Results')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body,
+              });
+            }

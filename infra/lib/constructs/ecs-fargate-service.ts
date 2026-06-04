@@ -2,36 +2,35 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 
 export interface EcsFargateServiceProps {
-  /** NetworkStackで定義したVPC */
   vpc: ec2.Vpc;
-  /** コンテナイメージ */
   image: ecs.ContainerImage;
-  /** コンテナが待ち受けるポート番号 */
   containerPort: number;
-  /** 環境変数 */
   environment?: Record<string, string>;
-  /** Secrets Managerなどのシークレット */
   secrets?: Record<string, ecs.Secret>;
-  /** タスクのCPUユニット数（デフォルト: 256） */
   cpu?: number;
-  /** タスクのメモリ (MiB)（デフォルト: 512） */
   memoryLimitMiB?: number;
-  /** 起動タスク数（デフォルト: 1） */
   desiredCount?: number;
+  deploymentController?: ecs.DeploymentControllerType;
 }
 
 /**
  * ALB + ECS Fargateサービスの再利用可能なコンストラクト
  * APIサーバー・Webアプリなど複数のサービスで共通利用する
+ * deploymentController に CODE_DEPLOY を指定するとBlue/Green構成になる
  */
 export class EcsFargateService extends Construct {
-  /** ECSクラスター */
   public readonly cluster: ecs.Cluster;
-  /** ALB + Fargateサービス */
-  public readonly service: ecs_patterns.ApplicationLoadBalancedFargateService;
+  public readonly taskDefinition: ecs.TaskDefinition;
+  public readonly loadBalancer: elbv2.ApplicationLoadBalancer;
+  public readonly fargateService: ecs.FargateService;
+  public readonly productionListener: elbv2.ApplicationListener;
+  public readonly blueTargetGroup: elbv2.ApplicationTargetGroup;
+  public readonly greenTargetGroup?: elbv2.ApplicationTargetGroup;
+  public readonly testListener?: elbv2.ApplicationListener;
 
   constructor(scope: Construct, id: string, props: EcsFargateServiceProps) {
     super(scope, id);
@@ -45,36 +44,102 @@ export class EcsFargateService extends Construct {
       cpu = 256,
       memoryLimitMiB = 512,
       desiredCount = 1,
+      deploymentController = ecs.DeploymentControllerType.ECS,
     } = props;
 
     this.cluster = new ecs.Cluster(this, 'Cluster', { vpc });
 
-    this.service = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
-      cluster: this.cluster,
-      taskImageOptions: {
+    if (deploymentController === ecs.DeploymentControllerType.CODE_DEPLOY) {
+      const taskDef = new ecs.FargateTaskDefinition(this, 'TaskDef', { cpu, memoryLimitMiB });
+      taskDef.addContainer('Container', {
         image,
-        containerPort,
+        portMappings: [{ containerPort }],
         environment,
         secrets,
-      },
-      cpu,
-      memoryLimitMiB,
-      desiredCount,
-      publicLoadBalancer: true,
-      assignPublicIp: false,
-      taskSubnets: {
-        subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
-      },
-    });
+        logging: ecs.LogDrivers.awsLogs({ streamPrefix: id }),
+      });
+      this.taskDefinition = taskDef;
 
-    // ヘルスチェックの猶予期間
-    this.service.targetGroup.configureHealthCheck({
-      path: '/',
-      healthyHttpCodes: '200-399',
-      interval: cdk.Duration.seconds(30),
-      timeout: cdk.Duration.seconds(5),
-      healthyThresholdCount: 2,
-      unhealthyThresholdCount: 3,
-    });
+      this.loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
+        vpc,
+        internetFacing: true,
+      });
+
+      const healthCheck: elbv2.HealthCheck = {
+        path: '/',
+        healthyHttpCodes: '200-399',
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(5),
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3,
+      };
+
+      this.blueTargetGroup = new elbv2.ApplicationTargetGroup(this, 'BlueTargetGroup', {
+        vpc,
+        port: containerPort,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targetType: elbv2.TargetType.IP,
+        healthCheck,
+        deregistrationDelay: cdk.Duration.seconds(30),
+      });
+
+      this.greenTargetGroup = new elbv2.ApplicationTargetGroup(this, 'GreenTargetGroup', {
+        vpc,
+        port: containerPort,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        targetType: elbv2.TargetType.IP,
+        healthCheck,
+        deregistrationDelay: cdk.Duration.seconds(30),
+      });
+
+      this.productionListener = this.loadBalancer.addListener('ProductionListener', {
+        port: 80,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        defaultTargetGroups: [this.blueTargetGroup],
+      });
+
+      this.testListener = this.loadBalancer.addListener('TestListener', {
+        port: 8080,
+        protocol: elbv2.ApplicationProtocol.HTTP,
+        defaultTargetGroups: [this.greenTargetGroup],
+      });
+
+      this.fargateService = new ecs.FargateService(this, 'Service', {
+        cluster: this.cluster,
+        taskDefinition: taskDef,
+        deploymentController: { type: ecs.DeploymentControllerType.CODE_DEPLOY },
+        desiredCount,
+        assignPublicIp: false,
+        vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      });
+
+      this.fargateService.attachToApplicationTargetGroup(this.blueTargetGroup);
+    } else {
+      const svc = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
+        cluster: this.cluster,
+        taskImageOptions: { image, containerPort, environment, secrets },
+        cpu,
+        memoryLimitMiB,
+        desiredCount,
+        publicLoadBalancer: true,
+        assignPublicIp: false,
+        taskSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      });
+
+      svc.targetGroup.configureHealthCheck({
+        path: '/',
+        healthyHttpCodes: '200-399',
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(5),
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3,
+      });
+
+      this.taskDefinition = svc.taskDefinition;
+      this.loadBalancer = svc.loadBalancer;
+      this.fargateService = svc.service;
+      this.blueTargetGroup = svc.targetGroup;
+      this.productionListener = svc.listener;
+    }
   }
 }

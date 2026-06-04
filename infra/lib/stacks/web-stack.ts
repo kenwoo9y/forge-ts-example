@@ -17,6 +17,8 @@ export interface WebStackProps extends cdk.StackProps {
   memoryLimitMiB?: number;
   /** 起動タスク数（デフォルト: 1） */
   desiredCount?: number;
+  /** デプロイコントローラー（デフォルト: ECS） */
+  deploymentController?: ecs.DeploymentControllerType;
 }
 
 /**
@@ -37,6 +39,7 @@ export class WebStack extends cdk.Stack {
       cpu = 256,
       memoryLimitMiB = 512,
       desiredCount = 1,
+      deploymentController,
     } = props;
 
     this.ecsFargateService = new EcsFargateService(this, 'WebService', {
@@ -50,6 +53,7 @@ export class WebStack extends cdk.Stack {
       cpu,
       memoryLimitMiB,
       desiredCount,
+      deploymentController,
     });
   }
 }

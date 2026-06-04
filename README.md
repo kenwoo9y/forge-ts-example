@@ -124,6 +124,103 @@ pnpm test
 | `make migrate` | マイグレーション実行 |
 | `make psql` | PostgreSQL に接続 |
 
+## AWS インフラのデプロイ
+
+### 環境構成
+
+DEV から始めて、段階的に STG・PROD を追加できます。
+
+| 環境 | CDK スタック群 | ECR リポジトリ |
+|---|---|---|
+| DEV（常時） | `DevNetworkStack` / `DevDatabaseStack` / `DevApiStack` / `DevWebStack` | `forge-ts/api-dev`, `forge-ts/web-dev` |
+| STG（任意） | `StgNetworkStack` / `StgDatabaseStack` / `StgApiStack` / `StgWebStack` | `forge-ts/api-stg`, `forge-ts/web-stg` |
+| PROD（任意） | `ProdNetworkStack` / `ProdDatabaseStack` / `ProdApiStack` / `ProdWebStack` | `forge-ts/api-prod`, `forge-ts/web-prod` |
+
+デプロイフロー（昇格モデル）:
+
+```
+main push → DEV 自動デプロイ → (承認) → STG → (承認) → PROD
+```
+
+### 初回セットアップ（DEV のみ）
+
+```bash
+# 1. CDK bootstrap（初回のみ）
+cd infra
+npx cdk bootstrap aws://ACCOUNT_ID/REGION
+
+# 2. Secrets Manager に JWT シークレットを作成
+aws secretsmanager create-secret --name dev/jwt-secret --secret-string "$(openssl rand -base64 32)"
+
+# 3. ECR・DEV インフラ・パイプラインをデプロイ
+#    GitHub との接続を先に作成しておく:
+#      AWS コンソール → CodePipeline → Settings → Connections → Create connection
+npx cdk deploy --all \
+  -c githubOrg=<GitHub ユーザー名または組織名> \
+  -c githubRepo=<リポジトリ名> \
+  -c codestarConnectionArn=<接続 ARN>
+
+# 4. GitHub Actions のシークレット・変数を設定
+#    Settings → Secrets and variables → Actions
+#    - Secrets: AWS_APP_DEPLOY_ROLE_ARN（PipelineStack の出力から取得）
+#    - Secrets: AWS_INFRA_DIFF_ROLE_ARN（同上）
+#    - Variables: AWS_REGION（例: ap-northeast-1）
+
+# 5. main ブランチに push すると GitHub Actions が DEV へ自動デプロイ
+```
+
+> **注意**: 初回デプロイに使用した強い権限のロールは、デプロイ完了後に無効化・削除してください。
+
+### STG 環境の追加
+
+```bash
+cd infra
+
+# STG 用シークレットを作成
+aws secretsmanager create-secret --name stg/jwt-secret --secret-string "$(openssl rand -base64 32)"
+
+# enableStg=true を付けて再デプロイ
+npx cdk deploy --all \
+  -c enableStg=true \
+  -c githubOrg=<GitHub ユーザー名または組織名> \
+  -c githubRepo=<リポジトリ名> \
+  -c codestarConnectionArn=<接続 ARN>
+```
+
+デプロイ後、次回の main push から CodePipeline に STG 承認・昇格ステージが追加されます。
+
+### PROD 環境の追加
+
+```bash
+cd infra
+
+# PROD 用シークレットを作成
+aws secretsmanager create-secret --name prod/jwt-secret --secret-string "$(openssl rand -base64 32)"
+
+# enableStg=true enableProd=true を付けて再デプロイ
+npx cdk deploy --all \
+  -c enableStg=true \
+  -c enableProd=true \
+  -c githubOrg=<GitHub ユーザー名または組織名> \
+  -c githubRepo=<リポジトリ名> \
+  -c codestarConnectionArn=<接続 ARN>
+```
+
+### リソースサイズのデフォルト値
+
+全環境で最小コスト設定が共通のデフォルトです。環境変数で環境ごとに上書きできます。
+
+| 項目 | デフォルト | 上書き用環境変数の例 |
+|---|---|---|
+| API CPU | 256 | `PROD_API_CPU=1024` |
+| API メモリ (MiB) | 512 | `PROD_API_MEMORY_MIB=2048` |
+| API タスク数 | 1 | `PROD_API_DESIRED_COUNT=2` |
+| Web CPU | 256 | `PROD_WEB_CPU=1024` |
+| Web メモリ (MiB) | 512 | `PROD_WEB_MEMORY_MIB=2048` |
+| Web タスク数 | 1 | `PROD_WEB_DESIRED_COUNT=2` |
+| DB インスタンス | t3.micro | `PROD_DB_INSTANCE_TYPE=t3.medium` |
+| DB ストレージ (GB) | 20 | `PROD_DB_ALLOCATED_STORAGE=50` |
+
 ## データベース
 
 ### マイグレーション

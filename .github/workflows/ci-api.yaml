@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'apps/api/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
 
 jobs:
   lint-and-format:

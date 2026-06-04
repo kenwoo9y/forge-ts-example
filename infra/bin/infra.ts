@@ -1,57 +1,127 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { DatabaseStack } from '../lib/stacks/database-stack';
+import { EcrStack } from '../lib/stacks/ecr-stack';
 import { NetworkStack } from '../lib/stacks/network-stack';
+import { type EnvResources, PipelineStack } from '../lib/stacks/pipeline-stack';
 import { WebStack } from '../lib/stacks/web-stack';
+
+// ─── ユーティリティ ─────────────────────────────────────────────────────────
 
 function envInt(key: string, defaultValue: number): number {
   const val = process.env[key];
   return val !== undefined ? parseInt(val, 10) : defaultValue;
 }
 
+function isEnabled(app: cdk.App, key: string): boolean {
+  const val = app.node.tryGetContext(key);
+  return val === true || val === 'true';
+}
+
+// ─── デフォルト設定（全環境共通・最小コスト）────────────────────────────────
+// 環境ごとに増強する場合は DEV_API_CPU / STG_API_CPU / PROD_API_CPU 等の
+// 環境変数で上書きする
+
+type EnvName = 'dev' | 'stg' | 'prod';
+
+const DEFAULT_API_CPU = 256;
+const DEFAULT_API_MEMORY = 512;
+const DEFAULT_API_COUNT = 1;
+const DEFAULT_WEB_CPU = 256;
+const DEFAULT_WEB_MEMORY = 512;
+const DEFAULT_WEB_COUNT = 1;
+const DEFAULT_DB_TYPE = 't3.micro';
+const DEFAULT_DB_STORAGE = 20;
+const DEFAULT_DB_MAX_STORAGE = 100;
+
+// ─── 環境インフラ生成ファクトリ ──────────────────────────────────────────────
+
+const placeholderImage = ecs.ContainerImage.fromRegistry(
+  'public.ecr.aws/nginx/nginx:stable-alpine'
+);
+
+function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): EnvResources {
+  const E = envName.toUpperCase();
+  const P = envName.charAt(0).toUpperCase() + envName.slice(1); // 'Dev' | 'Stg' | 'Prod'
+
+  const networkStack = new NetworkStack(app, `${P}NetworkStack`, { env });
+  const databaseStack = new DatabaseStack(app, `${P}DatabaseStack`, {
+    env,
+    vpc: networkStack.vpc,
+    rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    instanceType: new ec2.InstanceType(process.env[`${E}_DB_INSTANCE_TYPE`] ?? DEFAULT_DB_TYPE),
+    allocatedStorage: envInt(`${E}_DB_ALLOCATED_STORAGE`, DEFAULT_DB_STORAGE),
+    maxAllocatedStorage: envInt(`${E}_DB_MAX_ALLOCATED_STORAGE`, DEFAULT_DB_MAX_STORAGE),
+  });
+
+  const jwtSecret = secretsmanager.Secret.fromSecretNameV2(
+    app,
+    `${P}JwtSecret`,
+    `${envName}/jwt-secret`
+  );
+
+  const apiStack = new ApiStack(app, `${P}ApiStack`, {
+    env,
+    vpc: networkStack.vpc,
+    rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    database: databaseStack.database,
+    databaseCredentials: databaseStack.credentials,
+    jwtSecret,
+    image: placeholderImage,
+    cpu: envInt(`${E}_API_CPU`, DEFAULT_API_CPU),
+    memoryLimitMiB: envInt(`${E}_API_MEMORY_MIB`, DEFAULT_API_MEMORY),
+    desiredCount: envInt(`${E}_API_DESIRED_COUNT`, DEFAULT_API_COUNT),
+    deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+  });
+
+  const webStack = new WebStack(app, `${P}WebStack`, {
+    env,
+    vpc: networkStack.vpc,
+    apiUrl: `http://${apiStack.ecsFargateService.loadBalancer.loadBalancerDnsName}`,
+    image: placeholderImage,
+    cpu: envInt(`${E}_WEB_CPU`, DEFAULT_WEB_CPU),
+    memoryLimitMiB: envInt(`${E}_WEB_MEMORY_MIB`, DEFAULT_WEB_MEMORY),
+    desiredCount: envInt(`${E}_WEB_DESIRED_COUNT`, DEFAULT_WEB_COUNT),
+    deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+  });
+
+  return { apiStack, webStack };
+}
+
+// ─── アプリ ──────────────────────────────────────────────────────────────────
+
 const app = new cdk.App();
 
-const env = {
+const cdkEnv = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.CDK_DEFAULT_REGION,
 };
 
-const networkStack = new NetworkStack(app, 'NetworkStack', {
-  env,
-  maxAzs: envInt('MAX_AZS', 2),
-});
+const enableStg = isEnabled(app, 'enableStg');
+const enableProd = isEnabled(app, 'enableProd');
 
-const databaseStack = new DatabaseStack(app, 'DatabaseStack', {
-  env,
-  vpc: networkStack.vpc,
-  rdsSecurityGroup: networkStack.rdsSecurityGroup,
-  instanceType: new ec2.InstanceType(process.env.DB_INSTANCE_TYPE ?? 't3.micro'),
-  allocatedStorage: envInt('DB_ALLOCATED_STORAGE', 20),
-  maxAllocatedStorage: envInt('DB_MAX_ALLOCATED_STORAGE', 100),
-});
+const ecrStack = new EcrStack(app, 'EcrStack', { env: cdkEnv, enableStg, enableProd });
 
-const jwtSecret = secretsmanager.Secret.fromSecretNameV2(app, 'JwtSecret', 'jwt-secret');
+const dev = createEnvInfra(app, 'dev', cdkEnv);
+const stg = enableStg ? createEnvInfra(app, 'stg', cdkEnv) : undefined;
+const prod = enableProd ? createEnvInfra(app, 'prod', cdkEnv) : undefined;
 
-const apiStack = new ApiStack(app, 'ApiStack', {
-  env,
-  vpc: networkStack.vpc,
-  rdsSecurityGroup: networkStack.rdsSecurityGroup,
-  database: databaseStack.database,
-  databaseCredentials: databaseStack.credentials,
-  jwtSecret,
-  cpu: envInt('API_CPU', 256),
-  memoryLimitMiB: envInt('API_MEMORY_MIB', 512),
-  desiredCount: envInt('API_DESIRED_COUNT', 1),
-});
+const githubOrg = (app.node.tryGetContext('githubOrg') as string | undefined) ?? '';
+const githubRepo = (app.node.tryGetContext('githubRepo') as string | undefined) ?? '';
+const codestarConnectionArn =
+  (app.node.tryGetContext('codestarConnectionArn') as string | undefined) ?? '';
 
-new WebStack(app, 'WebStack', {
-  env,
-  vpc: networkStack.vpc,
-  apiUrl: `http://${apiStack.ecsFargateService.service.loadBalancer.loadBalancerDnsName}`,
-  cpu: envInt('WEB_CPU', 256),
-  memoryLimitMiB: envInt('WEB_MEMORY_MIB', 512),
-  desiredCount: envInt('WEB_DESIRED_COUNT', 1),
+new PipelineStack(app, 'PipelineStack', {
+  env: cdkEnv,
+  githubOrg,
+  githubRepo,
+  codestarConnectionArn,
+  ecrStack,
+  dev,
+  stg,
+  prod,
 });
