@@ -9,3 +9,6 @@ allowBuilds:
   msgpackr-extract: true
   prisma: true
   sharp: true
+minimumReleaseAgeExclude:
+  - nativewind@4.2.5
+  - react-native-css-interop@0.2.5
