@@ -7,6 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "lint": "biome check",
+    "format": "biome format --write",
     "type-check": "tsc --noEmit",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
