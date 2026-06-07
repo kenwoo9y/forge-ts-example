@@ -1,6 +1,6 @@
 # インフラアーキテクチャ
 
-AWS CDK (TypeScript) で定義された 4 つのスタックで構成される。
+AWS CDK (TypeScript) で定義されている。グローバルスタック 2 つ（`EcrStack`・`PipelineStack`）と、環境ごとのスタック 4 つ（`NetworkStack`・`DatabaseStack`・`ApiStack`・`WebStack`）で構成される。DEV 環境は常に作成され、STG・PROD は CDK コンテキスト（`enableStg` / `enableProd`）で有効化する。
 
 ## システム概要
 
@@ -16,6 +16,8 @@ graph TB
         DATABASE_STACK["DatabaseStack<br/>stacks/database-stack.ts"]
         API_STACK["ApiStack<br/>stacks/api-stack.ts"]
         WEB_STACK["WebStack<br/>stacks/web-stack.ts"]
+        ECR_STACK["EcrStack<br/>stacks/ecr-stack.ts"]
+        PIPELINE_STACK["PipelineStack<br/>stacks/pipeline-stack.ts"]
     end
 
     subgraph "Amazon Web Services"
@@ -27,11 +29,12 @@ graph TB
         RDS["RDS PostgreSQL 16<br/>task_db :5432"]
         ECR["Amazon ECR<br/>Container Registry"]
         SM["Secrets Manager<br/>DB credentials / JWT secret"]
+        CODEPIPELINE["CodePipeline<br/>App / Infra Pipeline"]
     end
 
     subgraph "CI/CD Pipeline"
         GITHUB["GitHub Repository"]
-        GITHUB_ACTIONS["GitHub Actions<br/>Lint / Type Check / Unit Test / E2E"]
+        GITHUB_ACTIONS["GitHub Actions<br/>CI / Deploy"]
         DEPENDABOT["Dependabot<br/>Dependency Updates"]
     end
 
@@ -41,6 +44,8 @@ graph TB
     CDK_APP --> DATABASE_STACK
     CDK_APP --> API_STACK
     CDK_APP --> WEB_STACK
+    CDK_APP --> ECR_STACK
+    CDK_APP --> PIPELINE_STACK
 
     %% Infrastructure Resources
     NETWORK_STACK --> VPC
@@ -50,6 +55,8 @@ graph TB
     API_STACK --> ECS_API
     WEB_STACK --> ALB_WEB
     WEB_STACK --> ECS_WEB
+    ECR_STACK --> ECR
+    PIPELINE_STACK --> CODEPIPELINE
 
     %% Service Connections
     ALB_API --> ECS_API
@@ -63,6 +70,7 @@ graph TB
     %% CI/CD
     DEV --> GITHUB
     GITHUB --> GITHUB_ACTIONS
+    GITHUB_ACTIONS --> ECR
     DEPENDABOT --> GITHUB
 
     %% Styles
@@ -72,8 +80,8 @@ graph TB
     classDef ciCdClass fill:#e8f5e8
 
     class DEV actorClass
-    class CDK_APP,NETWORK_STACK,DATABASE_STACK,API_STACK,WEB_STACK infraClass
-    class VPC,ALB_API,ALB_WEB,ECS_API,ECS_WEB,RDS,ECR,SM awsClass
+    class CDK_APP,NETWORK_STACK,DATABASE_STACK,API_STACK,WEB_STACK,ECR_STACK,PIPELINE_STACK infraClass
+    class VPC,ALB_API,ALB_WEB,ECS_API,ECS_WEB,RDS,ECR,SM,CODEPIPELINE awsClass
     class GITHUB,GITHUB_ACTIONS,DEPENDABOT ciCdClass
 ```
 
@@ -88,14 +96,18 @@ graph LR
     NS --> WS[WebStack]
     DS --> AS
     AS --> WS
+    ECR[EcrStack] --> PS[PipelineStack]
+    WS --> PS
 ```
 
-| スタック | ファイル | 役割 |
-|---|---|---|
-| `NetworkStack` | `lib/stacks/network-stack.ts` | VPC・サブネット・セキュリティグループ |
-| `DatabaseStack` | `lib/stacks/database-stack.ts` | RDS PostgreSQL・DB 認証情報 |
-| `ApiStack` | `lib/stacks/api-stack.ts` | Hono API サーバー (ECS Fargate) |
-| `WebStack` | `lib/stacks/web-stack.ts` | Next.js フロントエンド (ECS Fargate) |
+| スタック | ファイル | スコープ | 役割 |
+|---|---|---|---|
+| `EcrStack` | `lib/stacks/ecr-stack.ts` | グローバル | ECR リポジトリ（api / web × 環境） |
+| `PipelineStack` | `lib/stacks/pipeline-stack.ts` | グローバル | CodePipeline（アプリ・インフラデプロイ）※GitHub Actions へ移行予定 |
+| `NetworkStack` | `lib/stacks/network-stack.ts` | 環境ごと | VPC・サブネット・セキュリティグループ |
+| `DatabaseStack` | `lib/stacks/database-stack.ts` | 環境ごと | RDS PostgreSQL・DB 認証情報 |
+| `ApiStack` | `lib/stacks/api-stack.ts` | 環境ごと | Hono API サーバー (ECS Fargate) |
+| `WebStack` | `lib/stacks/web-stack.ts` | 環境ごと | Next.js フロントエンド (ECS Fargate) |
 
 ---
 
@@ -163,6 +175,29 @@ flowchart LR
 ---
 
 ## スタック詳細
+
+### EcrStack
+
+環境ごとに api / web の ECR リポジトリペアを管理するグローバルスタック。DEV は常に作成され、STG・PROD はコンテキストフラグで制御する。
+
+| 項目 | 値 |
+|---|---|
+| リポジトリ名 | `forge-ts/api-{env}` / `forge-ts/web-{env}` |
+| イメージスキャン | プッシュ時に自動実行（`imageScanOnPush: true`） |
+| ライフサイクルルール | 最新 20 イメージのみ保持 |
+| 削除ポリシー | `RETAIN`（スタック削除時もリポジトリは残る） |
+
+| 環境 | 有効化条件 |
+|---|---|
+| DEV | 常時 |
+| STG | `enableStg: true` |
+| PROD | `enableProd: true` |
+
+### PipelineStack
+
+> **移行予定**: CodePipeline + CodeStar Connections から GitHub Actions + OIDC へ移行予定。詳細は [deploy.md](./deploy.md) を参照。
+
+アプリ・インフラのデプロイパイプラインを管理するグローバルスタック。CodeStar Connections 経由で GitHub を Source とし、ECS Blue/Green デプロイと CDK デプロイを実行する。
 
 ### NetworkStack
 
