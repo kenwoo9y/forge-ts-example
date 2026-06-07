@@ -1,0 +1,43 @@
+name: Infra Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+
+jobs:
+  cdk-deploy:
+    name: CDK Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_INFRA_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: CDK Synth
+        working-directory: infra
+        run: npx cdk synth --no-notices
+
+      - name: CDK Deploy
+        working-directory: infra
+        run: npx cdk deploy --all --require-approval never --no-notices
