@@ -227,7 +227,7 @@ export class PipelineStack extends cdk.Stack {
         phases: {
           install: {
             'runtime-versions': { nodejs: '22' },
-            commands: ['npm install -g pnpm@11.4.0', 'pnpm install --frozen-lockfile'],
+            commands: ['npm install -g pnpm@11.5.2', 'pnpm install --frozen-lockfile'],
           },
           build: { commands: ['cd infra && npx cdk synth'] },
         },
@@ -272,7 +272,7 @@ export class PipelineStack extends cdk.Stack {
         phases: {
           install: {
             'runtime-versions': { nodejs: '22' },
-            commands: ['npm install -g pnpm@11.4.0', 'pnpm install --frozen-lockfile'],
+            commands: ['npm install -g pnpm@11.5.2', 'pnpm install --frozen-lockfile'],
           },
           build: { commands: ['cd infra && npx cdk deploy --require-approval never --all'] },
         },
