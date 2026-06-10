@@ -1,6 +1,6 @@
 {
   "name": "Forge TS Example",
-  "dockerComposeFile": "compose.yaml",
+  "dockerComposeFile": ["compose.yaml", "compose.override.yaml"],
   "service": "app",
   "workspaceFolder": "/workspace",
   "customizations": {
@@ -42,7 +42,7 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/aws-cli:1": {}
   },
-  "postCreateCommand": "rm -f pnpm-lock.yaml && pnpm install && node_modules/.bin/lefthook install || true && git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets && (cd /tmp/git-secrets && sudo make install) && sudo chmod 755 \"$(command -v git-secrets || echo /usr/local/bin/git-secrets)\" || true && rm -rf /tmp/git-secrets",
+  "postCreateCommand": "node_modules/.bin/lefthook install || true && git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets && (cd /tmp/git-secrets && sudo make install) && sudo chmod 755 \"$(command -v git-secrets || echo /usr/local/bin/git-secrets)\" || true && rm -rf /tmp/git-secrets",
   "postStartCommand": "pnpm run type-check",
   "forwardPorts": [3000, 3001, 8081, 5432],
   "portsAttributes": {

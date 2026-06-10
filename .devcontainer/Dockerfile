@@ -40,6 +40,9 @@ WORKDIR /workspace
 RUN mkdir -p /home/node/.pnpm-store && \
     chown -R node:node /home/node/.pnpm-store
 
+RUN mkdir -p /home/node/.aws && \
+    chown -R node:node /home/node/.aws
+
 # 環境変数の設定
 ENV PNPM_HOME=/home/node/.pnpm
 ENV PNPM_STORE_PATH=/home/node/.pnpm-store

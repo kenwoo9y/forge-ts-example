@@ -38,6 +38,7 @@ migrate:  ## Execute migration
 
 aws-login: ## Login to AWS
 	@test -n "$(SSO_SESSION)" || (echo "Error: SSO_SESSION is not set. Please configure .devcontainer/.env"; exit 1)
+	@bash .devcontainer/setup-aws.sh
 	aws sso login --sso-session=$(SSO_SESSION)
 
 help: ## Show options
