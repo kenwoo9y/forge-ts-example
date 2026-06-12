@@ -12,7 +12,7 @@ if [ ${#missing[@]} -gt 0 ]; then
   exit 0
 fi
 
-mkdir -p ~/.aws
+mkdir -p ~/.aws/sso/cache
 
 cat > ~/.aws/config << EOF
 [sso-session ${SSO_SESSION}]
