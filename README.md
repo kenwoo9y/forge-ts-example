@@ -30,20 +30,41 @@ pnpm dev
 
 ## 開発環境 (Codespaces / ローカル)
 
-このリポジトリでは PostgreSQL の接続情報を環境変数で渡す必要があります。
+このリポジトリでは PostgreSQL の接続情報と AWS SSO の設定を環境変数で渡す必要があります。
 
-- Codespaces: リポジトリ（または組織）の Codespaces シークレットとして `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` を設定してください。devcontainer はこれらのシークレットを優先して使います。
+- Codespaces: リポジトリ（または組織）の Codespaces シークレットとして下記の変数を設定してください。
 - ローカル: リポジトリにコミットしないファイル `.devcontainer/.env` を作成し、同じ環境変数を定義してください。テンプレートは `.devcontainer/.env.example` にあります。
 
-devcontainer は起動時に必要な環境変数が揃っていることをチェックします。変数が不足している場合はセットアップを中止し、Codespaces のシークレットを設定するか、ローカルで `.devcontainer/.env` を作成するよう指示されます。
+```bash
+cp .devcontainer/.env.example .devcontainer/.env
+# .devcontainer/.env を編集して各値を入力
+```
 
 ### Codespaces シークレットの設定手順
 
 1. GitHub の該当リポジトリにアクセスします。
 2. `Settings` → `Secrets and variables` → `Codespaces` → `Repository secrets` に移動します。
-3. `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` を追加します。
+3. 以下の変数をすべて追加します。
 
-シークレットを設定した後、Codespace を作成するか devcontainer を再起動してください。
+**PostgreSQL**
+
+| シークレット名 | 説明 |
+|---|---|
+| `POSTGRES_DB` | データベース名 |
+| `POSTGRES_USER` | ユーザー名 |
+| `POSTGRES_PASSWORD` | パスワード |
+
+**AWS SSO**
+
+| シークレット名 | 説明 |
+|---|---|
+| `SSO_SESSION` | SSO セッション名（任意の名前。例: `my-company`） |
+| `SSO_START_URL` | SSO ポータル URL（例: `https://xxxxx.awsapps.com/start`） |
+| `SSO_REGION` | SSO リージョン（例: `ap-northeast-1`） |
+| `SSO_ACCOUNT_ID` | AWS アカウント ID（例: `123456789012`） |
+| `SSO_ROLE_NAME` | 使用する IAM ロール名（例: `AdministratorAccess`） |
+
+シークレットを設定した後、Codespace を作成するか devcontainer を再起動してください。再起動後に `make aws-login` を実行すると `~/.aws/config` が生成され、AWS SSO 認証が完了します。
 
 ### Prisma 用環境変数ファイルの作成
 
@@ -123,6 +144,7 @@ pnpm test
 | `make migrate-generate` | マイグレーションファイル生成 |
 | `make migrate` | マイグレーション実行 |
 | `make psql` | PostgreSQL に接続 |
+| `make aws-login` | AWS SSO ログイン |
 
 ## AWS インフラのデプロイ
 
