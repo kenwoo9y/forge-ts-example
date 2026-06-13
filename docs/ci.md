@@ -1,4 +1,4 @@
-# CI/CD
+# CI
 
 ## CI - API (`.github/workflows/ci-api.yaml`)
 
@@ -136,48 +136,11 @@ cd apps/web && pnpm exec playwright test
 
 ---
 
-## CD - アプリデプロイ (`.github/workflows/app-deploy.yaml`)
+## インフラ diff (`.github/disabled-workflows/infra-diff.yaml`)
 
 ### 概要
 
-`CI - API`・`CI - Web`・`Playwright Tests` の 3 ワークフローがすべて成功した後に起動するワークフロー。全 CI 通過を確認してから Docker イメージをビルドして DEV 環境の ECR へ push する。push が CodePipeline のトリガーとなり、DEV→STG→PROD の昇格パイプラインが起動する。
-
-同一コミットに対する重複実行は `concurrency` グループ（`app-deploy-<head_sha>`）でキャンセルされる。
-
-### 処理フロー
-
-```
-check-all-ci ─┬─ build-push-scan (api)
-              └─ build-push-scan (web)
-```
-
-### ジョブ一覧
-
-| ジョブ | 内容 |
-|---|---|
-| `check-all-ci` | `CI - API`・`CI - Web`・`Playwright Tests` の全ワークフローが同一 SHA で成功済みか検証 |
-| `build-push-scan` | OIDC 認証 → Docker ビルド → ECR push → スキャン結果確認（api / web の matrix） |
-
-### ECR push とスキャンゲート
-
-- `:${GITHUB_SHA}` と `:latest` の 2 タグを push する
-- `imageScanOnPush: true` のためプッシュ直後にスキャンが実行される
-- `CRITICAL` 脆弱性が 1 件でも検出された場合はワークフローが失敗し、パイプラインは起動しない
-
-### 必要な GitHub Secrets / Variables
-
-| 名前 | 種別 | 説明 |
-|---|---|---|
-| `AWS_APP_DEPLOY_ROLE_ARN` | Secret | OIDC ロール ARN（ECR push 専用、ECS/CodePipeline 操作不可） |
-| `AWS_REGION` | Variable | AWS リージョン（例: `ap-northeast-1`） |
-
----
-
-## CD - インフラ diff (`.github/workflows/infra-diff.yaml`)
-
-### 概要
-
-`CI - Infra` ワークフローが成功した後に起動し、`cdk diff` を実行して差分を PR コメントとして自動投稿するワークフロー。再実行時は既存コメントを更新する。
+`main` ブランチへの Pull Request 作成・更新時に起動し、`cdk diff` を実行して差分を PR コメントとして自動投稿するワークフロー。マージ前にインフラ変更内容をレビューできる。再実行時は既存コメントを更新する。
 
 ### 処理フロー
 
@@ -192,69 +155,3 @@ check-all-ci ─┬─ build-push-scan (api)
 |---|---|---|
 | `AWS_INFRA_DIFF_ROLE_ARN` | Secret | OIDC ロール ARN（CloudFormation 読み取り専用、デプロイ不可） |
 | `AWS_REGION` | Variable | AWS リージョン |
-
----
-
-## CD - インフラパイプライン（CodePipeline: `InfraCdkPipeline`）
-
-### 概要
-
-`main` への push を CodeStar Connections 経由で検知し、CDK スタックを自動デプロイするパイプライン。**本番適用前に手動承認ゲートを挟む**。
-
-### ステージ構成
-
-| ステージ | 内容 |
-|---|---|
-| Source | GitHub から最新コードを取得（CodeStar Connections） |
-| Synth | CodeBuild で `npx cdk synth` を実行 |
-| Approve | 手動承認（差分を確認してから本番適用） |
-| Deploy | CodeBuild で `npx cdk deploy --require-approval never --all` を実行 |
-
----
-
-## CD - アプリパイプライン（CodePipeline: `ApiAppPipeline` / `WebAppPipeline`）
-
-### 概要
-
-ECR の `:latest` タグ更新を EventBridge で検知して起動するパイプライン。DEV への自動デプロイ後、承認を経て STG・PROD へ順番にイメージを昇格させる。
-
-### 昇格モデル
-
-```
-ECR forge-ts/api-dev:latest push
-  └─ DEV 自動デプロイ（Blue/Green, LINEAR_10PERCENT_EVERY_1MINUTES）
-       └─ 承認（enableStg 時）
-            └─ forge-ts/api-stg:latest へ昇格（同一イメージダイジェスト）
-                 └─ STG 自動デプロイ
-                      └─ 承認（enableProd 時）
-                           └─ forge-ts/api-prod:latest へ昇格
-                                └─ PROD 自動デプロイ
-```
-
-昇格はイメージの**再ビルドなし**でマニフェストをコピーするため、DEV で検証済のバイナリがそのまま PROD に届く。
-
-### ステージ構成
-
-| ステージ | 常時 | enableStg | enableProd |
-|---|---|---|---|
-| Source | ✓ | ✓ | ✓ |
-| GenerateDev | ✓ | ✓ | ✓ |
-| DeployDev | ✓ | ✓ | ✓ |
-| ApproveStg | | ✓ | ✓ |
-| PromoteToStg | | ✓ | ✓ |
-| GenerateStg | | ✓ | ✓ |
-| DeployStg | | ✓ | ✓ |
-| ApproveProd | | | ✓ |
-| PromoteToProd | | | ✓ |
-| GenerateProd | | | ✓ |
-| DeployProd | | | ✓ |
-
-### デプロイ設定
-
-| 設定 | 値 |
-|---|---|
-| デプロイ戦略 | `LINEAR_10PERCENT_EVERY_1MINUTES`（段階的トラフィック移行） |
-| 失敗時 | 自動ロールバック |
-| 旧タスク削除 | デプロイ成功直後に自動削除 |
-| ALB リスナー | 本番用 :80 / テスト用 :8080 |
-

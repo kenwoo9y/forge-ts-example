@@ -20,7 +20,7 @@ RUN mkdir -p /home/node && \
     chown -R node:node /home/node
 
 # pnpmのインストール
-RUN npm install -g pnpm@11.4.0
+RUN npm install -g pnpm@11.5.2
 
 # pnpmのパスを確認して設定
 RUN which pnpm && pnpm --version
@@ -39,6 +39,9 @@ WORKDIR /workspace
 # pnpmの設定とディレクトリ作成
 RUN mkdir -p /home/node/.pnpm-store && \
     chown -R node:node /home/node/.pnpm-store
+
+RUN mkdir -p /home/node/.aws && \
+    chown -R node:node /home/node/.aws
 
 # 環境変数の設定
 ENV PNPM_HOME=/home/node/.pnpm

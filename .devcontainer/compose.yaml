@@ -6,6 +6,7 @@ services:
     volumes:
       - ..:/workspace:cached
       - pnpm_store:/home/node/.pnpm-store
+      - aws_sso_cache:/home/node/.aws/sso/cache
     command: sleep infinity
     environment:
       - NODE_ENV=development
@@ -29,3 +30,4 @@ volumes:
   node_modules:
   pnpm_store:
   postgres_data:
+  aws_sso_cache:

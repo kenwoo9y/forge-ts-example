@@ -1,6 +1,6 @@
 -include .devcontainer/.env
 
-.PHONY: help lint-check lint-fix format-check format-fix check check-fix type-check secrets-scan psql migrate-generate migrate
+.PHONY: help lint-check lint-fix format-check format-fix check check-fix type-check secrets-scan psql migrate-generate migrate aws-login
 .DEFAULT_GOAL := help
 
 lint-check: ## Run lint check
@@ -35,6 +35,11 @@ migrate-generate:  ## Generate migration
 
 migrate:  ## Execute migration
 	cd packages/db && npx prisma migrate dev
+
+aws-login: ## Login to AWS
+	@test -n "$(SSO_SESSION)" || (echo "Error: SSO_SESSION is not set. Please configure .devcontainer/.env"; exit 1)
+	@bash .devcontainer/setup-aws.sh
+	aws sso login --sso-session=$(SSO_SESSION)
 
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
