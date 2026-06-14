@@ -59,7 +59,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
   });
 
   const jwtSecret = secretsmanager.Secret.fromSecretNameV2(
-    app,
+    networkStack,
     `${P}JwtSecret`,
     `${envName}/jwt-secret`
   );

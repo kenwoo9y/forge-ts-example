@@ -145,6 +145,7 @@ pnpm test
 | `make migrate` | マイグレーション実行 |
 | `make psql` | PostgreSQL に接続 |
 | `make aws-login` | AWS SSO ログイン |
+| `make cdk-bootstrap` | CDK Bootstrap（初回のみ） |
 
 ## AWS インフラのデプロイ
 
@@ -167,28 +168,31 @@ main push → DEV 自動デプロイ → (承認) → STG → (承認) → PROD
 ### 初回セットアップ（DEV のみ）
 
 ```bash
-# 1. CDK bootstrap（初回のみ）
-cd infra
-npx cdk bootstrap aws://ACCOUNT_ID/REGION
+# 1. AWS SSO でログイン
+make aws-login
 
-# 2. Secrets Manager に JWT シークレットを作成
+# 2. CDK bootstrap（初回のみ）
+make cdk-bootstrap
+
+# 3. Secrets Manager に JWT シークレットを作成
 aws secretsmanager create-secret --name dev/jwt-secret --secret-string "$(openssl rand -base64 32)"
 
-# 3. ECR・DEV インフラ・パイプラインをデプロイ
+# 4. ECR・DEV インフラ・パイプラインをデプロイ
 #    GitHub との接続を先に作成しておく:
 #      AWS コンソール → CodePipeline → Settings → Connections → Create connection
-npx cdk deploy --all \
+cd infra
+pnpm exec cdk deploy --all \
   -c githubOrg=<GitHub ユーザー名または組織名> \
   -c githubRepo=<リポジトリ名> \
   -c codestarConnectionArn=<接続 ARN>
 
-# 4. GitHub Actions のシークレット・変数を設定
+# 5. GitHub Actions のシークレット・変数を設定
 #    Settings → Secrets and variables → Actions
 #    - Secrets: AWS_APP_DEPLOY_ROLE_ARN（PipelineStack の出力から取得）
 #    - Secrets: AWS_INFRA_DIFF_ROLE_ARN（同上）
 #    - Variables: AWS_REGION（例: ap-northeast-1）
 
-# 5. main ブランチに push すると GitHub Actions が DEV へ自動デプロイ
+# 6. main ブランチに push すると GitHub Actions が DEV へ自動デプロイ
 ```
 
 > **注意**: 初回デプロイに使用した強い権限のロールは、デプロイ完了後に無効化・削除してください。
@@ -202,7 +206,7 @@ cd infra
 aws secretsmanager create-secret --name stg/jwt-secret --secret-string "$(openssl rand -base64 32)"
 
 # enableStg=true を付けて再デプロイ
-npx cdk deploy --all \
+pnpm exec cdk deploy --all \
   -c enableStg=true \
   -c githubOrg=<GitHub ユーザー名または組織名> \
   -c githubRepo=<リポジトリ名> \
@@ -220,7 +224,7 @@ cd infra
 aws secretsmanager create-secret --name prod/jwt-secret --secret-string "$(openssl rand -base64 32)"
 
 # enableStg=true enableProd=true を付けて再デプロイ
-npx cdk deploy --all \
+pnpm exec cdk deploy --all \
   -c enableStg=true \
   -c enableProd=true \
   -c githubOrg=<GitHub ユーザー名または組織名> \

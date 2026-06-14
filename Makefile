@@ -41,6 +41,11 @@ aws-login: ## Login to AWS
 	@bash .devcontainer/setup-aws.sh
 	aws sso login --sso-session=$(SSO_SESSION)
 
+cdk-bootstrap: ## Bootstrap CDK for AWS account/region (requires aws-login first)
+	@test -n "$(SSO_ACCOUNT_ID)" || (echo "Error: SSO_ACCOUNT_ID is not set. Please configure .devcontainer/.env"; exit 1)
+	@test -n "$(SSO_REGION)" || (echo "Error: SSO_REGION is not set. Please configure .devcontainer/.env"; exit 1)
+	cd infra && pnpm exec cdk bootstrap aws://$(SSO_ACCOUNT_ID)/$(SSO_REGION)
+
 help: ## Show options
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
