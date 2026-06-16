@@ -1,6 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { describe, it } from 'vitest';
+
+process.env.POSTGRES_DB = 'test_db';
+
 import { DatabaseStack } from '../lib/stacks/database-stack';
 import { NetworkStack } from '../lib/stacks/network-stack';
 
@@ -38,9 +41,9 @@ describe('DatabaseStack', () => {
     template.resourceCountIs('AWS::SecretsManager::Secret', 1);
   });
 
-  it('データベース名がtask_dbである', () => {
+  it('データベース名がPOSTGRES_DBの値に設定される', () => {
     template.hasResourceProperties('AWS::RDS::DBInstance', {
-      DBName: 'task_db',
+      DBName: 'test_db',
     });
   });
 

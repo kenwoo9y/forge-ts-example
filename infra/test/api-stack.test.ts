@@ -3,6 +3,9 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { describe, it } from 'vitest';
+
+process.env.POSTGRES_DB = 'test_db';
+
 import { ApiStack } from '../lib/stacks/api-stack';
 import { DatabaseStack } from '../lib/stacks/database-stack';
 import { NetworkStack } from '../lib/stacks/network-stack';
@@ -80,11 +83,11 @@ describe('ApiStack', () => {
     });
   });
 
-  it('DB_NAMEがtask_dbに設定される', () => {
+  it('DB_NAMEがPOSTGRES_DBの値に設定される', () => {
     template.hasResourceProperties('AWS::ECS::TaskDefinition', {
       ContainerDefinitions: Match.arrayWith([
         Match.objectLike({
-          Environment: Match.arrayWith([Match.objectLike({ Name: 'DB_NAME', Value: 'task_db' })]),
+          Environment: Match.arrayWith([Match.objectLike({ Name: 'DB_NAME', Value: 'test_db' })]),
         }),
       ]),
     });

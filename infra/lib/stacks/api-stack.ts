@@ -60,7 +60,11 @@ export class ApiStack extends cdk.Stack {
       environment: {
         DB_HOST: database.dbInstanceEndpointAddress,
         DB_PORT: database.dbInstanceEndpointPort,
-        DB_NAME: 'task_db',
+        DB_NAME: (() => {
+          if (!process.env.POSTGRES_DB)
+            throw new Error('POSTGRES_DB environment variable is required');
+          return process.env.POSTGRES_DB;
+        })(),
         NODE_ENV: 'production',
       },
       secrets: {

@@ -54,7 +54,11 @@ export class DatabaseStack extends cdk.Stack {
       },
       securityGroups: [rdsSecurityGroup],
       credentials: rds.Credentials.fromSecret(this.credentials),
-      databaseName: 'task_db',
+      databaseName: (() => {
+        if (!process.env.POSTGRES_DB)
+          throw new Error('POSTGRES_DB environment variable is required');
+        return process.env.POSTGRES_DB;
+      })(),
       multiAz: false,
       allocatedStorage,
       maxAllocatedStorage,
