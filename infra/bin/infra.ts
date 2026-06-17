@@ -112,14 +112,11 @@ const prod = enableProd ? createEnvInfra(app, 'prod', cdkEnv) : undefined;
 
 const githubOrg = (app.node.tryGetContext('githubOrg') as string | undefined) ?? '';
 const githubRepo = (app.node.tryGetContext('githubRepo') as string | undefined) ?? '';
-const codestarConnectionArn =
-  (app.node.tryGetContext('codestarConnectionArn') as string | undefined) ?? '';
 
 new PipelineStack(app, 'PipelineStack', {
   env: cdkEnv,
   githubOrg,
   githubRepo,
-  codestarConnectionArn,
   ecrStack,
   dev,
   stg,
