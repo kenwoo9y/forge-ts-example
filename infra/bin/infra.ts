@@ -48,7 +48,10 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
   const E = envName.toUpperCase();
   const P = envName.charAt(0).toUpperCase() + envName.slice(1); // 'Dev' | 'Stg' | 'Prod'
 
-  const networkStack = new NetworkStack(app, `${P}NetworkStack`, { env });
+  const networkStack = new NetworkStack(app, `${P}NetworkStack`, {
+    env,
+    enableVpcEndpoints: envName !== 'dev',
+  });
   const databaseStack = new DatabaseStack(app, `${P}DatabaseStack`, {
     env,
     vpc: networkStack.vpc,

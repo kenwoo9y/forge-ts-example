@@ -5,6 +5,8 @@ import type { Construct } from 'constructs';
 export interface NetworkStackProps extends cdk.StackProps {
   /** 使用する AZ 数（デフォルト: 2） */
   maxAzs?: number;
+  /** Secrets Manager・ECR・CloudWatch Logs の VPC エンドポイントを作成するか（デフォルト: false） */
+  enableVpcEndpoints?: boolean;
 }
 
 /**
@@ -82,5 +84,34 @@ export class NetworkStack extends cdk.Stack {
       ec2.Port.tcp(5432),
       'Allow PostgreSQL from ECS'
     );
+
+    if (props?.enableVpcEndpoints) {
+      // S3 (Gatewayタイプ: 無料) — ECRイメージレイヤーの取得に使用
+      this.vpc.addGatewayEndpoint('S3Endpoint', {
+        service: ec2.GatewayVpcEndpointAwsService.S3,
+      });
+
+      const privateSubnets = { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS };
+
+      this.vpc.addInterfaceEndpoint('EcrApiEndpoint', {
+        service: ec2.InterfaceVpcEndpointAwsService.ECR,
+        subnets: privateSubnets,
+      });
+
+      this.vpc.addInterfaceEndpoint('EcrDkrEndpoint', {
+        service: ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+        subnets: privateSubnets,
+      });
+
+      this.vpc.addInterfaceEndpoint('SecretsManagerEndpoint', {
+        service: ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+        subnets: privateSubnets,
+      });
+
+      this.vpc.addInterfaceEndpoint('CloudWatchLogsEndpoint', {
+        service: ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
+        subnets: privateSubnets,
+      });
+    }
   }
 }

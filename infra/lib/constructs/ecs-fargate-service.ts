@@ -124,6 +124,7 @@ export class EcsFargateService extends Construct {
         publicLoadBalancer: true,
         assignPublicIp: false,
         taskSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        circuitBreaker: { rollback: true },
       });
 
       svc.targetGroup.configureHealthCheck({
@@ -134,6 +135,7 @@ export class EcsFargateService extends Construct {
         healthyThresholdCount: 2,
         unhealthyThresholdCount: 3,
       });
+      svc.targetGroup.setAttribute('deregistration_delay.timeout_seconds', '30');
 
       this.taskDefinition = svc.taskDefinition;
       this.loadBalancer = svc.loadBalancer;
