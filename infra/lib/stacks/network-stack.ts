@@ -5,7 +5,9 @@ import type { Construct } from 'constructs';
 export interface NetworkStackProps extends cdk.StackProps {
   /** 使用する AZ 数（デフォルト: 2） */
   maxAzs?: number;
-  /** Secrets Manager・ECR・CloudWatch Logs の VPC エンドポイントを作成するか（デフォルト: false） */
+  /** ECR・Secrets Manager・CloudWatch Logs の VPC エンドポイントを作成するか（デフォルト: false）
+   *  stg/prod では true を推奨（AWS 内部通信に限定）
+   *  dev では NAT Gateway で代替可能なため省略可（月 ~$58 の削減） */
   enableVpcEndpoints?: boolean;
 }
 
@@ -85,12 +87,12 @@ export class NetworkStack extends cdk.Stack {
       'Allow PostgreSQL from ECS'
     );
 
-    if (props?.enableVpcEndpoints) {
-      // S3 (Gatewayタイプ: 無料) — ECRイメージレイヤーの取得に使用
-      this.vpc.addGatewayEndpoint('S3Endpoint', {
-        service: ec2.GatewayVpcEndpointAwsService.S3,
-      });
+    // S3 (Gatewayタイプ: 無料) — ECRイメージレイヤーの取得に使用
+    this.vpc.addGatewayEndpoint('S3Endpoint', {
+      service: ec2.GatewayVpcEndpointAwsService.S3,
+    });
 
+    if (props?.enableVpcEndpoints) {
       const privateSubnets = { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS };
 
       this.vpc.addInterfaceEndpoint('EcrApiEndpoint', {

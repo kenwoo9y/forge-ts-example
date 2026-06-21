@@ -11,6 +11,8 @@ export interface WebStackProps extends cdk.StackProps {
   apiUrl: string;
   /** コンテナイメージ（デフォルト: apps/webのDockerfileからビルド） */
   image?: ecs.ContainerImage;
+  /** コンテナ起動コマンド上書き（プレースホルダ用途） */
+  command?: string[];
   /** タスクのCPUユニット数（デフォルト: 256） */
   cpu?: number;
   /** タスクのメモリ (MiB)（デフォルト: 512） */
@@ -36,6 +38,7 @@ export class WebStack extends cdk.Stack {
       vpc,
       apiUrl,
       image = ecs.ContainerImage.fromAsset('../apps/web'),
+      command,
       cpu = 256,
       memoryLimitMiB = 512,
       desiredCount = 1,
@@ -46,6 +49,7 @@ export class WebStack extends cdk.Stack {
       vpc,
       image,
       containerPort: 3001,
+      command,
       environment: {
         API_URL: apiUrl,
         NODE_ENV: 'production',

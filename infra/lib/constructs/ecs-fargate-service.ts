@@ -11,6 +11,7 @@ export interface EcsFargateServiceProps {
   containerPort: number;
   environment?: Record<string, string>;
   secrets?: Record<string, ecs.Secret>;
+  command?: string[];
   cpu?: number;
   memoryLimitMiB?: number;
   desiredCount?: number;
@@ -41,6 +42,7 @@ export class EcsFargateService extends Construct {
       containerPort,
       environment,
       secrets,
+      command,
       cpu = 256,
       memoryLimitMiB = 512,
       desiredCount = 1,
@@ -56,6 +58,7 @@ export class EcsFargateService extends Construct {
         portMappings: [{ containerPort }],
         environment,
         secrets,
+        command,
         logging: ecs.LogDrivers.awsLogs({ streamPrefix: id }),
       });
       this.taskDefinition = taskDef;
@@ -111,13 +114,15 @@ export class EcsFargateService extends Construct {
         desiredCount,
         assignPublicIp: false,
         vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+        enableExecuteCommand: true,
+        healthCheckGracePeriod: cdk.Duration.minutes(5),
       });
 
       this.fargateService.attachToApplicationTargetGroup(this.blueTargetGroup);
     } else {
       const svc = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'Service', {
         cluster: this.cluster,
-        taskImageOptions: { image, containerPort, environment, secrets },
+        taskImageOptions: { image, containerPort, environment, secrets, command },
         cpu,
         memoryLimitMiB,
         desiredCount,
@@ -125,6 +130,8 @@ export class EcsFargateService extends Construct {
         assignPublicIp: false,
         taskSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         circuitBreaker: { rollback: true },
+        enableExecuteCommand: true,
+        healthCheckGracePeriod: cdk.Duration.minutes(5),
       });
 
       svc.targetGroup.configureHealthCheck({

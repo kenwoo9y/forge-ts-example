@@ -44,6 +44,16 @@ const placeholderImage = ecs.ContainerImage.fromRegistry(
   'public.ecr.aws/nginx/nginx:stable-alpine'
 );
 
+// nginx のデフォルト設定（ポート80）を指定ポートで上書きして起動する
+// Docker ビルド不要でヘルスチェックを通過させるためのシェルコマンド
+function placeholderCommand(port: number): string[] {
+  return [
+    '/bin/sh',
+    '-c',
+    `echo 'server{listen ${port};location /{return 200;}}' > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'`,
+  ];
+}
+
 function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): EnvResources {
   const E = envName.toUpperCase();
   const P = envName.charAt(0).toUpperCase() + envName.slice(1); // 'Dev' | 'Stg' | 'Prod'
@@ -61,11 +71,9 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     maxAllocatedStorage: envInt(`${E}_DB_MAX_ALLOCATED_STORAGE`, DEFAULT_DB_MAX_STORAGE),
   });
 
-  const jwtSecret = secretsmanager.Secret.fromSecretNameV2(
-    networkStack,
-    `${P}JwtSecret`,
-    `${envName}/jwt-secret`
-  );
+  const jwtSecret = new secretsmanager.Secret(networkStack, `${P}JwtSecret`, {
+    secretName: `${envName}/jwt-secret`,
+  });
 
   const apiStack = new ApiStack(app, `${P}ApiStack`, {
     env,
@@ -75,6 +83,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     databaseCredentials: databaseStack.credentials,
     jwtSecret,
     image: placeholderImage,
+    command: placeholderCommand(3000),
     cpu: envInt(`${E}_API_CPU`, DEFAULT_API_CPU),
     memoryLimitMiB: envInt(`${E}_API_MEMORY_MIB`, DEFAULT_API_MEMORY),
     desiredCount: envInt(`${E}_API_DESIRED_COUNT`, DEFAULT_API_COUNT),
@@ -86,6 +95,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     vpc: networkStack.vpc,
     apiUrl: `http://${apiStack.ecsFargateService.loadBalancer.loadBalancerDnsName}`,
     image: placeholderImage,
+    command: placeholderCommand(3001),
     cpu: envInt(`${E}_WEB_CPU`, DEFAULT_WEB_CPU),
     memoryLimitMiB: envInt(`${E}_WEB_MEMORY_MIB`, DEFAULT_WEB_MEMORY),
     desiredCount: envInt(`${E}_WEB_DESIRED_COUNT`, DEFAULT_WEB_COUNT),
