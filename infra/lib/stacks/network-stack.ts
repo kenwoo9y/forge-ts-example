@@ -7,7 +7,7 @@ export interface NetworkStackProps extends cdk.StackProps {
   maxAzs?: number;
   /** ECR・Secrets Manager・CloudWatch Logs の VPC エンドポイントを作成するか（デフォルト: false）
    *  stg/prod では true を推奨（AWS 内部通信に限定）
-   *  dev では NAT Gateway で代替可能なため省略可（月 ~$58 の削減） */
+   *  dev では NAT Gateway で代替可能 */
   enableVpcEndpoints?: boolean;
 }
 
