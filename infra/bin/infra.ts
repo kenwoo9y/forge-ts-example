@@ -75,6 +75,9 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     secretName: `${envName}/jwt-secret`,
   });
 
+  const dbName = process.env.POSTGRES_DB;
+  if (!dbName) throw new Error('POSTGRES_DB environment variable is required');
+
   const apiStack = new ApiStack(app, `${P}ApiStack`, {
     env,
     vpc: networkStack.vpc,
@@ -82,6 +85,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     database: databaseStack.database,
     databaseCredentials: databaseStack.credentials,
     jwtSecret,
+    dbName,
     image: placeholderImage,
     command: placeholderCommand(3000),
     cpu: envInt(`${E}_API_CPU`, DEFAULT_API_CPU),

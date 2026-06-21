@@ -29,6 +29,7 @@ function buildApiStack(
     databaseCredentials: databaseStack.credentials,
     jwtSecret,
     image: ecs.ContainerImage.fromRegistry('nginx'),
+    dbName: 'test_db',
     ...opts,
   });
   return Template.fromStack(stack);

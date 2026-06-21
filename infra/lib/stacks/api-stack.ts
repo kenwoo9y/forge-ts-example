@@ -17,6 +17,8 @@ export interface ApiStackProps extends cdk.StackProps {
   databaseCredentials: rds.DatabaseSecret;
   /** Secrets ManagerにあるJWT署名シークレット */
   jwtSecret: secretsmanager.ISecret;
+  /** PostgreSQL データベース名 */
+  dbName: string;
   /** コンテナイメージ（デフォルト: apps/apiのDockerfileからビルド） */
   image?: ecs.ContainerImage;
   /** コンテナ起動コマンド上書き（プレースホルダ用途） */
@@ -48,6 +50,7 @@ export class ApiStack extends cdk.Stack {
       database,
       databaseCredentials,
       jwtSecret,
+      dbName,
       image = ecs.ContainerImage.fromAsset('../apps/api'),
       command,
       cpu = 256,
@@ -64,11 +67,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         DB_HOST: database.dbInstanceEndpointAddress,
         DB_PORT: database.dbInstanceEndpointPort,
-        DB_NAME: (() => {
-          if (!process.env.POSTGRES_DB)
-            throw new Error('POSTGRES_DB environment variable is required');
-          return process.env.POSTGRES_DB;
-        })(),
+        DB_NAME: dbName,
         NODE_ENV: 'production',
       },
       secrets: {

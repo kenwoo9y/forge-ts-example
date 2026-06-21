@@ -39,6 +39,7 @@ function buildPipelineStack() {
     databaseCredentials: databaseStack.credentials,
     jwtSecret,
     image,
+    dbName: 'test_db',
     deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
   });
 
@@ -384,6 +385,7 @@ describe('PipelineStack (enableStg=true)', () => {
       databaseCredentials: databaseStack.credentials,
       jwtSecret,
       image,
+      dbName: 'test_db',
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });
     const webStack = new WebStack(app, 'TestWebStack', {
@@ -401,6 +403,7 @@ describe('PipelineStack (enableStg=true)', () => {
       databaseCredentials: stgDatabaseStack.credentials,
       jwtSecret: stgJwtSecret,
       image,
+      dbName: 'test_db',
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });
     const stgWebStack = new WebStack(app, 'StgWebStack', {
