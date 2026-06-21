@@ -174,15 +174,19 @@ make aws-login
 # 2. CDK bootstrap（初回のみ）
 make cdk-bootstrap
 
-# 3. Secrets Manager に JWT シークレットを作成
-aws secretsmanager create-secret --name dev/jwt-secret --secret-string "$(openssl rand -base64 32)"
-
-# 4. ECR・DEV インフラ・パイプラインをデプロイ
+# 3. ECR・DEV インフラ・パイプラインをデプロイ
 #    POSTGRES_DB（.devcontainer/.env で設定済み）が RDS のデータベース名として使用される
+#    JWT シークレット（dev/jwt-secret）は CDK が自動作成する
 cd infra
 pnpm exec cdk deploy --all \
   -c githubOrg=<GitHub ユーザー名または組織名> \
   -c githubRepo=<リポジトリ名>
+
+# 4. JWT シークレットに値を設定
+#    CDK がランダム値でシークレットを作成するため、実際に使用する値に更新する
+aws secretsmanager put-secret-value \
+  --secret-id dev/jwt-secret \
+  --secret-string "$(openssl rand -base64 32)"
 
 # 5. GitHub Actions のシークレット・変数を設定
 #    Settings → Secrets and variables → Actions
@@ -218,10 +222,7 @@ git push -u origin enable-deployment-workflows
 ```bash
 cd infra
 
-# STG 用シークレットを作成
-aws secretsmanager create-secret --name stg/jwt-secret --secret-string "$(openssl rand -base64 32)"
-
-# enableStg=true を付けて再デプロイ
+# enableStg=true を付けて再デプロイ（stg/jwt-secret は CDK が自動作成）
 pnpm exec cdk deploy --all \
   -c enableStg=true \
   -c githubOrg=<GitHub ユーザー名または組織名> \
@@ -235,10 +236,7 @@ pnpm exec cdk deploy --all \
 ```bash
 cd infra
 
-# PROD 用シークレットを作成
-aws secretsmanager create-secret --name prod/jwt-secret --secret-string "$(openssl rand -base64 32)"
-
-# enableStg=true enableProd=true を付けて再デプロイ
+# enableStg=true enableProd=true を付けて再デプロイ（prod/jwt-secret は CDK が自動作成）
 pnpm exec cdk deploy --all \
   -c enableStg=true \
   -c enableProd=true \
