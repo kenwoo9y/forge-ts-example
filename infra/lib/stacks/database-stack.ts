@@ -8,6 +8,8 @@ export interface DatabaseStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   /** NetworkStackで定義したRDS用セキュリティグループ */
   rdsSecurityGroup: ec2.SecurityGroup;
+  /** PostgreSQL データベース名 */
+  dbName: string;
   /** RDSインスタンスタイプ（デフォルト: t3.micro） */
   instanceType?: ec2.InstanceType;
   /** 初期ストレージ容量 GB（デフォルト: 20） */
@@ -32,6 +34,7 @@ export class DatabaseStack extends cdk.Stack {
     const {
       vpc,
       rdsSecurityGroup,
+      dbName,
       instanceType = ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       allocatedStorage = 20,
       maxAllocatedStorage = 100,
@@ -54,11 +57,7 @@ export class DatabaseStack extends cdk.Stack {
       },
       securityGroups: [rdsSecurityGroup],
       credentials: rds.Credentials.fromSecret(this.credentials),
-      databaseName: (() => {
-        if (!process.env.POSTGRES_DB)
-          throw new Error('POSTGRES_DB environment variable is required');
-        return process.env.POSTGRES_DB;
-      })(),
+      databaseName: dbName,
       multiAz: false,
       allocatedStorage,
       maxAllocatedStorage,

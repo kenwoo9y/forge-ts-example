@@ -58,6 +58,9 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
   const E = envName.toUpperCase();
   const P = envName.charAt(0).toUpperCase() + envName.slice(1); // 'Dev' | 'Stg' | 'Prod'
 
+  const dbName = process.env.POSTGRES_DB;
+  if (!dbName) throw new Error('POSTGRES_DB environment variable is required');
+
   const networkStack = new NetworkStack(app, `${P}NetworkStack`, {
     env,
     enableVpcEndpoints: envName !== 'dev',
@@ -66,6 +69,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     env,
     vpc: networkStack.vpc,
     rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    dbName,
     instanceType: new ec2.InstanceType(process.env[`${E}_DB_INSTANCE_TYPE`] ?? DEFAULT_DB_TYPE),
     allocatedStorage: envInt(`${E}_DB_ALLOCATED_STORAGE`, DEFAULT_DB_STORAGE),
     maxAllocatedStorage: envInt(`${E}_DB_MAX_ALLOCATED_STORAGE`, DEFAULT_DB_MAX_STORAGE),
@@ -74,9 +78,6 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
   const jwtSecret = new secretsmanager.Secret(networkStack, `${P}JwtSecret`, {
     secretName: `${envName}/jwt-secret`,
   });
-
-  const dbName = process.env.POSTGRES_DB;
-  if (!dbName) throw new Error('POSTGRES_DB environment variable is required');
 
   const apiStack = new ApiStack(app, `${P}ApiStack`, {
     env,

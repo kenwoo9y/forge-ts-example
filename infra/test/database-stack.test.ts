@@ -13,6 +13,7 @@ describe('DatabaseStack', () => {
   const stack = new DatabaseStack(app, 'TestDatabaseStack', {
     vpc: networkStack.vpc,
     rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    dbName: 'test_db',
   });
   const template = Template.fromStack(stack);
 

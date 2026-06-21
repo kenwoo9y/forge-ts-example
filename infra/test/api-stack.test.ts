@@ -19,6 +19,7 @@ function buildApiStack(
   const databaseStack = new DatabaseStack(app, `TestDatabaseStack${suffix}`, {
     vpc: networkStack.vpc,
     rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    dbName: 'test_db',
   });
   const sharedStack = new cdk.Stack(app, `TestSharedStack${suffix}`);
   const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');

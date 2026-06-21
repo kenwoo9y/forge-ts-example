@@ -22,6 +22,7 @@ function buildPipelineStack() {
     env: TEST_ENV,
     vpc: networkStack.vpc,
     rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    dbName: 'test_db',
   });
   const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
   const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
@@ -361,6 +362,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       vpc: networkStack.vpc,
       rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      dbName: 'test_db',
     });
     const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
     const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
@@ -370,6 +372,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       vpc: stgNetworkStack.vpc,
       rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
+      dbName: 'test_db',
     });
     const stgSharedStack = new cdk.Stack(app, 'StgSharedStack', { env: TEST_ENV });
     const stgJwtSecret = new secretsmanager.Secret(stgSharedStack, 'StgJwtSecret');
