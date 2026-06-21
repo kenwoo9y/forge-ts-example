@@ -3,6 +3,9 @@ import { Match, Template } from 'aws-cdk-lib/assertions';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { describe, it } from 'vitest';
+
+process.env.POSTGRES_DB = 'test_db';
+
 import { ApiStack } from '../lib/stacks/api-stack';
 import { DatabaseStack } from '../lib/stacks/database-stack';
 import { NetworkStack } from '../lib/stacks/network-stack';
@@ -16,6 +19,7 @@ function buildApiStack(
   const databaseStack = new DatabaseStack(app, `TestDatabaseStack${suffix}`, {
     vpc: networkStack.vpc,
     rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    dbName: 'test_db',
   });
   const sharedStack = new cdk.Stack(app, `TestSharedStack${suffix}`);
   const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
@@ -26,6 +30,7 @@ function buildApiStack(
     databaseCredentials: databaseStack.credentials,
     jwtSecret,
     image: ecs.ContainerImage.fromRegistry('nginx'),
+    dbName: 'test_db',
     ...opts,
   });
   return Template.fromStack(stack);
@@ -80,11 +85,11 @@ describe('ApiStack', () => {
     });
   });
 
-  it('DB_NAMEがtask_dbに設定される', () => {
+  it('DB_NAMEがPOSTGRES_DBの値に設定される', () => {
     template.hasResourceProperties('AWS::ECS::TaskDefinition', {
       ContainerDefinitions: Match.arrayWith([
         Match.objectLike({
-          Environment: Match.arrayWith([Match.objectLike({ Name: 'DB_NAME', Value: 'task_db' })]),
+          Environment: Match.arrayWith([Match.objectLike({ Name: 'DB_NAME', Value: 'test_db' })]),
         }),
       ]),
     });

@@ -44,16 +44,14 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (SHA tag only)
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: ${{ matrix.ecr_repository }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t "$REGISTRY/$REPOSITORY:$IMAGE_TAG" -f "${{ matrix.dockerfile }}" .
-          docker tag "$REGISTRY/$REPOSITORY:$IMAGE_TAG" "$REGISTRY/$REPOSITORY:latest"
           docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
-          docker push "$REGISTRY/$REPOSITORY:latest"
 
       - name: Check ECR image scan results
         env:
@@ -78,3 +76,12 @@ jobs:
             exit 1
           fi
           echo "No CRITICAL vulnerabilities found. Proceeding."
+
+      - name: Tag as latest and push (triggers CodePipeline)
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ matrix.ecr_repository }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker tag "$REGISTRY/$REPOSITORY:$IMAGE_TAG" "$REGISTRY/$REPOSITORY:latest"
+          docker push "$REGISTRY/$REPOSITORY:latest"

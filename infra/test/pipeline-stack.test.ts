@@ -22,6 +22,7 @@ function buildPipelineStack() {
     env: TEST_ENV,
     vpc: networkStack.vpc,
     rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    dbName: 'test_db',
   });
   const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
   const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
@@ -39,6 +40,7 @@ function buildPipelineStack() {
     databaseCredentials: databaseStack.credentials,
     jwtSecret,
     image,
+    dbName: 'test_db',
     deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
   });
 
@@ -54,8 +56,7 @@ function buildPipelineStack() {
     env: TEST_ENV,
     githubOrg: 'acme',
     githubRepo: 'forge',
-    codestarConnectionArn:
-      'arn:aws:codestar-connections:ap-northeast-1:123456789012:connection/test-connection',
+
     ecrStack,
     dev: { apiStack, webStack },
   });
@@ -196,48 +197,55 @@ describe('PipelineStack', () => {
     });
   });
 
+  describe('インフラデプロイ用 OIDC ロール', () => {
+    it('ロールが正しい名前で作成される', () => {
+      template.hasResourceProperties('AWS::IAM::Role', {
+        RoleName: 'github-actions-infra-deploy',
+      });
+    });
+
+    it('production Environment にスコープされた信頼ポリシーが設定される', () => {
+      template.hasResourceProperties('AWS::IAM::Role', {
+        RoleName: 'github-actions-infra-deploy',
+        AssumeRolePolicyDocument: Match.objectLike({
+          Statement: Match.arrayWith([
+            Match.objectLike({
+              Action: 'sts:AssumeRoleWithWebIdentity',
+              Condition: Match.objectLike({
+                StringEquals: Match.objectLike({
+                  'token.actions.githubusercontent.com:sub':
+                    'repo:acme/forge:environment:production',
+                }),
+              }),
+            }),
+          ]),
+        }),
+      });
+    });
+
+    it('CDK bootstrap ロールへの AssumeRole 権限が付与される', () => {
+      template.hasResourceProperties('AWS::IAM::Policy', {
+        PolicyDocument: {
+          Statement: Match.arrayWith([
+            Match.objectLike({
+              Sid: 'CdkDeploy',
+              Action: 'sts:AssumeRole',
+              Resource: 'arn:aws:iam::123456789012:role/cdk-*',
+            }),
+          ]),
+        },
+        Roles: Match.arrayWith([
+          Match.objectLike({ Ref: Match.stringLikeRegexp('InfraDeployOidcRole') }),
+        ]),
+      });
+    });
+  });
+
   // ─── CodePipeline ────────────────────────────────────────────────────────────
 
   describe('パイプライン', () => {
-    it('パイプラインが3つ作成される（インフラ・API・Web）', () => {
-      template.resourceCountIs('AWS::CodePipeline::Pipeline', 3);
-    });
-
-    it('インフラパイプラインが正しい名前で作成される', () => {
-      template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
-        Name: 'InfraCdkPipeline',
-      });
-    });
-
-    it('インフラパイプラインが4ステージで構成される（Source→Synth→Approve→Deploy）', () => {
-      template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
-        Name: 'InfraCdkPipeline',
-        Stages: Match.arrayWith([
-          Match.objectLike({ Name: 'Source' }),
-          Match.objectLike({ Name: 'Synth' }),
-          Match.objectLike({ Name: 'Approve' }),
-          Match.objectLike({ Name: 'Deploy' }),
-        ]),
-      });
-    });
-
-    it('インフラパイプラインに手動承認ステージが含まれる', () => {
-      template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
-        Name: 'InfraCdkPipeline',
-        Stages: Match.arrayWith([
-          Match.objectLike({
-            Name: 'Approve',
-            Actions: Match.arrayWith([
-              Match.objectLike({
-                ActionTypeId: Match.objectLike({
-                  Category: 'Approval',
-                  Provider: 'Manual',
-                }),
-              }),
-            ]),
-          }),
-        ]),
-      });
+    it('パイプラインが2つ作成される（API・Web）', () => {
+      template.resourceCountIs('AWS::CodePipeline::Pipeline', 2);
     });
 
     it('アプリパイプラインがDEVの3ステージで構成される（Source→GenerateDev→DeployDev）', () => {
@@ -274,24 +282,12 @@ describe('PipelineStack', () => {
   // ─── CodeBuild ───────────────────────────────────────────────────────────────
 
   describe('CodeBuild プロジェクト', () => {
-    it('CDK Synth プロジェクトが作成される', () => {
-      template.hasResourceProperties('AWS::CodeBuild::Project', {
-        Name: 'InfraCdkSynth',
-      });
-    });
-
-    it('CDK Deploy プロジェクトが作成される', () => {
-      template.hasResourceProperties('AWS::CodeBuild::Project', {
-        Name: 'InfraCdkDeploy',
-      });
-    });
-
-    it('CDK Deploy ロールが CDK bootstrap ロールへの AssumeRole 権限を持つ', () => {
+    it('インフラデプロイOIDCロールが CDK bootstrap ロールへの AssumeRole 権限を持つ', () => {
       template.hasResourceProperties('AWS::IAM::Policy', {
         PolicyDocument: {
           Statement: Match.arrayWith([
             Match.objectLike({
-              Sid: 'CdkBootstrapRoles',
+              Sid: 'CdkDeploy',
               Action: 'sts:AssumeRole',
               Resource: 'arn:aws:iam::123456789012:role/cdk-*',
             }),
@@ -366,6 +362,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       vpc: networkStack.vpc,
       rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      dbName: 'test_db',
     });
     const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
     const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
@@ -375,6 +372,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       vpc: stgNetworkStack.vpc,
       rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
+      dbName: 'test_db',
     });
     const stgSharedStack = new cdk.Stack(app, 'StgSharedStack', { env: TEST_ENV });
     const stgJwtSecret = new secretsmanager.Secret(stgSharedStack, 'StgJwtSecret');
@@ -390,6 +388,7 @@ describe('PipelineStack (enableStg=true)', () => {
       databaseCredentials: databaseStack.credentials,
       jwtSecret,
       image,
+      dbName: 'test_db',
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });
     const webStack = new WebStack(app, 'TestWebStack', {
@@ -407,6 +406,7 @@ describe('PipelineStack (enableStg=true)', () => {
       databaseCredentials: stgDatabaseStack.credentials,
       jwtSecret: stgJwtSecret,
       image,
+      dbName: 'test_db',
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });
     const stgWebStack = new WebStack(app, 'StgWebStack', {
@@ -421,8 +421,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       githubOrg: 'acme',
       githubRepo: 'forge',
-      codestarConnectionArn:
-        'arn:aws:codestar-connections:ap-northeast-1:123456789012:connection/test-connection',
+
       ecrStack,
       dev: { apiStack, webStack },
       stg: { apiStack: stgApiStack, webStack: stgWebStack },

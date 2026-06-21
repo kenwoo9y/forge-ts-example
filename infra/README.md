@@ -6,10 +6,14 @@ AWS CDK（TypeScript）によるインフラ定義。VPC・RDS・ECS Fargate を
 
 | スタック | 内容 |
 |---|---|
-| `NetworkStack` | VPC・サブネット・セキュリティグループ |
-| `DatabaseStack` | RDS PostgreSQL（プライベートサブネット）・Secrets Manager 認証情報 |
-| `ApiStack` | Hono API の ECS Fargate サービス・ALB |
-| `WebStack` | Next.js Web の ECS Fargate サービス・ALB |
+| `EcrStack` | 全環境共通の ECR リポジトリ（API・Web × DEV/STG/PROD） |
+| `PipelineStack` | GitHub Actions OIDC ロール（ECR push・cdk deploy・cdk diff 用） |
+| `{Env}NetworkStack` | VPC・サブネット・セキュリティグループ（環境ごと） |
+| `{Env}DatabaseStack` | RDS PostgreSQL（プライベートサブネット）・Secrets Manager 認証情報（環境ごと） |
+| `{Env}ApiStack` | Hono API の ECS Fargate サービス・ALB（環境ごと） |
+| `{Env}WebStack` | Next.js Web の ECS Fargate サービス・ALB（環境ごと） |
+
+環境プレフィックス `{Env}` は `Dev` / `Stg` / `Prod`。STG・PROD は `enableStg=true` / `enableProd=true` コンテキストで有効化します。
 
 ## 使用している AWS サービス
 
@@ -20,24 +24,21 @@ AWS CDK（TypeScript）によるインフラ定義。VPC・RDS・ECS Fargate を
 | Application Load Balancer | API・Web への HTTP トラフィック分散 |
 | Amazon RDS (PostgreSQL) | タスクデータの永続化（プライベートサブネット配置） |
 | AWS Secrets Manager | DB 認証情報・JWT シークレットの安全な管理 |
-| Amazon ECR | コンテナイメージのレジストリ（CDK Assets として自動作成） |
+| Amazon ECR | コンテナイメージのレジストリ（API・Web × 環境別） |
+| AWS IAM (OIDC) | GitHub Actions が AWS にアクセスするための OIDC 連携ロール |
 
 ## 事前準備
 
-AWS 認証情報が設定されていることを確認してください。
+AWS SSO でログインする（`.devcontainer/.env` に SSO 設定が必要）。
 
 ```bash
-aws configure
-# または
-export AWS_ACCESS_KEY_ID=...
-export AWS_SECRET_ACCESS_KEY=...
-export AWS_DEFAULT_REGION=ap-northeast-1
+make aws-login
 ```
 
-CDK を初めて使う環境ではブートストラップが必要です。
+CDK を初めて使う環境ではブートストラップが必要。
 
 ```bash
-pnpm cdk bootstrap
+make cdk-bootstrap
 ```
 
 ## コマンド一覧
@@ -51,8 +52,10 @@ pnpm cdk bootstrap
 | `pnpm test:coverage` | カバレッジ付きテスト実行 |
 | `pnpm cdk synth` | CloudFormation テンプレートを生成 |
 | `pnpm cdk diff` | デプロイ済みスタックと現在の差分を表示 |
-| `pnpm cdk deploy` | 全スタックをデプロイ |
-| `pnpm cdk deploy NetworkStack` | 指定スタックのみデプロイ |
+| `pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | 全スタックをデプロイ（初回・DEV のみ） |
+| `pnpm exec cdk deploy --all -c enableStg=true -c githubOrg=<org> -c githubRepo=<repo>` | STG を追加してデプロイ |
+| `pnpm exec cdk deploy --all -c enableStg=true -c enableProd=true -c githubOrg=<org> -c githubRepo=<repo>` | PROD を追加してデプロイ |
+| `pnpm cdk deploy DevNetworkStack` | 指定スタックのみデプロイ |
 | `pnpm cdk destroy` | 全スタックを削除 |
 
 ## 主要な依存関係

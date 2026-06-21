@@ -174,25 +174,45 @@ make aws-login
 # 2. CDK bootstrap（初回のみ）
 make cdk-bootstrap
 
-# 3. Secrets Manager に JWT シークレットを作成
-aws secretsmanager create-secret --name dev/jwt-secret --secret-string "$(openssl rand -base64 32)"
-
-# 4. ECR・DEV インフラ・パイプラインをデプロイ
-#    GitHub との接続を先に作成しておく:
-#      AWS コンソール → CodePipeline → Settings → Connections → Create connection
+# 3. ECR・DEV インフラ・パイプラインをデプロイ
+#    POSTGRES_DB（.devcontainer/.env で設定済み）が RDS のデータベース名として使用される
+#    JWT シークレット（dev/jwt-secret）は CDK が自動作成する
 cd infra
 pnpm exec cdk deploy --all \
   -c githubOrg=<GitHub ユーザー名または組織名> \
-  -c githubRepo=<リポジトリ名> \
-  -c codestarConnectionArn=<接続 ARN>
+  -c githubRepo=<リポジトリ名>
+
+# 4. JWT シークレットに値を設定
+#    CDK がランダム値でシークレットを作成するため、実際に使用する値に更新する
+aws secretsmanager put-secret-value \
+  --secret-id dev/jwt-secret \
+  --secret-string "$(openssl rand -base64 32)"
 
 # 5. GitHub Actions のシークレット・変数を設定
 #    Settings → Secrets and variables → Actions
 #    - Secrets: AWS_APP_DEPLOY_ROLE_ARN（PipelineStack の出力から取得）
+#    - Secrets: AWS_INFRA_DEPLOY_ROLE_ARN（同上）
 #    - Secrets: AWS_INFRA_DIFF_ROLE_ARN（同上）
 #    - Variables: AWS_REGION（例: ap-northeast-1）
+#
+#    GitHub Environment の設定:
+#    Settings → Environments → production
+#    - Required reviewers: 承認者を指定
+#    - Deployment branches: main のみ
 
-# 6. main ブランチに push すると GitHub Actions が DEV へ自動デプロイ
+# 6. アプリデプロイワークフローを有効化
+#    CDK デプロイ完了後、PR を作成してワークフローを workflows に移動する
+#    （main はブランチ保護のため直接 push 不可）
+git checkout -b enable-deployment-workflows
+mv .github/disabled-workflows/app-deploy.yaml .github/workflows/app-deploy.yaml
+mv .github/disabled-workflows/infra-deploy.yaml .github/workflows/infra-deploy.yaml
+mv .github/disabled-workflows/infra-diff.yaml .github/workflows/infra-diff.yaml
+git add .github/workflows
+git commit -m "ci: enable deployment workflows"
+git push -u origin enable-deployment-workflows
+# GitHub 上で PR を作成して main にマージする
+
+# 7. main ブランチに push すると GitHub Actions が DEV へ自動デプロイ
 ```
 
 > **注意**: 初回デプロイに使用した強い権限のロールは、デプロイ完了後に無効化・削除してください。
@@ -202,15 +222,11 @@ pnpm exec cdk deploy --all \
 ```bash
 cd infra
 
-# STG 用シークレットを作成
-aws secretsmanager create-secret --name stg/jwt-secret --secret-string "$(openssl rand -base64 32)"
-
-# enableStg=true を付けて再デプロイ
+# enableStg=true を付けて再デプロイ（stg/jwt-secret は CDK が自動作成）
 pnpm exec cdk deploy --all \
   -c enableStg=true \
   -c githubOrg=<GitHub ユーザー名または組織名> \
-  -c githubRepo=<リポジトリ名> \
-  -c codestarConnectionArn=<接続 ARN>
+  -c githubRepo=<リポジトリ名>
 ```
 
 デプロイ後、次回の main push から CodePipeline に STG 承認・昇格ステージが追加されます。
@@ -220,16 +236,12 @@ pnpm exec cdk deploy --all \
 ```bash
 cd infra
 
-# PROD 用シークレットを作成
-aws secretsmanager create-secret --name prod/jwt-secret --secret-string "$(openssl rand -base64 32)"
-
-# enableStg=true enableProd=true を付けて再デプロイ
+# enableStg=true enableProd=true を付けて再デプロイ（prod/jwt-secret は CDK が自動作成）
 pnpm exec cdk deploy --all \
   -c enableStg=true \
   -c enableProd=true \
   -c githubOrg=<GitHub ユーザー名または組織名> \
-  -c githubRepo=<リポジトリ名> \
-  -c codestarConnectionArn=<接続 ARN>
+  -c githubRepo=<リポジトリ名>
 ```
 
 ### リソースサイズのデフォルト値

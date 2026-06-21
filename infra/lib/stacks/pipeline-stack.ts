@@ -20,7 +20,6 @@ export interface EnvResources {
 export interface PipelineStackProps extends cdk.StackProps {
   githubOrg: string;
   githubRepo: string;
-  codestarConnectionArn: string;
   ecrStack: EcrStack;
   dev: EnvResources;
   stg?: EnvResources;
@@ -40,15 +39,14 @@ interface AppEnvConfig {
 
 /**
  * CI/CDパイプラインスタック
- * - GitHub Actions OIDC ロール（ECR push・cdk diff 用）
- * - インフラパイプライン（CodePipeline + CodeBuild: cdk deploy）
+ * - GitHub Actions OIDC ロール（ECR push・cdk deploy・cdk diff 用）
  * - アプリパイプライン（DEV→STG→PROD の昇格モデル）
  */
 export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
     super(scope, id, props);
 
-    const { githubOrg, githubRepo, codestarConnectionArn, ecrStack, dev, stg, prod } = props;
+    const { githubOrg, githubRepo, ecrStack, dev, stg, prod } = props;
 
     // ─── GitHub OIDC プロバイダー ────────────────────────────────────────────
     const githubOidcProvider = new iam.OpenIdConnectProvider(this, 'GitHubOidcProvider', {
@@ -140,8 +138,25 @@ export class PipelineStack extends cdk.Stack {
       })
     );
 
-    // ─── インフラパイプライン ─────────────────────────────────────────────────
-    this.createInfraPipeline(githubOrg, githubRepo, codestarConnectionArn);
+    // ─── OIDC ロール: インフラデプロイ用（cdk deploy、production Environment にスコープ） ──
+    const infraDeployOidcRole = new iam.Role(this, 'InfraDeployOidcRole', {
+      roleName: 'github-actions-infra-deploy',
+      assumedBy: new iam.WebIdentityPrincipal(githubOidcProvider.openIdConnectProviderArn, {
+        StringEquals: {
+          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
+          'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:environment:production`,
+        },
+      }),
+      description: 'GitHub Actions: cdk deploy via infra-deploy.yaml (production environment only)',
+    });
+
+    infraDeployOidcRole.addToPolicy(
+      new iam.PolicyStatement({
+        sid: 'CdkDeploy',
+        actions: ['sts:AssumeRole'],
+        resources: [`arn:aws:iam::${this.account}:role/cdk-*`],
+      })
+    );
 
     // ─── アプリパイプライン（API・Web） ───────────────────────────────────────
     const devApiGreenTg = dev.apiStack.ecsFargateService.greenTargetGroup;
@@ -207,121 +222,6 @@ export class PipelineStack extends cdk.Stack {
       testListener: svc.testListener,
       containerPort,
     };
-  }
-
-  // ─── インフラパイプライン ───────────────────────────────────────────────────
-
-  private createInfraPipeline(
-    githubOrg: string,
-    githubRepo: string,
-    codestarConnectionArn: string
-  ): void {
-    const sourceOutput = new codepipeline.Artifact('InfraSource');
-    const synthOutput = new codepipeline.Artifact('InfraSynthOutput');
-
-    const synthProject = new codebuild.PipelineProject(this, 'InfraSynthProject', {
-      projectName: 'InfraCdkSynth',
-      environment: { buildImage: codebuild.LinuxBuildImage.STANDARD_7_0 },
-      buildSpec: codebuild.BuildSpec.fromObject({
-        version: '0.2',
-        phases: {
-          install: {
-            'runtime-versions': { nodejs: '22' },
-            commands: ['npm install -g pnpm@11.5.2', 'pnpm install --frozen-lockfile'],
-          },
-          build: { commands: ['cd infra && npx cdk synth'] },
-        },
-        artifacts: { 'base-directory': 'infra/cdk.out', files: ['**/*'] },
-      }),
-    });
-    synthProject.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['sts:AssumeRole'],
-        resources: [`arn:aws:iam::${this.account}:role/cdk-*-lookup-role-*`],
-      })
-    );
-    synthProject.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'cloudformation:DescribeStacks',
-          'ec2:DescribeAvailabilityZones',
-          'ssm:GetParameter',
-        ],
-        resources: ['*'],
-      })
-    );
-
-    const deployRole = new iam.Role(this, 'CodeBuildDeployRole', {
-      assumedBy: new iam.ServicePrincipal('codebuild.amazonaws.com'),
-      description: 'CodeBuild role for CDK deploy (assumes CDK bootstrap roles)',
-    });
-    deployRole.addToPolicy(
-      new iam.PolicyStatement({
-        sid: 'CdkBootstrapRoles',
-        actions: ['sts:AssumeRole'],
-        resources: [`arn:aws:iam::${this.account}:role/cdk-*`],
-      })
-    );
-
-    const deployProject = new codebuild.PipelineProject(this, 'InfraDeployProject', {
-      projectName: 'InfraCdkDeploy',
-      role: deployRole,
-      environment: { buildImage: codebuild.LinuxBuildImage.STANDARD_7_0 },
-      buildSpec: codebuild.BuildSpec.fromObject({
-        version: '0.2',
-        phases: {
-          install: {
-            'runtime-versions': { nodejs: '22' },
-            commands: ['npm install -g pnpm@11.5.2', 'pnpm install --frozen-lockfile'],
-          },
-          build: { commands: ['cd infra && npx cdk deploy --require-approval never --all'] },
-        },
-      }),
-    });
-
-    const pipeline = new codepipeline.Pipeline(this, 'InfraPipeline', {
-      pipelineName: 'InfraCdkPipeline',
-      restartExecutionOnUpdate: false,
-    });
-
-    pipeline.addStage({
-      stageName: 'Source',
-      actions: [
-        new cpactions.CodeStarConnectionsSourceAction({
-          actionName: 'GitHub',
-          owner: githubOrg,
-          repo: githubRepo,
-          branch: 'main',
-          connectionArn: codestarConnectionArn,
-          output: sourceOutput,
-        }),
-      ],
-    });
-    pipeline.addStage({
-      stageName: 'Synth',
-      actions: [
-        new cpactions.CodeBuildAction({
-          actionName: 'CdkSynth',
-          project: synthProject,
-          input: sourceOutput,
-          outputs: [synthOutput],
-        }),
-      ],
-    });
-    pipeline.addStage({
-      stageName: 'Approve',
-      actions: [new cpactions.ManualApprovalAction({ actionName: 'ManualApproval' })],
-    });
-    pipeline.addStage({
-      stageName: 'Deploy',
-      actions: [
-        new cpactions.CodeBuildAction({
-          actionName: 'CdkDeploy',
-          project: deployProject,
-          input: sourceOutput,
-        }),
-      ],
-    });
   }
 
   // ─── アプリパイプライン（昇格モデル） ─────────────────────────────────────

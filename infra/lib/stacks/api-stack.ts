@@ -17,8 +17,12 @@ export interface ApiStackProps extends cdk.StackProps {
   databaseCredentials: rds.DatabaseSecret;
   /** Secrets ManagerにあるJWT署名シークレット */
   jwtSecret: secretsmanager.ISecret;
+  /** PostgreSQL データベース名 */
+  dbName: string;
   /** コンテナイメージ（デフォルト: apps/apiのDockerfileからビルド） */
   image?: ecs.ContainerImage;
+  /** コンテナ起動コマンド上書き（プレースホルダ用途） */
+  command?: string[];
   /** タスクのCPUユニット数（デフォルト: 256） */
   cpu?: number;
   /** タスクのメモリ (MiB)（デフォルト: 512） */
@@ -46,7 +50,9 @@ export class ApiStack extends cdk.Stack {
       database,
       databaseCredentials,
       jwtSecret,
+      dbName,
       image = ecs.ContainerImage.fromAsset('../apps/api'),
+      command,
       cpu = 256,
       memoryLimitMiB = 512,
       desiredCount = 1,
@@ -57,10 +63,11 @@ export class ApiStack extends cdk.Stack {
       vpc,
       image,
       containerPort: 3000,
+      command,
       environment: {
         DB_HOST: database.dbInstanceEndpointAddress,
         DB_PORT: database.dbInstanceEndpointPort,
-        DB_NAME: 'task_db',
+        DB_NAME: dbName,
         NODE_ENV: 'production',
       },
       secrets: {
@@ -84,7 +91,10 @@ export class ApiStack extends cdk.Stack {
         this.ecsFargateService.fargateService.connections.securityGroups[0].securityGroupId,
     });
 
-    databaseCredentials.grantRead(this.ecsFargateService.taskDefinition.taskRole);
-    jwtSecret.grantRead(this.ecsFargateService.taskDefinition.taskRole);
+    const executionRole = this.ecsFargateService.taskDefinition.executionRole;
+    if (executionRole) {
+      databaseCredentials.grantRead(executionRole);
+      jwtSecret.grantRead(executionRole);
+    }
   }
 }
