@@ -19,16 +19,16 @@
   "license": "ISC",
   "packageManager": "pnpm@11.5.2",
   "devDependencies": {
-    "@biomejs/biome": "2.4.15",
+    "@biomejs/biome": "2.5.0",
     "@commitlint/cli": "^21.0.0",
     "@commitlint/config-conventional": "^20.4.3",
     "@types/node": "25.5.2",
-    "@vitest/coverage-v8": "4.1.7",
+    "@vitest/coverage-v8": "4.1.8",
     "cspell": "^9.6.4",
     "lefthook": "^2.1.6",
     "turbo": "^2.9.14",
     "typescript": "^6.0.3",
-    "vitest": "4.1.7"
+    "vitest": "4.1.8"
   },
   "dependencies": {
     "next-auth": "5.0.0-beta.30"
