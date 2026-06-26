@@ -12,7 +12,11 @@
 | `/apps/api` | npm | 3 |
 | `/apps/api` | docker | 2 |
 | `/apps/web` | npm | 3 |
+| `/apps/web` | docker | 2 |
 | `/apps/mobile` | npm | 3 |
 | `/infra` | npm | 2 |
+| `/packages/auth` | npm | 2 |
 | `/packages/db` | npm | 2 |
+| `/packages/error` | npm | 2 |
+| `/packages/schema` | npm | 2 |
 | `/` | github-actions | 2 |
