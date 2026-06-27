@@ -44,7 +44,7 @@
     "ghcr.io/devcontainers/features/aws-cli:1": {}
   },
   "postCreateCommand": "node_modules/.bin/lefthook install || true && git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets && (cd /tmp/git-secrets && sudo make install) && sudo chmod 755 \"$(command -v git-secrets || echo /usr/local/bin/git-secrets)\" || true && rm -rf /tmp/git-secrets",
-  "postStartCommand": "pnpm run type-check",
+  "postStartCommand": "sudo chown root:docker /var/run/docker.sock && sudo chmod 660 /var/run/docker.sock || true && pnpm run type-check",
   "forwardPorts": [3000, 3001, 8081, 5432],
   "portsAttributes": {
     "3000": {
