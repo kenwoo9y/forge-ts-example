@@ -7,6 +7,7 @@ services:
       - ..:/workspace:cached
       - pnpm_store:/home/node/.pnpm-store
       - aws_sso_cache:/home/node/.aws/sso/cache
+      - /var/run/docker.sock:/var/run/docker.sock
     command: sleep infinity
     environment:
       - NODE_ENV=development

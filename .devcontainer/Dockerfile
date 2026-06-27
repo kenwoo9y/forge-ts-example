@@ -10,10 +10,14 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     libnspr4 \
     libnss3 \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 # nodeユーザーにsudo権限を付与
 RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# nodeユーザーをdockerグループに追加（Docker socket へのアクセス用）
+RUN usermod -aG docker node
 
 # nodeユーザーのホームディレクトリを作成
 RUN mkdir -p /home/node && \
@@ -55,6 +59,9 @@ USER node
 RUN pnpm config set store-dir /home/node/.pnpm-store && \
     pnpm config set cache-dir /home/node/.pnpm-store && \
     pnpm config set state-dir /home/node/.pnpm-store
+
+# devcontainer features のインストールには root が必要
+USER root
 
 # シェルの設定
 SHELL ["/bin/bash", "-c"]
