@@ -5,7 +5,7 @@
 FROM node:26-slim AS installer
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+RUN npm install -g pnpm@11.5.2
 
 # Copy workspace manifests first for layer caching
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

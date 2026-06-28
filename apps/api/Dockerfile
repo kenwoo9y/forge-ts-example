@@ -5,7 +5,7 @@
 FROM node:26-slim AS installer
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+RUN npm install -g pnpm@11.5.2
 
 # Copy workspace manifests first for layer caching
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -31,7 +31,7 @@ COPY apps/api/src ./apps/api/src
 COPY apps/api/tsconfig.json ./apps/api/tsconfig.json
 
 # Generate Prisma client for the target platform
-RUN pnpm --filter db generate
+RUN DATABASE_URL=postgresql://dummy:dummy@localhost:5432/dummy pnpm --filter db generate
 
 # Build packages in dependency order (turbo: ^build)
 RUN pnpm --filter error build
@@ -39,7 +39,7 @@ RUN pnpm --filter schema build
 RUN pnpm --filter api build
 
 # Create a self-contained deployment bundle (resolves workspace:* deps)
-RUN pnpm --filter api --prod deploy /app/deploy
+RUN pnpm --filter api --prod deploy --legacy /app/deploy
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
 FROM node:26-slim AS runner
