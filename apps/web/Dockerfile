@@ -2,8 +2,10 @@
 # Build context: monorepo root (docker build -f apps/web/Dockerfile .)
 
 # ─── Stage 1: Install dependencies ───────────────────────────────────────────
-FROM node:26-alpine AS installer
+FROM --platform=linux/arm64 node:26-alpine AS installer
 WORKDIR /app
+
+ENV UV_USE_IO_URING=0
 
 RUN npm install -g pnpm@11.5.2
 
@@ -17,7 +19,7 @@ COPY packages/schema/package.json ./packages/schema/
 RUN pnpm install --frozen-lockfile
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
-FROM installer AS builder
+FROM --platform=linux/arm64 installer AS builder
 WORKDIR /app
 
 # Copy workspace package sources
@@ -44,7 +46,7 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm --filter web build
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM node:26-alpine AS runner
+FROM --platform=linux/arm64 node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

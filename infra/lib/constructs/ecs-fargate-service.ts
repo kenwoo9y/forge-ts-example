@@ -53,7 +53,14 @@ export class EcsFargateService extends Construct {
     this.cluster = new ecs.Cluster(this, 'Cluster', { vpc });
 
     if (deploymentController === ecs.DeploymentControllerType.CODE_DEPLOY) {
-      const taskDef = new ecs.FargateTaskDefinition(this, 'TaskDef', { cpu, memoryLimitMiB });
+      const taskDef = new ecs.FargateTaskDefinition(this, 'TaskDef', {
+        cpu,
+        memoryLimitMiB,
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.ARM64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
+      });
       taskDef.addContainer('Container', {
         image,
         portMappings: [{ containerPort }],
@@ -148,6 +155,10 @@ export class EcsFargateService extends Construct {
         circuitBreaker: { rollback: true },
         enableExecuteCommand: true,
         healthCheckGracePeriod: cdk.Duration.minutes(5),
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.ARM64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
       });
 
       svc.targetGroup.configureHealthCheck({
