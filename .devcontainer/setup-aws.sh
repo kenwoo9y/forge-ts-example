@@ -13,6 +13,7 @@ if [ ${#missing[@]} -gt 0 ]; then
 fi
 
 mkdir -p ~/.aws/sso/cache
+sudo chown -R "$(whoami)" ~/.aws/sso
 
 cat > ~/.aws/config << EOF
 [sso-session ${SSO_SESSION}]
