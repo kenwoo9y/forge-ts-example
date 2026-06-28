@@ -2,7 +2,7 @@
 # Build context: monorepo root (docker build -f apps/web/Dockerfile .)
 
 # ─── Stage 1: Install dependencies ───────────────────────────────────────────
-FROM node:26-slim AS installer
+FROM node:26-alpine AS installer
 WORKDIR /app
 
 RUN npm install -g pnpm@11.5.2
@@ -44,14 +44,14 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm --filter web build
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM node:26-slim AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs nextjs
+RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S -G nodejs nextjs
 USER nextjs
 
 # standalone bundle already contains all server-side node_modules.

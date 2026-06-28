@@ -2,7 +2,7 @@
 # Build context: monorepo root (docker build -f apps/api/Dockerfile .)
 
 # ─── Stage 1: Install dependencies ───────────────────────────────────────────
-FROM node:26-slim AS installer
+FROM node:26-alpine AS installer
 WORKDIR /app
 
 RUN npm install -g pnpm@11.5.2
@@ -42,14 +42,14 @@ RUN pnpm --filter api build
 RUN pnpm --filter api --prod deploy --legacy /app/deploy
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM node:26-slim AS runner
+FROM node:26-alpine AS runner
 WORKDIR /app
 
-# Prisma's query engine binary links against libssl
-RUN apt-get update -y && apt-get install -y --no-install-recommends libssl3 && rm -rf /var/lib/apt/lists/*
+# Prisma's query engine binary links against openssl
+RUN apk add --no-cache openssl
 
 # Run as non-root for security
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs apiuser
+RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S -G nodejs apiuser
 USER apiuser
 
 COPY --from=builder --chown=apiuser:nodejs /app/deploy ./
