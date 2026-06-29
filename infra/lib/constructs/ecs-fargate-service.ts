@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as ecs_patterns from 'aws-cdk-lib/aws-ecs-patterns';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 export interface EcsFargateServiceProps {
@@ -52,7 +53,14 @@ export class EcsFargateService extends Construct {
     this.cluster = new ecs.Cluster(this, 'Cluster', { vpc });
 
     if (deploymentController === ecs.DeploymentControllerType.CODE_DEPLOY) {
-      const taskDef = new ecs.FargateTaskDefinition(this, 'TaskDef', { cpu, memoryLimitMiB });
+      const taskDef = new ecs.FargateTaskDefinition(this, 'TaskDef', {
+        cpu,
+        memoryLimitMiB,
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.ARM64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
+      });
       taskDef.addContainer('Container', {
         image,
         portMappings: [{ containerPort }],
@@ -62,6 +70,21 @@ export class EcsFargateService extends Construct {
         logging: ecs.LogDrivers.awsLogs({ streamPrefix: id }),
       });
       this.taskDefinition = taskDef;
+
+      // The placeholder image is from public.ecr.aws, so CDK does not automatically
+      // grant private ECR pull permissions to the execution role. Add them explicitly
+      // so CodeDeploy can pull the real image when it replaces the placeholder.
+      taskDef.addToExecutionRolePolicy(
+        new iam.PolicyStatement({
+          actions: [
+            'ecr:GetAuthorizationToken',
+            'ecr:BatchCheckLayerAvailability',
+            'ecr:GetDownloadUrlForLayer',
+            'ecr:BatchGetImage',
+          ],
+          resources: ['*'],
+        })
+      );
 
       this.loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
         vpc,
@@ -132,6 +155,10 @@ export class EcsFargateService extends Construct {
         circuitBreaker: { rollback: true },
         enableExecuteCommand: true,
         healthCheckGracePeriod: cdk.Duration.minutes(5),
+        runtimePlatform: {
+          cpuArchitecture: ecs.CpuArchitecture.ARM64,
+          operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+        },
       });
 
       svc.targetGroup.configureHealthCheck({

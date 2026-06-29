@@ -2,10 +2,12 @@
 # Build context: monorepo root (docker build -f apps/web/Dockerfile .)
 
 # ─── Stage 1: Install dependencies ───────────────────────────────────────────
-FROM node:26-slim AS installer
+FROM --platform=linux/arm64 node:26-alpine AS installer
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
+ENV UV_USE_IO_URING=0
+
+RUN npm install -g pnpm@11.5.2
 
 # Copy workspace manifests first for layer caching
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
@@ -17,7 +19,7 @@ COPY packages/schema/package.json ./packages/schema/
 RUN pnpm install --frozen-lockfile
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
-FROM installer AS builder
+FROM --platform=linux/arm64 installer AS builder
 WORKDIR /app
 
 # Copy workspace package sources
@@ -44,14 +46,14 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 RUN pnpm --filter web build
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM node:26-slim AS runner
+FROM --platform=linux/arm64 node:26-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 --ingroup nodejs nextjs
+RUN addgroup -g 1001 -S nodejs && adduser -u 1001 -S -G nodejs nextjs
 USER nextjs
 
 # standalone bundle already contains all server-side node_modules.

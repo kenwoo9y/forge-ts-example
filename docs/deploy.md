@@ -114,6 +114,124 @@ IAM ロールのトラストポリシーは Environment に紐づけることで
 
 ---
 
+## マニュアルアプリデプロイ手順
+
+CDK デプロイ直後や GitHub Actions ワークフローを使用せずに手動でアプリをデプロイする場合の手順。
+
+### 前提条件
+
+- AWS CLI がインストール・設定済みであること
+- Docker がインストール・起動済みであること
+- 以下の IAM 権限を持つ AWS 認証情報が設定済みであること
+  - `ecr:GetAuthorizationToken`
+  - `ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`（`forge-ts/api-dev` / `forge-ts/web-dev` リポジトリ）
+  - `ecr:DescribeImageScanFindings`, `ecr:DescribeImages`（スキャン結果確認用）
+  - `cloudformation:ListStackResources`, `elasticloadbalancing:DescribeLoadBalancers`（ALB DNS 名取得用）
+
+### 1. 環境変数の設定
+
+`.env.template` をコピーして値を設定後、読み込む。
+
+```bash
+cp .env.template .env
+# .env を編集して AWS_REGION, AWS_ACCOUNT_ID, IMAGE_TAG を設定
+set -a && source .env && set +a
+```
+
+`NEXT_PUBLIC_API_URL` は DevApiStack の API ALB DNS 名から取得する。
+
+```bash
+API_ALB_ARN=$(aws cloudformation list-stack-resources \
+  --stack-name DevApiStack \
+  --query "StackResourceSummaries[?ResourceType=='AWS::ElasticLoadBalancingV2::LoadBalancer'].PhysicalResourceId" \
+  --output text)
+
+API_ALB_DNS=$(aws elbv2 describe-load-balancers \
+  --load-balancer-arns "$API_ALB_ARN" \
+  --query 'LoadBalancers[0].DNSName' \
+  --output text)
+
+# .env の NEXT_PUBLIC_API_URL に設定
+echo "NEXT_PUBLIC_API_URL=http://$API_ALB_DNS" >> .env
+```
+
+`REGISTRY` はシェル上で動的に組み立てる。
+
+```bash
+export REGISTRY=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+```
+
+### 2. ECR ログイン
+
+```bash
+aws ecr get-login-password --region $AWS_REGION | \
+  docker login --username AWS --password-stdin $REGISTRY
+```
+
+### 3. API イメージのビルド & プッシュ
+
+ビルドコンテキストはモノレポルート（`apps/api/Dockerfile` を参照）。
+
+```bash
+docker build \
+  --platform linux/arm64 \
+  -t $REGISTRY/forge-ts/api-dev:$IMAGE_TAG \
+  -f apps/api/Dockerfile \
+  .
+
+docker push $REGISTRY/forge-ts/api-dev:$IMAGE_TAG
+```
+
+### 4. Web イメージのビルド & プッシュ
+
+`NEXT_PUBLIC_API_URL` はクライアントバンドルにビルド時に焼き込まれるため、手順 1 で `.env` に設定済みであることを確認する。
+
+```bash
+docker build \
+  --platform linux/arm64 \
+  --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+  -t $REGISTRY/forge-ts/web-dev:$IMAGE_TAG \
+  -f apps/web/Dockerfile \
+  .
+
+docker push $REGISTRY/forge-ts/web-dev:$IMAGE_TAG
+```
+
+### 5. ECR スキャン結果の確認
+
+CRITICAL 脆弱性が検出された場合は `:latest` タグのプッシュを行わず、脆弱性を修正してから再ビルドする。
+
+```bash
+for REPO in forge-ts/api-dev forge-ts/web-dev; do
+  echo "=== $REPO ==="
+  aws ecr wait image-scan-complete \
+    --repository-name "$REPO" \
+    --image-id "imageTag=$IMAGE_TAG" \
+    --region "$AWS_REGION"
+
+  aws ecr describe-image-scan-findings \
+    --repository-name "$REPO" \
+    --image-id "imageTag=$IMAGE_TAG" \
+    --region "$AWS_REGION" \
+    --query 'imageScanFindings.findingSeverityCounts' \
+    --output table
+done
+```
+
+### 6. `:latest` タグでプッシュ（CodePipeline トリガー）
+
+CRITICAL 脆弱性がないことを確認後、`:latest` タグをプッシュする。このプッシュが EventBridge 経由で `ApiAppPipeline` / `WebAppPipeline` を起動する。
+
+```bash
+# API
+docker tag $REGISTRY/forge-ts/api-dev:$IMAGE_TAG $REGISTRY/forge-ts/api-dev:latest
+docker push $REGISTRY/forge-ts/api-dev:latest
+
+# Web
+docker tag $REGISTRY/forge-ts/web-dev:$IMAGE_TAG $REGISTRY/forge-ts/web-dev:latest
+docker push $REGISTRY/forge-ts/web-dev:latest
+```
+
 ## アプリパイプライン（CodePipeline: `ApiAppPipeline` / `WebAppPipeline`）
 
 ### 概要
