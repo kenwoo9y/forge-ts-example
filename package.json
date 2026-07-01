@@ -19,10 +19,10 @@
   "license": "ISC",
   "packageManager": "pnpm@11.5.2",
   "devDependencies": {
-    "@biomejs/biome": "2.5.0",
+    "@biomejs/biome": "2.5.1",
     "@commitlint/cli": "^21.0.0",
     "@commitlint/config-conventional": "^20.4.3",
-    "@types/node": "26.0.0",
+    "@types/node": "26.0.1",
     "@vitest/coverage-v8": "4.1.9",
     "cspell": "^9.6.4",
     "lefthook": "^2.1.6",
