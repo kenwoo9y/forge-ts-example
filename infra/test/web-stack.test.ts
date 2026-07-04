@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { describe, it } from 'vitest';
 import { NetworkStack } from '../lib/stacks/network-stack';
 import { WebStack } from '../lib/stacks/web-stack';
@@ -11,9 +12,12 @@ function buildWebStack(
   opts: { deploymentController?: ecs.DeploymentControllerType } = {}
 ) {
   const networkStack = new NetworkStack(app, `TestNetworkStack${suffix}`);
+  const sharedStack = new cdk.Stack(app, `TestSharedStack${suffix}`);
+  const authSecret = new secretsmanager.Secret(sharedStack, 'AuthSecret');
   const stack = new WebStack(app, `TestWebStack${suffix}`, {
     vpc: networkStack.vpc,
     apiUrl: 'http://api.example.com',
+    authSecret,
     image: ecs.ContainerImage.fromRegistry('nginx'),
     ...opts,
   });

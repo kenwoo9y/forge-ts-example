@@ -48,6 +48,7 @@ function buildPipelineStack() {
     env: TEST_ENV,
     vpc: networkStack.vpc,
     apiUrl: 'http://api.example.com',
+    authSecret: new secretsmanager.Secret(sharedStack, 'AuthSecret'),
     image,
     deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
   });
@@ -395,6 +396,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       vpc: networkStack.vpc,
       apiUrl: 'http://api.example.com',
+      authSecret: new secretsmanager.Secret(sharedStack, 'AuthSecret'),
       image,
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });
@@ -413,6 +415,7 @@ describe('PipelineStack (enableStg=true)', () => {
       env: TEST_ENV,
       vpc: stgNetworkStack.vpc,
       apiUrl: 'http://stg-api.example.com',
+      authSecret: new secretsmanager.Secret(stgSharedStack, 'StgAuthSecret'),
       image,
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });

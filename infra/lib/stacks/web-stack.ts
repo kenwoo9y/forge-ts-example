@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import type * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import type * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import type { Construct } from 'constructs';
 import { EcsFargateService } from '../constructs/ecs-fargate-service';
 
@@ -9,6 +10,8 @@ export interface WebStackProps extends cdk.StackProps {
   vpc: ec2.Vpc;
   /** バックエンドAPIのURL */
   apiUrl: string;
+  /** Secrets ManagerにあるAuth.js署名シークレット */
+  authSecret: secretsmanager.ISecret;
   /** コンテナイメージ（デフォルト: apps/webのDockerfileからビルド） */
   image?: ecs.ContainerImage;
   /** コンテナ起動コマンド上書き（プレースホルダ用途） */
@@ -37,6 +40,7 @@ export class WebStack extends cdk.Stack {
     const {
       vpc,
       apiUrl,
+      authSecret,
       image = ecs.ContainerImage.fromAsset('../apps/web'),
       command,
       cpu = 256,
@@ -54,10 +58,18 @@ export class WebStack extends cdk.Stack {
         API_URL: apiUrl,
         NODE_ENV: 'production',
       },
+      secrets: {
+        AUTH_SECRET: ecs.Secret.fromSecretsManager(authSecret),
+      },
       cpu,
       memoryLimitMiB,
       desiredCount,
       deploymentController,
     });
+
+    const executionRole = this.ecsFargateService.taskDefinition.executionRole;
+    if (executionRole) {
+      authSecret.grantRead(executionRole);
+    }
   }
 }
