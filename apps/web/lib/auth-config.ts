@@ -47,6 +47,7 @@ export function createAuthConfig(apiUrl: string): NextAuthConfig {
       }),
     ],
     session: { strategy: "jwt" },
+    trustHost: true,
     pages: {
       signIn: "/signin",
     },
