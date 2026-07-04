@@ -2,6 +2,11 @@ packages:
   - apps/*
   - packages/*
   - infra
+supportedArchitectures:
+  os:
+    - current
+  cpu:
+    - current
 allowBuilds:
   '@prisma/engines': true
   esbuild: true
