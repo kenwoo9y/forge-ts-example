@@ -20,14 +20,16 @@
 
 ### 概要
 
-`main` ブランチへの Pull Request で `apps/web/**`・`packages/**`・`pnpm-lock.yaml` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+`main` ブランチへの Pull Request で `apps/web/**`・`apps/api/**`・`packages/**`・`pnpm-lock.yaml` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+
+`apps/web` は Hono API のルート型（`AppType`）を `hc<AppType>()` の型付きクライアントとして参照しているため、`apps/api` の変更にも反応し、型チェック・テストの前に `apps/api` 側もビルドする。
 
 ### ジョブ一覧
 
 | ジョブ | 内容 |
 |---|---|
 | `lint-and-format` | `pnpm --filter web run lint` で Next.js の ESLint ルールを検証 |
-| `type-check` | `error` / `schema` / `auth` パッケージのビルド後に `pnpm --filter web run type-check` を実行 |
+| `type-check` | `error` / `schema` / `auth` パッケージのビルド、Prisma クライアント生成、`api` パッケージのビルド後に `pnpm --filter web run type-check` を実行 |
 | `unit-test` | 同上の前準備後に `pnpm --filter web run test:coverage` でカバレッジ付きテストを実行 |
 
 ---

@@ -48,10 +48,13 @@ jobs:
     
     - name: Generate Prisma client
       run: pnpm --filter db exec prisma generate
-    
+
+    - name: Build api package
+      run: pnpm --filter api build
+
     - name: Run database migrations
       run: pnpm --filter db exec prisma migrate deploy
-    
+
     - name: Start API server
       working-directory: apps/api
       run: pnpm exec tsx src/index.ts &
