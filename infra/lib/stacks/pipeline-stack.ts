@@ -593,9 +593,14 @@ export class PipelineStack extends cdk.Stack {
               'aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"',
               'docker pull "$IMAGE_URI"',
               // デプロイ対象イメージから db パッケージ（schema.prisma / migrations）を取り出す
-              'docker run --rm --entrypoint sh -v "$(pwd)":/out "$IMAGE_URI" -c "cp -rL /app/node_modules/db /out/db-package"',
+              // イメージ側は非rootで動くため、バインドマウント先への書き込み用にrootで実行する
+              'docker run --rm --user root --entrypoint sh -v "$(pwd)":/out "$IMAGE_URI" -c "cp -rL /app/node_modules/db /out/db-package"',
               'cd db-package',
-              'DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" npx --yes prisma@7.8.0 migrate deploy',
+              // CodeBuildは環境変数を直接注入するのでdotenv自体不要なため、dotenv依存のない最小構成で上書きする
+              'printf \'import { defineConfig, env } from "prisma/config";\\nexport default defineConfig({\\n  schema: "./prisma/schema.prisma",\\n  migrations: { path: "./prisma/migrations" },\\n  datasource: { url: env("DATABASE_URL") },\\n});\\n\' > prisma.config.ts',
+              'PRISMA_VERSION=$(node -e "console.log(require(\'./package.json\').devDependencies.prisma)")',
+              'npm install --no-save "prisma@$PRISMA_VERSION"',
+              'DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" npx prisma migrate deploy',
             ],
           },
         },
