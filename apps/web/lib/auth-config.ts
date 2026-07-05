@@ -1,16 +1,16 @@
 import { signinSchema } from "auth";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { apiClient } from "./hono-client";
 
 /**
  * NextAuth v5 設定ファクトリー。
  * CredentialsProvider でユーザー名・パスワード認証を行い、
  * Hono API の /auth/signin エンドポイントで JWT を取得する。
  *
- * @param apiUrl Hono API のベース URL
  * @returns NextAuth 設定オブジェクト
  */
-export function createAuthConfig(apiUrl: string): NextAuthConfig {
+export function createAuthConfig(): NextAuthConfig {
   return {
     providers: [
       Credentials({
@@ -22,21 +22,16 @@ export function createAuthConfig(apiUrl: string): NextAuthConfig {
           const parsed = signinSchema.safeParse(credentials);
           if (!parsed.success) return null;
 
-          const res = await fetch(`${apiUrl}/auth/signin`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const res = await apiClient.auth.signin.$post({
+            json: {
               username: parsed.data.username,
               password: parsed.data.password,
-            }),
+            },
           });
 
           if (!res.ok) return null;
 
-          const data = (await res.json()) as {
-            token: string;
-            username: string;
-          };
+          const data = await res.json();
 
           return {
             id: data.username,

@@ -50,10 +50,7 @@ const signInRoute = createRoute({
 });
 
 export function createAuthRoutes(deps: AuthHandlerDeps) {
-  const app = new OpenAPIHono();
   const handler = createAuthHandler(deps);
 
-  app.openapi(signInRoute, handler.signIn as never);
-
-  return app;
+  return new OpenAPIHono().openapi(signInRoute, handler.signIn as never);
 }

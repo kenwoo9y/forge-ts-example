@@ -38,11 +38,6 @@ RUN pnpm --filter schema build
 # Copy Next.js app source
 COPY apps/web ./apps/web
 
-# NEXT_PUBLIC_* vars are baked into the client bundle at build time.
-# Pass them here if your app uses any (e.g. --build-arg NEXT_PUBLIC_API_URL=...).
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
 RUN pnpm --filter web build
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────

@@ -97,7 +97,7 @@
 10. **Playwright ブラウザのインストール** (`playwright install --with-deps`)
 11. **Playwright テスト実行** (`apps/web` 配下)
     - `BASE_URL`: `http://localhost:3001`
-    - `NEXT_PUBLIC_API_URL` / `API_URL`: `http://localhost:3000`
+    - `API_URL`: `http://localhost:3000`
 12. **テストレポートのアップロード** (`apps/web/playwright-report/` を 30 日間保持、キャンセル時も実行)
 
 ### E2E テスト用環境変数（テスト実行時）
@@ -108,7 +108,6 @@
 | `E2E_USERNAME` | Secrets から注入 |
 | `E2E_PASSWORD` | Secrets から注入 |
 | `BASE_URL` | `http://localhost:3001` |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:3000` |
 | `API_URL` | `http://localhost:3000` |
 | `AUTH_SECRET` | Secrets から注入（未設定時は `ci-auth-secret`） |
 | `AUTH_TRUST_HOST` | `true` |

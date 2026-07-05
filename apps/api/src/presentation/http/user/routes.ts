@@ -228,15 +228,13 @@ const createUserTaskRoute = createRoute({
 });
 
 export function createUserRoutes(deps: UserHandlerDeps) {
-  const app = new OpenAPIHono();
   const handler = createUserHandler(deps);
 
-  app.openapi(createUserRoute, handler.createUser as never);
-  app.openapi(getUserRoute, handler.getUser as never);
-  app.openapi(updateUserRoute, handler.updateUser as never);
-  app.openapi(deleteUserRoute, handler.deleteUser as never);
-  app.openapi(getUserTasksRoute, handler.getUserTasks as never);
-  app.openapi(createUserTaskRoute, handler.createUserTask as never);
-
-  return app;
+  return new OpenAPIHono()
+    .openapi(createUserRoute, handler.createUser as never)
+    .openapi(getUserRoute, handler.getUser as never)
+    .openapi(updateUserRoute, handler.updateUser as never)
+    .openapi(deleteUserRoute, handler.deleteUser as never)
+    .openapi(getUserTasksRoute, handler.getUserTasks as never)
+    .openapi(createUserTaskRoute, handler.createUserTask as never);
 }

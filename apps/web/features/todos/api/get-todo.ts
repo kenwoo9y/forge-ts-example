@@ -1,25 +1,17 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 
-import { api } from "@/lib/api-client";
+import { getTodoAction } from "../actions";
 import type { Todo } from "../types";
 
 export const getTodoQueryOptions = (publicId: string) =>
   queryOptions({
     queryKey: ["todos", publicId],
-    queryFn: () => api.get<Todo>(`/tasks/${publicId}`),
+    queryFn: () => getTodoAction(publicId),
   });
 
 export const useTodo = (publicId: string) => {
-  const { data: session } = useSession();
-  const token = session?.apiToken ?? "";
-
   return useQuery({
     queryKey: ["todos", publicId],
-    queryFn: () =>
-      api.get<Todo>(`/tasks/${publicId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-    enabled: !!token,
+    queryFn: (): Promise<Todo> => getTodoAction(publicId),
   });
 };

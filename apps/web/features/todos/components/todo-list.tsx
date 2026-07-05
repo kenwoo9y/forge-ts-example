@@ -262,11 +262,10 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
 export function TodoList() {
   const { data: session } = useSession();
   const username = session?.user?.name ?? "";
-  const token = session?.apiToken ?? "";
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [deletingTodo, setDeletingTodo] = useState<Todo | null>(null);
-  const { data: todos, isLoading, isError } = useTodos(username, token);
+  const { data: todos, isLoading, isError } = useTodos(username);
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-4">

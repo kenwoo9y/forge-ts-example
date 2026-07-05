@@ -1,21 +1,18 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 
-import { api } from "@/lib/api-client";
+import { getTodosAction } from "../actions";
 import type { Todo } from "../types";
 
 export const getTodosQueryOptions = (username: string) =>
   queryOptions({
     queryKey: ["todos", { username }],
-    queryFn: () => api.get<Todo[]>(`/users/${username}/tasks`),
+    queryFn: () => getTodosAction(username),
   });
 
-export const useTodos = (username: string, token: string) => {
+export const useTodos = (username: string) => {
   return useQuery({
     queryKey: ["todos", { username }],
-    queryFn: () =>
-      api.get<Todo[]>(`/users/${username}/tasks`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
-    enabled: !!token && !!username,
+    queryFn: (): Promise<Todo[]> => getTodosAction(username),
+    enabled: !!username,
   });
 };

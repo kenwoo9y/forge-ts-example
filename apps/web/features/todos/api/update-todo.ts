@@ -1,28 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 
-import { api } from "@/lib/api-client";
-import type { Todo, TodoStatus } from "../types";
+import { updateTodoAction } from "../actions";
+import type { TodoStatus } from "../types";
 import { getTodoQueryOptions } from "./get-todo";
 import { getTodosQueryOptions } from "./get-todos";
 
 type UpdateTodoInput = {
-  title: string | null;
+  title: string;
   description: string | null;
   dueDate: string | null;
-  status: TodoStatus | null;
+  status: TodoStatus;
 };
 
 export const useUpdateTodo = (publicId: string, username?: string) => {
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
-  const token = session?.apiToken ?? "";
 
   return useMutation({
-    mutationFn: (input: UpdateTodoInput) =>
-      api.patch<Todo>(`/tasks/${publicId}`, input, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+    mutationFn: (input: UpdateTodoInput) => updateTodoAction(publicId, input),
     onSuccess: () => {
       queryClient.invalidateQueries(getTodoQueryOptions(publicId));
       if (username) {
