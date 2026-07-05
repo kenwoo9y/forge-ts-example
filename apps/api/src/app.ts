@@ -2,6 +2,7 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
+import { ErrorCode } from 'error';
 import { pinoLogger } from 'hono-pino';
 import { SignInUseCase } from './application/auth/signInUseCase.js';
 import { CreateTaskByUsernameUseCase } from './application/task/command/createTaskByUsernameUseCase.js';
@@ -70,6 +71,14 @@ const signInUseCase = new SignInUseCase(userRepository, jwtSecret);
 const app = new OpenAPIHono();
 
 app.use(pinoLogger({ pino: logger }));
+
+// Hono's default error handling returns a plain "Internal Server Error" text
+// response with no logging, which hides the actual cause. Log it and return
+// a JSON body matching the shape other error responses use.
+app.onError((err, c) => {
+  logger.error({ err }, 'Unhandled error');
+  return c.json({ code: ErrorCode.INTERNAL_SERVER_ERROR }, 500);
+});
 
 app.get('/', (c) => {
   return c.text('Hello Hono!');
