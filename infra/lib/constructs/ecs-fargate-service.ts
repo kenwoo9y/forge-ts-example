@@ -17,6 +17,8 @@ export interface EcsFargateServiceProps {
   memoryLimitMiB?: number;
   desiredCount?: number;
   deploymentController?: ecs.DeploymentControllerType;
+  /** ALBをインターネット向けにするか（デフォルト: true）。APIなど内部通信専用の場合は false を指定 */
+  internetFacing?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export class EcsFargateService extends Construct {
       memoryLimitMiB = 512,
       desiredCount = 1,
       deploymentController = ecs.DeploymentControllerType.ECS,
+      internetFacing = true,
     } = props;
 
     this.cluster = new ecs.Cluster(this, 'Cluster', { vpc });
@@ -88,7 +91,7 @@ export class EcsFargateService extends Construct {
 
       this.loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'ALB', {
         vpc,
-        internetFacing: true,
+        internetFacing,
       });
 
       const healthCheck: elbv2.HealthCheck = {
@@ -149,7 +152,7 @@ export class EcsFargateService extends Construct {
         cpu,
         memoryLimitMiB,
         desiredCount,
-        publicLoadBalancer: true,
+        publicLoadBalancer: internetFacing,
         assignPublicIp: false,
         taskSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
         circuitBreaker: { rollback: true },

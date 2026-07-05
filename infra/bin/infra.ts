@@ -79,6 +79,10 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     secretName: `${envName}/jwt-secret`,
   });
 
+  const authSecret = new secretsmanager.Secret(networkStack, `${P}AuthSecret`, {
+    secretName: `${envName}/auth-secret`,
+  });
+
   const apiStack = new ApiStack(app, `${P}ApiStack`, {
     env,
     vpc: networkStack.vpc,
@@ -99,6 +103,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     env,
     vpc: networkStack.vpc,
     apiUrl: `http://${apiStack.ecsFargateService.loadBalancer.loadBalancerDnsName}`,
+    authSecret,
     image: placeholderImage,
     command: placeholderCommand(3001),
     cpu: envInt(`${E}_WEB_CPU`, DEFAULT_WEB_CPU),

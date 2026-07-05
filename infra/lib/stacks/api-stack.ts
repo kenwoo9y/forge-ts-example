@@ -31,6 +31,8 @@ export interface ApiStackProps extends cdk.StackProps {
   desiredCount?: number;
   /** デプロイコントローラー（デフォルト: ECS） */
   deploymentController?: ecs.DeploymentControllerType;
+  /** ALBをインターネット向けにするか（デフォルト: false） */
+  internetFacing?: boolean;
 }
 
 /**
@@ -57,6 +59,7 @@ export class ApiStack extends cdk.Stack {
       memoryLimitMiB = 512,
       desiredCount = 1,
       deploymentController,
+      internetFacing = false,
     } = props;
 
     this.ecsFargateService = new EcsFargateService(this, 'ApiService', {
@@ -64,6 +67,7 @@ export class ApiStack extends cdk.Stack {
       image,
       containerPort: 3000,
       command,
+      internetFacing,
       environment: {
         DB_HOST: database.dbInstanceEndpointAddress,
         DB_PORT: database.dbInstanceEndpointPort,
