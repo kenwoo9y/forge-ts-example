@@ -37,7 +37,12 @@ const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
   throw new Error('JWT_SECRET environment variable is required');
 }
-const adapter = new PrismaPg({ connectionString: databaseUrl });
+// RDSのpg_hba.confは暗号化接続のみ許可しているが、pgドライバはデフォルトで平文接続を試みるため明示的に有効化する
+// ローカルのdocker-compose Postgresはssl未対応のため本番相当(NODE_ENV=production)でのみ有効にする
+const adapter = new PrismaPg({
+  connectionString: databaseUrl,
+  ...(process.env.NODE_ENV === 'production' ? { ssl: { rejectUnauthorized: false } } : {}),
+});
 const prisma = new PrismaClient({ adapter });
 
 // User - Command side
