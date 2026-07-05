@@ -2,7 +2,6 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
-import { cors } from 'hono/cors';
 import { pinoLogger } from 'hono-pino';
 import { SignInUseCase } from './application/auth/signInUseCase.js';
 import { CreateTaskByUsernameUseCase } from './application/task/command/createTaskByUsernameUseCase.js';
@@ -70,7 +69,6 @@ const signInUseCase = new SignInUseCase(userRepository, jwtSecret);
 
 const app = new OpenAPIHono();
 
-app.use(cors({ origin: ['http://localhost:3001', 'http://localhost:8081'] }));
 app.use(pinoLogger({ pino: logger }));
 
 app.get('/', (c) => {
