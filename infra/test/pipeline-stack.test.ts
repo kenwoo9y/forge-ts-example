@@ -59,7 +59,15 @@ function buildPipelineStack() {
     githubRepo: 'forge',
 
     ecrStack,
-    dev: { apiStack, webStack },
+    dev: {
+      apiStack,
+      webStack,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      database: databaseStack.database,
+      databaseCredentials: databaseStack.credentials,
+      dbName: 'test_db',
+    },
   });
 
   return Template.fromStack(pipelineStack);
@@ -426,8 +434,24 @@ describe('PipelineStack (enableStg=true)', () => {
       githubRepo: 'forge',
 
       ecrStack,
-      dev: { apiStack, webStack },
-      stg: { apiStack: stgApiStack, webStack: stgWebStack },
+      dev: {
+        apiStack,
+        webStack,
+        vpc: networkStack.vpc,
+        rdsSecurityGroup: networkStack.rdsSecurityGroup,
+        database: databaseStack.database,
+        databaseCredentials: databaseStack.credentials,
+        dbName: 'test_db',
+      },
+      stg: {
+        apiStack: stgApiStack,
+        webStack: stgWebStack,
+        vpc: stgNetworkStack.vpc,
+        rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
+        database: stgDatabaseStack.database,
+        databaseCredentials: stgDatabaseStack.credentials,
+        dbName: 'test_db',
+      },
     });
     return Template.fromStack(pipelineStack);
   })();

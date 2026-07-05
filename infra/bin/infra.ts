@@ -112,7 +112,15 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
   });
 
-  return { apiStack, webStack };
+  return {
+    apiStack,
+    webStack,
+    vpc: networkStack.vpc,
+    rdsSecurityGroup: networkStack.rdsSecurityGroup,
+    database: databaseStack.database,
+    databaseCredentials: databaseStack.credentials,
+    dbName,
+  };
 }
 
 // ─── アプリ ──────────────────────────────────────────────────────────────────
