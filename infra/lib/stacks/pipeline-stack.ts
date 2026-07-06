@@ -38,7 +38,12 @@ export interface PipelineStackProps extends cdk.StackProps {
 interface AppEnvConfig {
   repository: ecr.Repository;
   fargateService: ecs.FargateService;
-  clusterName: string;
+  /**
+   * cdk deployのたびに最新化されるタスク定義ARN。
+   * CODE_DEPLOYコントローラーのECSサービスは、CloudFormationのタスク定義更新を
+   * 自動では反映しないため、パイプライン側でこのARNを起点に生成する。
+   */
+  taskDefinitionArn: string;
   blueTargetGroup: elbv2.ApplicationTargetGroup;
   greenTargetGroup: elbv2.ApplicationTargetGroup;
   productionListener: elbv2.ApplicationListener;
@@ -177,7 +182,7 @@ export class PipelineStack extends cdk.Stack {
     const devApiConfig: AppEnvConfig = {
       repository: ecrStack.dev.api,
       fargateService: dev.apiStack.ecsFargateService.fargateService,
-      clusterName: dev.apiStack.ecsFargateService.cluster.clusterName,
+      taskDefinitionArn: dev.apiStack.ecsFargateService.taskDefinition.taskDefinitionArn,
       blueTargetGroup: dev.apiStack.ecsFargateService.blueTargetGroup,
       greenTargetGroup: devApiGreenTg,
       productionListener: dev.apiStack.ecsFargateService.productionListener,
@@ -187,7 +192,7 @@ export class PipelineStack extends cdk.Stack {
     const devWebConfig: AppEnvConfig = {
       repository: ecrStack.dev.web,
       fargateService: dev.webStack.ecsFargateService.fargateService,
-      clusterName: dev.webStack.ecsFargateService.cluster.clusterName,
+      taskDefinitionArn: dev.webStack.ecsFargateService.taskDefinition.taskDefinitionArn,
       blueTargetGroup: dev.webStack.ecsFargateService.blueTargetGroup,
       greenTargetGroup: devWebGreenTg,
       productionListener: dev.webStack.ecsFargateService.productionListener,
@@ -224,7 +229,7 @@ export class PipelineStack extends cdk.Stack {
     return {
       repository,
       fargateService: svc.fargateService,
-      clusterName: svc.cluster.clusterName,
+      taskDefinitionArn: svc.taskDefinition.taskDefinitionArn,
       blueTargetGroup: svc.blueTargetGroup,
       greenTargetGroup: svc.greenTargetGroup,
       productionListener: svc.productionListener,
@@ -441,8 +446,8 @@ export class PipelineStack extends cdk.Stack {
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
         environmentVariables: {
-          ECS_CLUSTER_NAME: { value: config.clusterName },
-          ECS_SERVICE_NAME: { value: config.fargateService.serviceName },
+          // サービスの「現在の」タスク定義ではなく、cdk deployのたびに更新されるCloudFormation側の最新タスク定義ARNを使う
+          TASK_DEF_ARN: { value: config.taskDefinitionArn },
           CONTAINER_PORT: { value: config.containerPort },
           CONTAINER_NAME: { value: 'Container' },
         },
@@ -453,7 +458,6 @@ export class PipelineStack extends cdk.Stack {
           build: {
             commands: [
               "IMAGE_URI=$(python3 -c \"import json; print(json.load(open('imageDetail.json'))['ImageURI'])\")",
-              'TASK_DEF_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE_NAME" --query \'services[0].taskDefinition\' --output text)',
               'aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query taskDefinition --output json | jq \'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.placementConstraints,.compatibilities,.registeredAt,.registeredBy,.deregisteredAt)\' > taskdef.json',
               'jq --arg img "$IMAGE_URI" --arg name "$CONTAINER_NAME" \'(.containerDefinitions[] | select(.name == $name)) |= (. + {image: $img} | del(.command))\' taskdef.json > taskdef_tmp.json && mv taskdef_tmp.json taskdef.json',
               'jq \'. + {"runtimePlatform": {"cpuArchitecture": "ARM64", "operatingSystemFamily": "LINUX"}}\' taskdef.json > taskdef_tmp.json && mv taskdef_tmp.json taskdef.json',
@@ -466,7 +470,7 @@ export class PipelineStack extends cdk.Stack {
     });
     project.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['ecs:DescribeServices', 'ecs:DescribeTaskDefinition'],
+        actions: ['ecs:DescribeTaskDefinition'],
         resources: ['*'],
       })
     );

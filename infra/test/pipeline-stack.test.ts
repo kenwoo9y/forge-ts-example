@@ -309,9 +309,10 @@ describe('PipelineStack', () => {
       const policies = template.findResources('AWS::IAM::Policy');
       const hasEcsDescribe = Object.values(policies).some((p) => {
         const statements = p.Properties?.PolicyDocument?.Statement ?? [];
-        return statements.some(
-          (s: { Action: string | string[] }) =>
-            Array.isArray(s.Action) && s.Action.includes('ecs:DescribeServices')
+        return statements.some((s: { Action: string | string[] }) =>
+          Array.isArray(s.Action)
+            ? s.Action.includes('ecs:DescribeTaskDefinition')
+            : s.Action === 'ecs:DescribeTaskDefinition'
         );
       });
       expect(hasEcsDescribe).toBe(true);
