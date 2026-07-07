@@ -100,58 +100,6 @@ export class PipelineStack extends cdk.Stack {
       })
     );
 
-    // ─── OIDC ロール: インフラ diff 用（読み取りのみ） ───────────────────────
-    const infraDiffOidcRole = new iam.Role(this, 'InfraDiffOidcRole', {
-      roleName: 'github-actions-infra-diff',
-      assumedBy: new iam.WebIdentityPrincipal(githubOidcProvider.openIdConnectProviderArn, {
-        StringEquals: {
-          'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-        },
-        StringLike: {
-          'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:*`,
-        },
-      }),
-      description: 'GitHub Actions: cdk synth/diff read-only (infra diff)',
-    });
-
-    infraDiffOidcRole.addToPolicy(
-      new iam.PolicyStatement({
-        sid: 'CfnRead',
-        actions: [
-          'cloudformation:DescribeStacks',
-          'cloudformation:GetTemplate',
-          'cloudformation:DescribeStackResources',
-          'cloudformation:DescribeChangeSet',
-          'cloudformation:ListChangeSets',
-          'cloudformation:ListStackResources',
-          'cloudformation:GetTemplateSummary',
-        ],
-        resources: ['*'],
-      })
-    );
-    infraDiffOidcRole.addToPolicy(
-      new iam.PolicyStatement({
-        sid: 'DescribeInfra',
-        actions: [
-          'ec2:DescribeVpcs',
-          'ec2:DescribeSubnets',
-          'ec2:DescribeRouteTables',
-          'ec2:DescribeAvailabilityZones',
-          'ec2:DescribeSecurityGroups',
-          'ssm:GetParameter',
-          'ssm:GetParameters',
-        ],
-        resources: ['*'],
-      })
-    );
-    infraDiffOidcRole.addToPolicy(
-      new iam.PolicyStatement({
-        sid: 'CdkLookup',
-        actions: ['sts:AssumeRole'],
-        resources: [`arn:aws:iam::${this.account}:role/cdk-*-lookup-role-*`],
-      })
-    );
-
     // ─── OIDC ロール: インフラデプロイ用（cdk deploy、production Environment にスコープ） ──
     const infraDeployOidcRole = new iam.Role(this, 'InfraDeployOidcRole', {
       roleName: 'github-actions-infra-deploy',

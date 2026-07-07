@@ -153,59 +153,6 @@ describe('PipelineStack', () => {
     });
   });
 
-  describe('インフラ diff 用 OIDC ロール', () => {
-    it('ロールが正しい名前で作成される', () => {
-      template.hasResourceProperties('AWS::IAM::Role', {
-        RoleName: 'github-actions-infra-diff',
-      });
-    });
-
-    it('リポジトリスコープの信頼ポリシーが設定される', () => {
-      template.hasResourceProperties('AWS::IAM::Role', {
-        RoleName: 'github-actions-infra-diff',
-        AssumeRolePolicyDocument: Match.objectLike({
-          Statement: Match.arrayWith([
-            Match.objectLike({
-              Action: 'sts:AssumeRoleWithWebIdentity',
-              Condition: Match.objectLike({
-                StringLike: Match.objectLike({
-                  'token.actions.githubusercontent.com:sub': 'repo:acme/forge:*',
-                }),
-              }),
-            }),
-          ]),
-        }),
-      });
-    });
-
-    it('CloudFormation 読み取り権限が付与される', () => {
-      template.hasResourceProperties('AWS::IAM::Policy', {
-        PolicyDocument: {
-          Statement: Match.arrayWith([
-            Match.objectLike({
-              Sid: 'CfnRead',
-              Action: Match.arrayWith(['cloudformation:DescribeStacks']),
-            }),
-          ]),
-        },
-      });
-    });
-
-    it('CDK lookup ロールの AssumeRole 権限が付与される', () => {
-      template.hasResourceProperties('AWS::IAM::Policy', {
-        PolicyDocument: {
-          Statement: Match.arrayWith([
-            Match.objectLike({
-              Sid: 'CdkLookup',
-              Action: 'sts:AssumeRole',
-              Resource: 'arn:aws:iam::123456789012:role/cdk-*-lookup-role-*',
-            }),
-          ]),
-        },
-      });
-    });
-  });
-
   describe('インフラデプロイ用 OIDC ロール', () => {
     it('ロールが正しい名前で作成される', () => {
       template.hasResourceProperties('AWS::IAM::Role', {
