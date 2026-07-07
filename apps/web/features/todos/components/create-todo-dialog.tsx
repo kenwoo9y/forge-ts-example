@@ -38,10 +38,10 @@ export function CreateTodoDialog({ username, onClose }: CreateTodoDialogProps) {
   const onSubmit = (values: TodoFormValues) => {
     createTodo(
       {
-        title: values.title ?? null,
+        title: values.title,
         description: values.description ?? null,
         dueDate: values.dueDate ? `${values.dueDate}T00:00:00.000Z` : null,
-        status: values.status ?? null,
+        status: values.status,
       },
       { onSuccess: onClose },
     );

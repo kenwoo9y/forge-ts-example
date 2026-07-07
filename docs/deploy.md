@@ -126,7 +126,6 @@ CDK デプロイ直後や GitHub Actions ワークフローを使用せずに手
   - `ecr:GetAuthorizationToken`
   - `ecr:BatchCheckLayerAvailability`, `ecr:InitiateLayerUpload`, `ecr:UploadLayerPart`, `ecr:CompleteLayerUpload`, `ecr:PutImage`（`forge-ts/api-dev` / `forge-ts/web-dev` リポジトリ）
   - `ecr:DescribeImageScanFindings`, `ecr:DescribeImages`（スキャン結果確認用）
-  - `cloudformation:ListStackResources`, `elasticloadbalancing:DescribeLoadBalancers`（ALB DNS 名取得用）
 
 ### 1. 環境変数の設定
 
@@ -136,23 +135,6 @@ CDK デプロイ直後や GitHub Actions ワークフローを使用せずに手
 cp .env.template .env
 # .env を編集して AWS_REGION, AWS_ACCOUNT_ID, IMAGE_TAG を設定
 set -a && source .env && set +a
-```
-
-`NEXT_PUBLIC_API_URL` は DevApiStack の API ALB DNS 名から取得する。
-
-```bash
-API_ALB_ARN=$(aws cloudformation list-stack-resources \
-  --stack-name DevApiStack \
-  --query "StackResourceSummaries[?ResourceType=='AWS::ElasticLoadBalancingV2::LoadBalancer'].PhysicalResourceId" \
-  --output text)
-
-API_ALB_DNS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns "$API_ALB_ARN" \
-  --query 'LoadBalancers[0].DNSName' \
-  --output text)
-
-# .env の NEXT_PUBLIC_API_URL に設定
-echo "NEXT_PUBLIC_API_URL=http://$API_ALB_DNS" >> .env
 ```
 
 `REGISTRY` はシェル上で動的に組み立てる。
@@ -184,12 +166,9 @@ docker push $REGISTRY/forge-ts/api-dev:$IMAGE_TAG
 
 ### 4. Web イメージのビルド & プッシュ
 
-`NEXT_PUBLIC_API_URL` はクライアントバンドルにビルド時に焼き込まれるため、手順 1 で `.env` に設定済みであることを確認する。
-
 ```bash
 docker build \
   --platform linux/arm64 \
-  --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
   -t $REGISTRY/forge-ts/web-dev:$IMAGE_TAG \
   -f apps/web/Dockerfile \
   .

@@ -1,27 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 
-import { api } from "@/lib/api-client";
-import type { Todo, TodoStatus } from "../types";
+import { createTodoAction } from "../actions";
+import type { TodoStatus } from "../types";
 import { getTodosQueryOptions } from "./get-todos";
 
 type CreateTodoInput = {
-  title: string | null;
+  title: string;
   description: string | null;
   dueDate: string | null;
-  status: TodoStatus | null;
+  status: TodoStatus;
 };
 
 export const useCreateTodo = (username: string) => {
   const queryClient = useQueryClient();
-  const { data: session } = useSession();
-  const token = session?.apiToken ?? "";
 
   return useMutation({
-    mutationFn: (input: CreateTodoInput) =>
-      api.post<Todo>(`/users/${username}/tasks`, input, {
-        headers: { Authorization: `Bearer ${token}` },
-      }),
+    mutationFn: (input: CreateTodoInput) => createTodoAction(username, input),
     onSuccess: () => {
       queryClient.invalidateQueries(getTodosQueryOptions(username));
     },

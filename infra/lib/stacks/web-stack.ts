@@ -67,6 +67,13 @@ export class WebStack extends cdk.Stack {
       deploymentController,
     });
 
+    // AUTH_URLを明示的に渡すことでAuth.jsのURL推測に依存しないようにする
+    // ALBのDNS名は自分自身（WebService）のものを参照するため、コンテナ生成後に追加する
+    this.ecsFargateService.taskDefinition.defaultContainer?.addEnvironment(
+      'AUTH_URL',
+      `http://${this.ecsFargateService.loadBalancer.loadBalancerDnsName}`
+    );
+
     const executionRole = this.ecsFargateService.taskDefinition.executionRole;
     if (executionRole) {
       authSecret.grantRead(executionRole);

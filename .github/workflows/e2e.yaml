@@ -48,10 +48,13 @@ jobs:
     
     - name: Generate Prisma client
       run: pnpm --filter db exec prisma generate
-    
+
+    - name: Build api package
+      run: pnpm --filter api build
+
     - name: Run database migrations
       run: pnpm --filter db exec prisma migrate deploy
-    
+
     - name: Start API server
       working-directory: apps/api
       run: pnpm exec tsx src/index.ts &
@@ -84,7 +87,6 @@ jobs:
         E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
         E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         BASE_URL: http://localhost:3001
-        NEXT_PUBLIC_API_URL: http://localhost:3000
         API_URL: http://localhost:3000
         AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret' }}
         AUTH_TRUST_HOST: true

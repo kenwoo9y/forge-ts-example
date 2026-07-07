@@ -3,10 +3,12 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codedeploy from 'aws-cdk-lib/aws-codedeploy';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as cpactions from 'aws-cdk-lib/aws-codepipeline-actions';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import type * as ecr from 'aws-cdk-lib/aws-ecr';
 import type * as ecs from 'aws-cdk-lib/aws-ecs';
 import type * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import type * as rds from 'aws-cdk-lib/aws-rds';
 import type { Construct } from 'constructs';
 import type { ApiStack } from './api-stack';
 import type { EcrStack } from './ecr-stack';
@@ -15,6 +17,13 @@ import type { WebStack } from './web-stack';
 export interface EnvResources {
   apiStack: ApiStack;
   webStack: WebStack;
+  /** マイグレーション用CodeBuildをRDSと同じVPCに配置するために使用 */
+  vpc: ec2.Vpc;
+  /** マイグレーション用CodeBuildからのアクセスを許可するために使用 */
+  rdsSecurityGroup: ec2.SecurityGroup;
+  database: rds.DatabaseInstance;
+  databaseCredentials: rds.DatabaseSecret;
+  dbName: string;
 }
 
 export interface PipelineStackProps extends cdk.StackProps {
@@ -29,7 +38,12 @@ export interface PipelineStackProps extends cdk.StackProps {
 interface AppEnvConfig {
   repository: ecr.Repository;
   fargateService: ecs.FargateService;
-  clusterName: string;
+  /**
+   * cdk deployのたびに最新化されるタスク定義ARN。
+   * CODE_DEPLOYコントローラーのECSサービスは、CloudFormationのタスク定義更新を
+   * 自動では反映しないため、パイプライン側でこのARNを起点に生成する。
+   */
+  taskDefinitionArn: string;
   blueTargetGroup: elbv2.ApplicationTargetGroup;
   greenTargetGroup: elbv2.ApplicationTargetGroup;
   productionListener: elbv2.ApplicationListener;
@@ -168,7 +182,7 @@ export class PipelineStack extends cdk.Stack {
     const devApiConfig: AppEnvConfig = {
       repository: ecrStack.dev.api,
       fargateService: dev.apiStack.ecsFargateService.fargateService,
-      clusterName: dev.apiStack.ecsFargateService.cluster.clusterName,
+      taskDefinitionArn: dev.apiStack.ecsFargateService.taskDefinition.taskDefinitionArn,
       blueTargetGroup: dev.apiStack.ecsFargateService.blueTargetGroup,
       greenTargetGroup: devApiGreenTg,
       productionListener: dev.apiStack.ecsFargateService.productionListener,
@@ -178,7 +192,7 @@ export class PipelineStack extends cdk.Stack {
     const devWebConfig: AppEnvConfig = {
       repository: ecrStack.dev.web,
       fargateService: dev.webStack.ecsFargateService.fargateService,
-      clusterName: dev.webStack.ecsFargateService.cluster.clusterName,
+      taskDefinitionArn: dev.webStack.ecsFargateService.taskDefinition.taskDefinitionArn,
       blueTargetGroup: dev.webStack.ecsFargateService.blueTargetGroup,
       greenTargetGroup: devWebGreenTg,
       productionListener: dev.webStack.ecsFargateService.productionListener,
@@ -199,7 +213,7 @@ export class PipelineStack extends cdk.Stack {
         ? this.buildEnvConfig(prod.webStack, ecrStack.prod.web, '3001')
         : undefined;
 
-    this.createAppPipeline('Api', devApiConfig, stgApiConfig, prodApiConfig);
+    this.createAppPipeline('Api', devApiConfig, stgApiConfig, prodApiConfig, { dev, stg, prod });
     this.createAppPipeline('Web', devWebConfig, stgWebConfig, prodWebConfig);
   }
 
@@ -215,7 +229,7 @@ export class PipelineStack extends cdk.Stack {
     return {
       repository,
       fargateService: svc.fargateService,
-      clusterName: svc.cluster.clusterName,
+      taskDefinitionArn: svc.taskDefinition.taskDefinitionArn,
       blueTargetGroup: svc.blueTargetGroup,
       greenTargetGroup: svc.greenTargetGroup,
       productionListener: svc.productionListener,
@@ -230,7 +244,8 @@ export class PipelineStack extends cdk.Stack {
     appName: string,
     devConfig: AppEnvConfig,
     stgConfig?: AppEnvConfig,
-    prodConfig?: AppEnvConfig
+    prodConfig?: AppEnvConfig,
+    migrationEnvs?: { dev: EnvResources; stg?: EnvResources; prod?: EnvResources }
   ): void {
     const pipeline = new codepipeline.Pipeline(this, `${appName}AppPipeline`, {
       pipelineName: `${appName}AppPipeline`,
@@ -264,6 +279,22 @@ export class PipelineStack extends cdk.Stack {
         }),
       ],
     });
+    if (migrationEnvs) {
+      pipeline.addStage({
+        stageName: 'MigrateDev',
+        actions: [
+          new cpactions.CodeBuildAction({
+            actionName: 'PrismaMigrateDeploy',
+            project: this.buildMigrateProject(
+              `${appName}MigrateDev`,
+              migrationEnvs.dev,
+              devConfig.repository
+            ),
+            input: devSource,
+          }),
+        ],
+      });
+    }
     pipeline.addStage({
       stageName: 'DeployDev',
       actions: [
@@ -312,6 +343,22 @@ export class PipelineStack extends cdk.Stack {
           }),
         ],
       });
+      if (migrationEnvs?.stg) {
+        pipeline.addStage({
+          stageName: 'MigrateStg',
+          actions: [
+            new cpactions.CodeBuildAction({
+              actionName: 'PrismaMigrateDeploy',
+              project: this.buildMigrateProject(
+                `${appName}MigrateStg`,
+                migrationEnvs.stg,
+                stgConfig.repository
+              ),
+              input: stgSource,
+            }),
+          ],
+        });
+      }
       pipeline.addStage({
         stageName: 'DeployStg',
         actions: [
@@ -360,6 +407,22 @@ export class PipelineStack extends cdk.Stack {
             }),
           ],
         });
+        if (migrationEnvs?.prod) {
+          pipeline.addStage({
+            stageName: 'MigrateProd',
+            actions: [
+              new cpactions.CodeBuildAction({
+                actionName: 'PrismaMigrateDeploy',
+                project: this.buildMigrateProject(
+                  `${appName}MigrateProd`,
+                  migrationEnvs.prod,
+                  prodConfig.repository
+                ),
+                input: prodSource,
+              }),
+            ],
+          });
+        }
         pipeline.addStage({
           stageName: 'DeployProd',
           actions: [
@@ -383,8 +446,8 @@ export class PipelineStack extends cdk.Stack {
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
         environmentVariables: {
-          ECS_CLUSTER_NAME: { value: config.clusterName },
-          ECS_SERVICE_NAME: { value: config.fargateService.serviceName },
+          // サービスの「現在の」タスク定義ではなく、cdk deployのたびに更新されるCloudFormation側の最新タスク定義ARNを使う
+          TASK_DEF_ARN: { value: config.taskDefinitionArn },
           CONTAINER_PORT: { value: config.containerPort },
           CONTAINER_NAME: { value: 'Container' },
         },
@@ -395,7 +458,6 @@ export class PipelineStack extends cdk.Stack {
           build: {
             commands: [
               "IMAGE_URI=$(python3 -c \"import json; print(json.load(open('imageDetail.json'))['ImageURI'])\")",
-              'TASK_DEF_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE_NAME" --query \'services[0].taskDefinition\' --output text)',
               'aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query taskDefinition --output json | jq \'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.placementConstraints,.compatibilities,.registeredAt,.registeredBy,.deregisteredAt)\' > taskdef.json',
               'jq --arg img "$IMAGE_URI" --arg name "$CONTAINER_NAME" \'(.containerDefinitions[] | select(.name == $name)) |= (. + {image: $img} | del(.command))\' taskdef.json > taskdef_tmp.json && mv taskdef_tmp.json taskdef.json',
               'jq \'. + {"runtimePlatform": {"cpuArchitecture": "ARM64", "operatingSystemFamily": "LINUX"}}\' taskdef.json > taskdef_tmp.json && mv taskdef_tmp.json taskdef.json',
@@ -408,7 +470,7 @@ export class PipelineStack extends cdk.Stack {
     });
     project.addToRolePolicy(
       new iam.PolicyStatement({
-        actions: ['ecs:DescribeServices', 'ecs:DescribeTaskDefinition'],
+        actions: ['ecs:DescribeTaskDefinition'],
         resources: ['*'],
       })
     );
@@ -475,6 +537,89 @@ export class PipelineStack extends cdk.Stack {
         resources: [dstRepo.repositoryArn],
       })
     );
+    return project;
+  }
+
+  // ─── ヘルパー: Prisma マイグレーション CodeBuild ───────────────────────────
+  // RDSはECSのセキュリティグループ以外からの接続を許可していないため、CodeBuildを
+  // 同じVPC内に配置してRDSに直接到達させる。
+
+  private buildMigrateProject(
+    id: string,
+    env: EnvResources,
+    repository: ecr.Repository
+  ): codebuild.PipelineProject {
+    const migrationSg = new ec2.SecurityGroup(this, `${id}Sg`, {
+      vpc: env.vpc,
+      description: `Security group for ${id} Prisma migration CodeBuild`,
+      allowAllOutbound: true,
+    });
+    new ec2.CfnSecurityGroupIngress(this, `${id}Ingress`, {
+      groupId: env.rdsSecurityGroup.securityGroupId,
+      ipProtocol: 'tcp',
+      fromPort: 5432,
+      toPort: 5432,
+      sourceSecurityGroupId: migrationSg.securityGroupId,
+    });
+
+    const project = new codebuild.PipelineProject(this, `${id}Project`, {
+      projectName: id,
+      vpc: env.vpc,
+      subnetSelection: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
+      securityGroups: [migrationSg],
+      environment: {
+        buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2023_STANDARD_3_0,
+        privileged: true,
+        environmentVariables: {
+          DB_HOST: { value: env.database.dbInstanceEndpointAddress },
+          DB_PORT: { value: env.database.dbInstanceEndpointPort },
+          DB_NAME: { value: env.dbName },
+          DB_USERNAME: {
+            type: codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER,
+            value: `${env.databaseCredentials.secretArn}:username`,
+          },
+          DB_PASSWORD: {
+            type: codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER,
+            value: `${env.databaseCredentials.secretArn}:password`,
+          },
+        },
+      },
+      buildSpec: codebuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          install: {
+            'runtime-versions': { nodejs: 22 },
+          },
+          build: {
+            commands: [
+              "IMAGE_URI=$(python3 -c \"import json; print(json.load(open('imageDetail.json'))['ImageURI'])\")",
+              'REGISTRY=$(echo "$IMAGE_URI" | cut -d/ -f1)',
+              'aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"',
+              'docker pull "$IMAGE_URI"',
+              // デプロイ対象イメージから db パッケージ（schema.prisma / migrations）を取り出す
+              // イメージ側は非rootで動くため、バインドマウント先への書き込み用にrootで実行する
+              'docker run --rm --user root --entrypoint sh -v "$(pwd)":/out "$IMAGE_URI" -c "cp -rL /app/node_modules/db /out/db-package"',
+              'cd db-package',
+              // CodeBuildは環境変数を直接注入するのでdotenv自体不要なため、dotenv依存のない最小構成で上書きする
+              'printf \'import { defineConfig, env } from "prisma/config";\\nexport default defineConfig({\\n  schema: "./prisma/schema.prisma",\\n  migrations: { path: "./prisma/migrations" },\\n  datasource: { url: env("DATABASE_URL") },\\n});\\n\' > prisma.config.ts',
+              'PRISMA_VERSION=$(node -e "console.log(require(\'./package.json\').devDependencies.prisma)")',
+              'npm install --no-save "prisma@$PRISMA_VERSION"',
+              'DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" npx prisma migrate deploy',
+            ],
+          },
+        },
+      }),
+    });
+
+    project.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['ecr:GetAuthorizationToken'],
+        resources: ['*'],
+      })
+    );
+    repository.grantPull(project);
+    env.databaseCredentials.grantRead(project);
+
     return project;
   }
 

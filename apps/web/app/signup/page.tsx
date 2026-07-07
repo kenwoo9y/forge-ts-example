@@ -1,14 +1,14 @@
 "use client";
 
-import { type SignupInput, signupSchema } from "auth";
+import { signupSchema } from "auth";
 import { Lock, Mail, User, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { api } from "@/lib/api-client";
 import { zodResolver } from "@/lib/zodResolver";
+import { signupAction } from "./actions";
 
 const signupFormSchema = signupSchema
   .extend({ confirmPassword: z.string() })
@@ -34,7 +34,7 @@ export default function SignupPage() {
   async function onSubmit({ confirmPassword: _, ...data }: SignupFormValues) {
     setError(null);
     try {
-      await api.post<SignupInput>("/users", data);
+      await signupAction(data);
       router.push("/signin");
     } catch (e) {
       setError(

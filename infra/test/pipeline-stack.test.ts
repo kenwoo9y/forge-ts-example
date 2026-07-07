@@ -59,7 +59,15 @@ function buildPipelineStack() {
     githubRepo: 'forge',
 
     ecrStack,
-    dev: { apiStack, webStack },
+    dev: {
+      apiStack,
+      webStack,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      database: databaseStack.database,
+      databaseCredentials: databaseStack.credentials,
+      dbName: 'test_db',
+    },
   });
 
   return Template.fromStack(pipelineStack);
@@ -301,9 +309,10 @@ describe('PipelineStack', () => {
       const policies = template.findResources('AWS::IAM::Policy');
       const hasEcsDescribe = Object.values(policies).some((p) => {
         const statements = p.Properties?.PolicyDocument?.Statement ?? [];
-        return statements.some(
-          (s: { Action: string | string[] }) =>
-            Array.isArray(s.Action) && s.Action.includes('ecs:DescribeServices')
+        return statements.some((s: { Action: string | string[] }) =>
+          Array.isArray(s.Action)
+            ? s.Action.includes('ecs:DescribeTaskDefinition')
+            : s.Action === 'ecs:DescribeTaskDefinition'
         );
       });
       expect(hasEcsDescribe).toBe(true);
@@ -426,8 +435,24 @@ describe('PipelineStack (enableStg=true)', () => {
       githubRepo: 'forge',
 
       ecrStack,
-      dev: { apiStack, webStack },
-      stg: { apiStack: stgApiStack, webStack: stgWebStack },
+      dev: {
+        apiStack,
+        webStack,
+        vpc: networkStack.vpc,
+        rdsSecurityGroup: networkStack.rdsSecurityGroup,
+        database: databaseStack.database,
+        databaseCredentials: databaseStack.credentials,
+        dbName: 'test_db',
+      },
+      stg: {
+        apiStack: stgApiStack,
+        webStack: stgWebStack,
+        vpc: stgNetworkStack.vpc,
+        rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
+        database: stgDatabaseStack.database,
+        databaseCredentials: stgDatabaseStack.credentials,
+        dbName: 'test_db',
+      },
     });
     return Template.fromStack(pipelineStack);
   })();

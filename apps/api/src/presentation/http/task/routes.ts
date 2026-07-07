@@ -136,13 +136,11 @@ const deleteTaskRoute = createRoute({
 });
 
 export function createTaskRoutes(deps: TaskHandlerDeps) {
-  const app = new OpenAPIHono();
   const handler = createTaskHandler(deps);
 
-  app.openapi(createTaskRoute, handler.createTask as never);
-  app.openapi(getTaskRoute, handler.getTask as never);
-  app.openapi(updateTaskRoute, handler.updateTask as never);
-  app.openapi(deleteTaskRoute, handler.deleteTask as never);
-
-  return app;
+  return new OpenAPIHono()
+    .openapi(createTaskRoute, handler.createTask as never)
+    .openapi(getTaskRoute, handler.getTask as never)
+    .openapi(updateTaskRoute, handler.updateTask as never)
+    .openapi(deleteTaskRoute, handler.deleteTask as never);
 }

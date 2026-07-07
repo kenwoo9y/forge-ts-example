@@ -115,7 +115,6 @@ cp apps/web/.env.local.example apps/web/.env.local
 ```
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3000
 API_URL=http://localhost:3000
 AUTH_SECRET="your-secret-key"
 ```
