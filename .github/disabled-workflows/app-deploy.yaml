@@ -5,19 +5,33 @@ on:
     branches:
       - main
     paths:
-      - 'apps/api/**'
-      - 'apps/web/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
+      - "apps/api/**"
+      - "apps/web/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
 
+# infra-deploy.yaml と同じグループを共有し、CDKによるインフラ更新とアプリのイメージビルド・ECS Blue/Greenデプロイが同時に走らないようにする
+# （cancel-in-progressをtrueにすると、実行中のdocker push/cdk deployが中断され不整合な状態を招くおそれがあるためfalseで待機させる）
 concurrency:
-  group: app-deploy-${{ github.sha }}
-  cancel-in-progress: true
+  group: infra-app-deploy-lock
+  cancel-in-progress: false
 
 jobs:
+  # ─── 承認ゲート ──────────────────────────────────────────────────────────────
+  # matrix化されたbuild-push-scanに直接environmentを付けると、api/webそれぞれで
+  # 個別に承認が要求されるため、承認だけを行う専用ジョブを前段に置く
+  approve:
+    name: Approval Gate
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: {}
+    steps:
+      - run: echo "Approved. Proceeding with app deploy."
+
   # ─── Docker Build / ECR Push / Scan ─────────────────────────────────────────
   build-push-scan:
     name: Build, Push & Scan (${{ matrix.app }})
+    needs: approve
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -33,6 +47,15 @@ jobs:
             dockerfile: apps/web/Dockerfile
     steps:
       - uses: actions/checkout@v6
+
+      # ビルド・pushコマンドのログにそのまま出ないようマスクする
+      # 認証情報を設定する前に登録することで、Configure AWS credentials自体の出力にアカウントIDが含まれていた場合も確実にマスクされるようにする
+      - name: Mask AWS account ID
+        env:
+          ROLE_ARN: ${{ secrets.AWS_APP_DEPLOY_ROLE_ARN }}
+        run: |
+          ACCOUNT_ID=$(echo "$ROLE_ARN" | cut -d: -f5)
+          echo "::add-mask::$ACCOUNT_ID"
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
