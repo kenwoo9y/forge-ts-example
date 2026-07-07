@@ -210,7 +210,7 @@ flowchart LR
    | ロール | 用途 | スコープ |
    |---|---|---|
    | `github-actions-app-deploy` | DEV ECRへのイメージpush専用 | `refs/heads/main` |
-   | `github-actions-infra-deploy` | `cdk deploy`（`production` Environment承認必須） | GitHub Environment `production` |
+   | `github-actions-infra-deploy` | `cdk deploy`（`main` Environment承認必須） | GitHub Environment `main` |
 
 2. **アプリ用CodePipeline**（`ApiAppPipeline` / `WebAppPipeline`）
    - **Source**: GitHubではなく、DEV ECRリポジトリへの`:latest`イメージpushをEventBridge経由で検知して起動（`EcrSourceAction`）

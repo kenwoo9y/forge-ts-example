@@ -23,7 +23,7 @@ jobs:
   approve:
     name: Approval Gate
     runs-on: ubuntu-latest
-    environment: production
+    environment: main
     permissions: {}
     steps:
       - run: echo "Approved. Proceeding with app deploy."

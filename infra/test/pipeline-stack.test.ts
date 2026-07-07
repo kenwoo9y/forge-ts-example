@@ -160,7 +160,7 @@ describe('PipelineStack', () => {
       });
     });
 
-    it('production Environment にスコープされた信頼ポリシーが設定される', () => {
+    it('main Environment にスコープされた信頼ポリシーが設定される', () => {
       template.hasResourceProperties('AWS::IAM::Role', {
         RoleName: 'github-actions-infra-deploy',
         AssumeRolePolicyDocument: Match.objectLike({
@@ -169,8 +169,7 @@ describe('PipelineStack', () => {
               Action: 'sts:AssumeRoleWithWebIdentity',
               Condition: Match.objectLike({
                 StringEquals: Match.objectLike({
-                  'token.actions.githubusercontent.com:sub':
-                    'repo:acme/forge:environment:production',
+                  'token.actions.githubusercontent.com:sub': 'repo:acme/forge:environment:main',
                 }),
               }),
             }),

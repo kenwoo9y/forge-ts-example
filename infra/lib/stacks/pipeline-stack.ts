@@ -100,16 +100,16 @@ export class PipelineStack extends cdk.Stack {
       })
     );
 
-    // ─── OIDC ロール: インフラデプロイ用（cdk deploy、production Environment にスコープ） ──
+    // ─── OIDC ロール: インフラデプロイ用（cdk deploy、main Environment にスコープ） ──
     const infraDeployOidcRole = new iam.Role(this, 'InfraDeployOidcRole', {
       roleName: 'github-actions-infra-deploy',
       assumedBy: new iam.WebIdentityPrincipal(githubOidcProvider.openIdConnectProviderArn, {
         StringEquals: {
           'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-          'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:environment:production`,
+          'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:environment:main`,
         },
       }),
-      description: 'GitHub Actions: cdk deploy via infra-deploy.yaml (production environment only)',
+      description: 'GitHub Actions: cdk deploy via infra-deploy.yaml (main environment only)',
     });
 
     infraDeployOidcRole.addToPolicy(

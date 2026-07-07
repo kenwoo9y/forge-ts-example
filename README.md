@@ -194,7 +194,7 @@ aws secretsmanager put-secret-value \
 #    - Variables: AWS_REGION（例: ap-northeast-1）
 #
 #    GitHub Environment の設定:
-#    Settings → Environments → production
+#    Settings → Environments → main
 #    - Required reviewers: 承認者を指定
 #    - Deployment branches: main のみ
 
