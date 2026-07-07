@@ -25,9 +25,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     PR[PR作成] --> CIInfra[CI - Infra]
-    PR --> InfraDiff["infra-diff.yaml\nCDK差分をPRコメントに投稿"]
     CIInfra --> Merge[main にマージ]
-    InfraDiff --> Merge
     Merge --> InfraDeploy["infra-deploy.yaml\npush: main, infra/**"]
     InfraDeploy --> Approve{GitHub Environment\nproduction 承認}
     Approve --> Synth[cdk synth]

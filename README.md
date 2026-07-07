@@ -191,7 +191,6 @@ aws secretsmanager put-secret-value \
 #    Settings → Secrets and variables → Actions
 #    - Secrets: AWS_APP_DEPLOY_ROLE_ARN（PipelineStack の出力から取得）
 #    - Secrets: AWS_INFRA_DEPLOY_ROLE_ARN（同上）
-#    - Secrets: AWS_INFRA_DIFF_ROLE_ARN（同上）
 #    - Variables: AWS_REGION（例: ap-northeast-1）
 #
 #    GitHub Environment の設定:
@@ -205,7 +204,6 @@ aws secretsmanager put-secret-value \
 git checkout -b enable-deployment-workflows
 mv .github/disabled-workflows/app-deploy.yaml .github/workflows/app-deploy.yaml
 mv .github/disabled-workflows/infra-deploy.yaml .github/workflows/infra-deploy.yaml
-mv .github/disabled-workflows/infra-diff.yaml .github/workflows/infra-diff.yaml
 git add .github/workflows
 git commit -m "ci: enable deployment workflows"
 git push -u origin enable-deployment-workflows
