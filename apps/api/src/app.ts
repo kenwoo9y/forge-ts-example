@@ -3,6 +3,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from 'db/generated/prisma/index.js';
 import { ErrorCode } from 'error';
+import { cors } from 'hono/cors';
 import { pinoLogger } from 'hono-pino';
 import { SignInUseCase } from './application/auth/signInUseCase.js';
 import { CreateTaskByUsernameUseCase } from './application/task/command/createTaskByUsernameUseCase.js';
@@ -74,6 +75,23 @@ const getTasksByUsernameUseCase = new GetTasksByUsernameUseCase(taskQueryService
 const signInUseCase = new SignInUseCase(userRepository, jwtSecret);
 
 const app = new OpenAPIHono();
+
+// The mobile app (Expo web / react-native-web) runs in a real browser and
+// calls the API directly from the client, so it needs CORS. The web app
+// calls the API server-side (see apps/web/lib/hono-client.ts), so it never
+// hits this middleware from a browser context.
+const corsOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()) ?? [
+  'http://localhost:8081',
+];
+
+app.use(
+  '*',
+  cors({
+    origin: corsOrigins,
+    allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 app.use(pinoLogger({ pino: logger }));
 
