@@ -38,6 +38,12 @@ const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
   throw new Error('JWT_SECRET environment variable is required');
 }
+
+const corsOrigin = process.env.CORS_ORIGIN;
+if (!corsOrigin) {
+  throw new Error('CORS_ORIGIN environment variable is required');
+}
+const corsOrigins = corsOrigin.split(',').map((origin) => origin.trim());
 // RDSのpg_hba.confは暗号化接続のみ許可しているが、pgドライバはデフォルトで平文接続を試みるため明示的に有効化する
 // ローカルのdocker-compose Postgresはssl未対応のため本番相当(NODE_ENV=production)でのみ有効にする
 const adapter = new PrismaPg({
@@ -80,10 +86,6 @@ const app = new OpenAPIHono();
 // calls the API directly from the client, so it needs CORS. The web app
 // calls the API server-side (see apps/web/lib/hono-client.ts), so it never
 // hits this middleware from a browser context.
-const corsOrigins = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()) ?? [
-  'http://localhost:8081',
-];
-
 app.use(
   '*',
   cors({
