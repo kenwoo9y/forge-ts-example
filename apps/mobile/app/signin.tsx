@@ -36,6 +36,7 @@ export default function SigninScreen() {
     formState: { errors, isSubmitting },
   } = useForm<SigninInput>({
     resolver: zodResolver(signinSchema),
+    defaultValues: { username: '', password: '' },
   });
 
   async function onSubmit(data: SigninInput) {
