@@ -5,16 +5,24 @@ on:
     branches:
       - main
     paths:
-      - 'infra/**'
+      - "infra/**"
+      - ".github/workflows/infra-deploy.yaml"
+
+# app-deploy.yaml と同じグループを共有し、CDKによるインフラ更新とアプリのイメージビルド・ECS Blue/Greenデプロイが同時に走らないようにする
+concurrency:
+  group: infra-app-deploy-lock
+  cancel-in-progress: false
 
 jobs:
   cdk-deploy:
     name: CDK Deploy
     runs-on: ubuntu-latest
-    environment: production
+    environment: main
     permissions:
       id-token: write
       contents: read
+    env:
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
     steps:
       - uses: actions/checkout@v6
 
@@ -27,6 +35,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # ジョブログとしてそのまま公開されないようマスクする
+      # 認証情報を設定する前に登録することで、Configure AWS credentials自体の出力にアカウントIDが含まれていた場合も確実にマスクされるようにする
+      - name: Mask AWS account ID
+        env:
+          ROLE_ARN: ${{ secrets.AWS_INFRA_DEPLOY_ROLE_ARN }}
+        run: |
+          ACCOUNT_ID=$(echo "$ROLE_ARN" | cut -d: -f5)
+          echo "::add-mask::$ACCOUNT_ID"
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4

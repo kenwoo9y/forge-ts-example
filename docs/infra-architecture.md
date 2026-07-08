@@ -210,10 +210,7 @@ flowchart LR
    | ロール | 用途 | スコープ |
    |---|---|---|
    | `github-actions-app-deploy` | DEV ECRへのイメージpush専用 | `refs/heads/main` |
-   | `github-actions-infra-diff` | `cdk synth`/`diff`（読み取りのみ） | 任意のref |
-   | `github-actions-infra-deploy` | `cdk deploy`（`production` Environment承認必須） | GitHub Environment `production` |
-
-   CodeStar Connectionsは使用していない。GitHubからのソース取得はGitHub Actions側（`.github/workflows/`、現状`disabled-workflows/`配下）が担当し、CDKはOIDC経由でAssumeRoleするのみ。詳細は [deploy.md](./deploy.md) を参照。
+   | `github-actions-infra-deploy` | `cdk deploy`（`main` Environment承認必須） | GitHub Environment `main` |
 
 2. **アプリ用CodePipeline**（`ApiAppPipeline` / `WebAppPipeline`）
    - **Source**: GitHubではなく、DEV ECRリポジトリへの`:latest`イメージpushをEventBridge経由で検知して起動（`EcrSourceAction`）

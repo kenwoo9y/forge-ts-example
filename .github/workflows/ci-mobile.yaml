@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'apps/mobile/**'
+      - '.github/workflows/ci-mobile.yaml'
 
 jobs:
   lint-and-format:

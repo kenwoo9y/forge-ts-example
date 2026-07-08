@@ -5,6 +5,7 @@ on:
     paths:
       - 'apps/web/**'
       - 'apps/api/**'
+      - '.github/workflows/e2e.yaml'
 
 jobs:
   test:

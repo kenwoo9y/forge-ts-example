@@ -1,5 +1,55 @@
 # Deploy
 
+## 事前準備（GitHub / AWS 設定）
+
+`app-deploy.yaml` / `infra-deploy.yaml` を有効化する前に、以下がすべて設定されている必要がある。特に **GitHub Environment の設定を忘れると、承認なしで無人デプロイされてしまう**ため注意。
+
+### 1. GitHub Environment: `main`
+
+Settings → Environments → New environment → `main`
+
+| 設定 | 値 | 必須度 |
+|---|---|---|
+| Required reviewers | 承認者を指定 | 必須（未設定だと承認ゲートが機能せず、pushされた瞬間に無人でデプロイされる） |
+| Deployment branches | `main` のみ | 推奨 |
+
+`app-deploy.yaml`（`approve` ジョブ）・`infra-deploy.yaml`（`cdk-deploy` ジョブ）の両方がこの Environment を参照する。IAM ロールのトラストポリシーもこの Environment 名にスコープされているため、設定を怠ると GitHub 側・AWS 側どちらの防御も効かない。
+
+### 2. GitHub Secrets
+
+Settings → Secrets and variables → Actions → Secrets
+
+| 名前 | 使用ワークフロー | 説明 |
+|---|---|---|
+| `AWS_APP_DEPLOY_ROLE_ARN` | `app-deploy.yaml` | OIDC ロール ARN（DEV ECR push 専用、ECS/CodePipeline 操作不可） |
+| `AWS_INFRA_DEPLOY_ROLE_ARN` | `infra-deploy.yaml` | OIDC ロール ARN（CDK deploy 用） |
+| `E2E_USERNAME` / `E2E_PASSWORD` | `e2e.yaml` | E2E テスト用アカウント（必須。詳細は [ci.md](./ci.md)） |
+| `JWT_SECRET` / `AUTH_SECRET` | `e2e.yaml` | 任意。未設定時はワークフロー内の固定値で代替 |
+
+上記2つの OIDC ロールは **CDK（`PipelineStack`）自身が作成する** 。ローカルの強い権限を持つ AWS 認証情報で一度 `cdk deploy --all` を実行し、出力されたロール ARN をここに設定する（初回セットアップの全手順は [README.md](../README.md) を参照）。
+
+### 3. GitHub Variables
+
+Settings → Secrets and variables → Actions → Variables
+
+| 名前 | 使用ワークフロー | 説明 |
+|---|---|---|
+| `AWS_REGION` | 全ワークフロー | 例: `ap-northeast-1` |
+| `POSTGRES_DB` | `infra-deploy.yaml` | RDS のデータベース名（`cdk synth`/`deploy` の実行に必須。未設定だとエラーで停止する） |
+
+### 4. ブランチ保護ルール（`main`）
+
+Settings → Branches → Branch protection rules
+
+| 設定 | 値 |
+|---|---|
+| Require status checks to pass before merging | `CI - API` / `CI - Web` / `CI - Infra` 等を必須化 |
+| Require a pull request before merging | 推奨（`main` への直接 push を防ぐ） |
+
+`app-deploy.yaml` はワークフロー内で CI 通過を検証していない（コメントで前提としているだけ）ため、この設定が実質的な担保になる。
+
+---
+
 ## アプリデプロイの流れ
 
 ```mermaid
@@ -7,7 +57,8 @@ flowchart TD
     PR[PR作成] --> CI["CI - API / CI - Web / Playwright Tests"]
     CI --> Merge[main にマージ]
     Merge --> AppDeploy["app-deploy.yaml\npush: main"]
-    AppDeploy --> Build["Docker Build & ECR Push\napi / web 並列"]
+    AppDeploy --> ApproveApp{GitHub Environment\nmain 承認}
+    ApproveApp --> Build["Docker Build & ECR Push\napi / web 並列"]
     Build --> Scan[ECR Image Scan]
     Scan -->|CRITICAL 検出| Stop[デプロイ停止]
     Scan -->|問題なし| Pipeline[CodePipeline 起動]
@@ -18,6 +69,8 @@ flowchart TD
     ApprovePROD --> PROD[PROD デプロイ]
 ```
 
+`app-deploy.yaml` と `infra-deploy.yaml` は `concurrency` グループ（`infra-app-deploy-lock`）を共有しており、片方の実行中はもう片方が待機する（CDKによるインフラ更新とアプリのビルド・ECS Blue/Greenデプロイが同時に走ることで生じ得る不整合を防ぐため）。
+
 ---
 
 ## インフラデプロイの流れ
@@ -25,37 +78,37 @@ flowchart TD
 ```mermaid
 flowchart TD
     PR[PR作成] --> CIInfra[CI - Infra]
-    PR --> InfraDiff["infra-diff.yaml\nCDK差分をPRコメントに投稿"]
     CIInfra --> Merge[main にマージ]
-    InfraDiff --> Merge
     Merge --> InfraDeploy["infra-deploy.yaml\npush: main, infra/**"]
-    InfraDeploy --> Approve{GitHub Environment\nproduction 承認}
+    InfraDeploy --> Approve{GitHub Environment\nmain 承認}
     Approve --> Synth[cdk synth]
     Synth --> Deploy[cdk deploy --all]
 ```
 
 ---
 
-## アプリデプロイ (`.github/disabled-workflows/app-deploy.yaml`)
+## アプリデプロイ (`.github/workflows/app-deploy.yaml`)
 
 ### 概要
 
 `main` ブランチへの push（PR マージ）で `apps/api/**`・`apps/web/**`・`packages/**`・`pnpm-lock.yaml` に変更があった場合に起動するワークフロー。ブランチ保護ルールにより CI 通過済みであることが保証された状態で Docker イメージをビルドして DEV 環境の ECR へ push する。push が CodePipeline のトリガーとなり、DEV→STG→PROD の昇格パイプラインが起動する。
 
-CI 通過の保証はワークフロー内ではなく GitHub の **Required status checks**（ブランチ保護ルール）で行う。同一コミットに対する重複実行は `concurrency` グループ（`app-deploy-<sha>`）でキャンセルされる。
+CI 通過の保証はワークフロー内ではなく GitHub の **Required status checks**（ブランチ保護ルール）で行う。`infra-deploy.yaml` と `concurrency` グループ（`infra-app-deploy-lock`）を共有しており、CDKによるインフラ更新中はキャンセルされず待機する。
 
 ### 処理フロー
 
 ```
-build-push-scan (api)
-build-push-scan (web)  ← 並列実行
+approve（GitHub Environment main 承認）
+  └─ build-push-scan (api)
+     build-push-scan (web)  ← 並列実行
 ```
 
 ### ジョブ一覧
 
 | ジョブ | 内容 |
 |---|---|
-| `build-push-scan` | OIDC 認証 → Docker ビルド → ECR push → スキャン結果確認（api / web の matrix） |
+| `approve` | GitHub Environment `main` の承認ゲート（`infra-deploy.yaml` と同様） |
+| `build-push-scan` | `approve` 完了後、OIDC 認証 → Docker ビルド → ECR push → スキャン結果確認（api / web の matrix） |
 
 ### ECR push とスキャンゲート
 
@@ -72,23 +125,23 @@ build-push-scan (web)  ← 並列実行
 
 ---
 
-## インフラデプロイ (`.github/disabled-workflows/infra-deploy.yaml`)
+## インフラデプロイ (`.github/workflows/infra-deploy.yaml`)
 
 ### 概要
 
-`main` ブランチへの push（PR マージ）で `infra/**` に変更があった場合に起動するワークフロー。GitHub Environment（`production`）の承認ゲートを経てから OIDC 認証で AWS に接続し、CDK スタックを自動デプロイする。
+`main` ブランチへの push（PR マージ）で `infra/**` に変更があった場合に起動するワークフロー。GitHub Environment（`main`）の承認ゲートを経てから OIDC 認証で AWS に接続し、CDK スタックを自動デプロイする。`app-deploy.yaml` と `concurrency` グループ（`infra-app-deploy-lock`）を共有しており、アプリのビルド・デプロイ中はキャンセルされず待機する。
 
 CodePipeline + CodeStar Connections を使わず GitHub Actions + OIDC に統一することで、すべての CI/CD をコードで管理し手動セットアップを排除している。
 
 ### 処理フロー
 
-1. AWS OIDC 認証（`production` Environment にスコープされた IAM ロール）
+1. AWS OIDC 認証（`main` Environment にスコープされた IAM ロール）
 2. `npx cdk synth --no-notices`
 3. `npx cdk deploy --all --require-approval never --no-notices`
 
 ### 承認ゲート
 
-GitHub Environment `production` に以下を設定することで、デプロイ前の手動承認と実行ブランチの制限を行う。
+GitHub Environment `main` に以下を設定することで、デプロイ前の手動承認と実行ブランチの制限を行う。
 
 | 設定 | 値 |
 |---|---|
@@ -97,11 +150,11 @@ GitHub Environment `production` に以下を設定することで、デプロイ
 
 ### OIDC トラストポリシー
 
-IAM ロールのトラストポリシーは Environment に紐づけることで、`main` ブランチ以外・`production` Environment 以外からの Assume を AWS 側でもブロックする。
+IAM ロールのトラストポリシーは Environment（`main`）に紐づけることで、この Environment を経由しない Assume を AWS 側でもブロックする。
 
 ```json
 "StringEquals": {
-  "token.actions.githubusercontent.com:sub": "repo:<org>/<repo>:environment:production"
+  "token.actions.githubusercontent.com:sub": "repo:<org>/<repo>:environment:main"
 }
 ```
 

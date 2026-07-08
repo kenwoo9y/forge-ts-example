@@ -137,22 +137,3 @@ cd apps/web && pnpm exec playwright test
 
 ---
 
-## インフラ diff (`.github/disabled-workflows/infra-diff.yaml`)
-
-### 概要
-
-`main` ブランチへの Pull Request 作成・更新時に起動し、`cdk diff` を実行して差分を PR コメントとして自動投稿するワークフロー。マージ前にインフラ変更内容をレビューできる。再実行時は既存コメントを更新する。
-
-### 処理フロー
-
-1. AWS OIDC 認証（読み取り専用ロール）
-2. `npx cdk synth --no-notices`
-3. `npx cdk diff --no-notices --no-color`
-4. 差分を PR コメントに投稿（再実行時は既存コメントを更新）
-
-### 必要な GitHub Secrets / Variables
-
-| 名前 | 種別 | 説明 |
-|---|---|---|
-| `AWS_INFRA_DIFF_ROLE_ARN` | Secret | OIDC ロール ARN（CloudFormation 読み取り専用、デプロイ不可） |
-| `AWS_REGION` | Variable | AWS リージョン |

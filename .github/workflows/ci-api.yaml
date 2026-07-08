@@ -8,6 +8,7 @@ on:
       - 'apps/api/**'
       - 'packages/**'
       - 'pnpm-lock.yaml'
+      - '.github/workflows/ci-api.yaml'
 
 jobs:
   lint-and-format:

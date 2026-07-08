@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'infra/**'
+      - '.github/workflows/ci-infra.yaml'
 
 jobs:
   lint-and-format:
