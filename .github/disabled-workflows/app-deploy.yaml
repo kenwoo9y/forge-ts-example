@@ -9,6 +9,7 @@ on:
       - "apps/web/**"
       - "packages/**"
       - "pnpm-lock.yaml"
+      - ".github/workflows/app-deploy.yaml"
 
 # infra-deploy.yaml と同じグループを共有し、CDKによるインフラ更新とアプリのイメージビルド・ECS Blue/Greenデプロイが同時に走らないようにする
 # （cancel-in-progressをtrueにすると、実行中のdocker push/cdk deployが中断され不整合な状態を招くおそれがあるためfalseで待機させる）
