@@ -1,6 +1,6 @@
 -include .devcontainer/.env
 
-.PHONY: help lint-check lint-fix format-check format-fix check check-fix type-check secrets-scan psql migrate-generate migrate aws-login
+.PHONY: help lint-check lint-fix format-check format-fix yaml-format-check yaml-format-fix check check-fix type-check secrets-scan psql migrate-generate migrate aws-login
 .DEFAULT_GOAL := help
 
 lint-check: ## Run lint check
@@ -14,6 +14,12 @@ format-check: ## Run format check
 
 format-fix: ## Run format fix
 	pnpm exec biome format --write .
+
+yaml-format-check: ## Run YAML format check
+	pnpm exec prettier --check "**/*.{yml,yaml}"
+
+yaml-format-fix: ## Run YAML format fix
+	pnpm exec prettier --write "**/*.{yml,yaml}"
 
 check: ## Run check
 	pnpm exec biome check .
