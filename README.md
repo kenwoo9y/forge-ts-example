@@ -134,10 +134,16 @@ pnpm test
 |---|---|
 | `make lint-check` | リントチェック |
 | `make lint-fix` | リント自動修正 |
-| `make format-check` | フォーマットチェック |
-| `make format-fix` | フォーマット自動修正 |
-| `make check` | リント + フォーマットチェック |
-| `make check-fix` | リント + フォーマット自動修正 |
+| `make format-check` | フォーマットチェック（Biome + YAML） |
+| `make format-fix` | フォーマット自動修正（Biome + YAML） |
+| `make biome-format-check` | Biomeのみフォーマットチェック |
+| `make biome-format-fix` | Biomeのみフォーマット自動修正 |
+| `make yaml-format-check` | YAMLのみフォーマットチェック |
+| `make yaml-format-fix` | YAMLのみフォーマット自動修正 |
+| `make check` | リント + フォーマットチェック（Biome + YAML） |
+| `make check-fix` | リント + フォーマット自動修正（Biome + YAML） |
+| `make biome-check` | Biomeのみ リント + フォーマットチェック |
+| `make biome-check-fix` | Biomeのみ リント + フォーマット自動修正 |
 | `make type-check` | 型チェック |
 | `make secrets-scan` | シークレットスキャン |
 | `make migrate-generate` | マイグレーションファイル生成 |
