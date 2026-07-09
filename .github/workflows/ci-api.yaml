@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'apps/api/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/ci-api.yaml'
+      - "apps/api/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/ci-api.yaml"
 
 jobs:
   lint-and-format:

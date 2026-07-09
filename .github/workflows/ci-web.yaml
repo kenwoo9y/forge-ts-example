@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths:
-      - 'apps/web/**'
-      - 'apps/api/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/ci-web.yaml'
+      - "apps/web/**"
+      - "apps/api/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/ci-web.yaml"
 
 jobs:
   lint-and-format:

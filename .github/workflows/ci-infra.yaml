@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'infra/**'
-      - '.github/workflows/ci-infra.yaml'
+      - "infra/**"
+      - ".github/workflows/ci-infra.yaml"
 
 jobs:
   lint-and-format:

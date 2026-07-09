@@ -66,6 +66,20 @@
 
 ---
 
+## CI - YAML Format (`.github/workflows/ci-yaml-format.yaml`)
+
+### 概要
+
+Pull Request で `**/*.yml`・`**/*.yaml` に変更があった場合に実行されるワークフロー。特定のアプリに紐づかないリポジトリ横断のYAMLファイル（GitHub Actions workflow、`.devcontainer` の compose ファイル、`pnpm-workspace.yaml` など）を対象に、Prettier によるフォーマットチェックを行う。
+
+### ジョブ一覧
+
+| ジョブ | 内容 |
+|---|---|
+| `yaml-format-check` | `make yaml-format-check`（`prettier --check "**/*.{yml,yaml}"`）でYAMLファイルのフォーマットを検証 |
+
+---
+
 ## E2E テスト (`.github/workflows/e2e.yaml`)
 
 ### 概要

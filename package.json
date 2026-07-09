@@ -11,6 +11,7 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "format": "turbo run format",
+    "format:yaml": "prettier --write \"**/*.{yml,yaml}\"",
     "test": "turbo run test",
     "spell-check": "cspell \"**\""
   },
@@ -26,6 +27,7 @@
     "@vitest/coverage-v8": "4.1.9",
     "cspell": "^9.6.4",
     "lefthook": "^2.1.6",
+    "prettier": "^3.9.4",
     "turbo": "^2.10.0",
     "typescript": "^6.0.3",
     "vitest": "4.1.9"

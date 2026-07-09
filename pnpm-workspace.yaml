@@ -8,7 +8,7 @@ supportedArchitectures:
   cpu:
     - current
 allowBuilds:
-  '@prisma/engines': true
+  "@prisma/engines": true
   esbuild: true
   lefthook: true
   msgpackr-extract: true
