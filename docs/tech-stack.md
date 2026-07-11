@@ -5,6 +5,10 @@
 ![PNPM](https://img.shields.io/badge/pnpm-%234a4a4a.svg?style=for-the-badge&logo=pnpm&logoColor=f69220)
 ![Turborepo](https://img.shields.io/badge/Turborepo-FF1E56.svg?style=for-the-badge&logo=Turborepo&logoColor=white)
 ![Biome](https://img.shields.io/badge/Biome-60A5FA.svg?style=for-the-badge&logo=Biome&logoColor=white)
+![Prettier](https://img.shields.io/badge/prettier-1A2C34?style=for-the-badge&logo=prettier&logoColor=F7BA3E)
+![cspell](https://img.shields.io/badge/cspell-4B32C3?style=for-the-badge&logo=checkmarx&logoColor=white)
+![Lefthook](https://img.shields.io/badge/Lefthook-FF1E1E.svg?style=for-the-badge&logo=Lefthook&logoColor=white)
+![commitlint](https://img.shields.io/badge/commitlint-000000.svg?style=for-the-badge&logo=commitlint&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -19,24 +23,24 @@
 ![Zod](https://img.shields.io/badge/zod-%233068b7.svg?style=for-the-badge&logo=zod&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Vitest](https://img.shields.io/badge/-Vitest-252529?style=for-the-badge&logo=vitest&logoColor=FCC72B)
 ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=for-the-badge&logo=playwright&logoColor=white)
 ![Storybook](https://img.shields.io/badge/Storybook-FF4785?style=for-the-badge&logo=storybook&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![AWS CDK](https://img.shields.io/badge/AWS_CDK-FF9900?style=for-the-badge&logo=amazonaws&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![Dependabot](https://img.shields.io/badge/dependabot-025E8C?style=for-the-badge&logo=dependabot&logoColor=white)
-![Lefthook](https://img.shields.io/badge/Lefthook-FF1E1E.svg?style=for-the-badge&logo=Lefthook&logoColor=white)
-![commitlint](https://img.shields.io/badge/commitlint-000000.svg?style=for-the-badge&logo=commitlint&logoColor=white)
 
 ## 🧠 共通設定・言語
 - **言語**: TypeScript（全体で統一）
 - **実行環境**: Node.js
 - **パッケージマネージャー**: pnpm
 - **モノレポ管理**: Turborepo
-- **コード整形・静的解析**: Biome
-- **共通設定**: `packages/config` に Biome / tsconfig を集約
+- **コード整形・静的解析**: Biome（アプリ・パッケージ全般）、Prettier（YAMLファイルのみ）
+- **共通設定**: `packages/config` に Biome / tsconfig / vitest を集約
+- **スペルチェック**: cspell
+- **Gitフック**: Lefthook
+- **コミットメッセージ規約**: commitlint
 
 ---
 
@@ -81,8 +85,7 @@
 - **ORM**: Prisma
 - **構成**:
   - Prisma schema: `packages/db/prisma/schema.prisma`
-  - マイグレーション: `packages/db/migrations`
-  - シードスクリプト: `packages/db/scripts/seed.ts`
+  - マイグレーション: `packages/db/prisma/migrations`
 
 ---
 
@@ -102,7 +105,7 @@
 - **単体テスト**: Vitest（Web / Mobile / API / Packages）
 - **E2Eテスト**: Playwright（主にWeb UI対象）
 - **CI/CD**:
-  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile`（lint / type-check / test）
+  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）
   - Dependabot: 依存パッケージの自動更新
 
 ---
@@ -152,6 +155,8 @@ forge-ts-example/
 │   │   ├── playwright.config.ts      # Playwright 設定
 │   │   ├── postcss.config.mjs
 │   │   ├── tailwind.config.ts
+│   │   ├── compose.yaml
+│   │   ├── Dockerfile
 │   │   ├── package.json
 │   │   └── tsconfig.json
 │   ├── mobile/                       # Expo + React Native
@@ -208,12 +213,16 @@ forge-ts-example/
 │   │   └── stacks/                   # CDKスタック定義
 │   │       ├── api-stack.ts
 │   │       ├── database-stack.ts
+│   │       ├── ecr-stack.ts
 │   │       ├── network-stack.ts
+│   │       ├── pipeline-stack.ts
 │   │       └── web-stack.ts
 │   ├── test/
 │   │   ├── api-stack.test.ts
 │   │   ├── database-stack.test.ts
+│   │   ├── ecr-stack.test.ts
 │   │   ├── network-stack.test.ts
+│   │   ├── pipeline-stack.test.ts
 │   │   └── web-stack.test.ts
 │   ├── cdk.json
 │   ├── package.json
@@ -227,7 +236,12 @@ forge-ts-example/
 │   │   ├── ci-api.yaml
 │   │   ├── ci-web.yaml
 │   │   ├── ci-mobile.yaml
+│   │   ├── ci-infra.yaml
+│   │   ├── ci-yaml-format.yaml
 │   │   └── e2e.yaml
+│   ├── disabled-workflows/            # 有効化前のデプロイワークフロー（README参照）
+│   │   ├── app-deploy.yaml
+│   │   └── infra-deploy.yaml
 │   ├── dependabot.yaml
 │   └── pull_request_template.md
 │

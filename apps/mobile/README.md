@@ -4,7 +4,9 @@ Expo ベースのモバイルアプリ。NativeWind でスタイリング、TanS
 
 ## 起動
 
-モノレポのルートから `pnpm dev` で全アプリを一括起動できます。単体で起動する場合:
+モノレポのルートから `pnpm dev` で全アプリを一括起動できます。
+
+単体で起動する場合:
 
 ```bash
 cd apps/mobile
@@ -32,13 +34,3 @@ pnpm dev
 | `pnpm test` | テスト実行 |
 | `pnpm test:coverage` | カバレッジ付きテスト実行 |
 | `pnpm storybook` | Storybook 起動 |
-
-## 主要な依存関係
-
-- [Expo](https://expo.dev) — モバイルアプリ基盤
-- [React Native](https://reactnative.dev) — UI フレームワーク
-- [Expo Router](https://expo.github.io/router) — ファイルベースルーティング
-- [NativeWind](https://www.nativewind.dev) — Tailwind CSS ベースのスタイリング
-- [TanStack Query](https://tanstack.com/query) — サーバー状態管理
-- [React Hook Form](https://react-hook-form.com) — フォーム管理
-- [Zod](https://zod.dev) — バリデーション

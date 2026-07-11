@@ -222,6 +222,7 @@ flowchart LR
 
 - **VPC**: パブリック・プライベートサブネット各 AZ、NAT Gateway 1 台
 - セキュリティグループを 3 つ定義し、下位スタックへ渡す
+- **VPC エンドポイント**: S3（Gateway型、全環境）は常時作成。ECR（API/Docker）・Secrets Manager・CloudWatch Logs（Interface型）は `enableVpcEndpoints` が `true` の場合のみ作成される。`bin/infra.ts` は DEV では `false`、STG/PROD では `true` を指定しており（NAT Gateway経由の通信で足りるDEVはコスト優先、STG/PRODはAWS内部通信に限定）、環境変数での上書きはできない
 
 | セキュリティグループ | インバウンド | アウトバウンド |
 |---|---|---|
