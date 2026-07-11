@@ -39,39 +39,7 @@
 | `GET /users/:username/tasks`, `POST /users/:username/tasks` | JWT 必須 |
 | `/todos`（Web） | 認証済みセッション必須 |
 
-## API エンドポイント
-
-### `POST /auth/signin`
-
-ユーザー名とパスワードで認証し、JWT を返します。
-
-```json
-// リクエスト
-{ "username": "alice", "password": "password123" }
-
-// レスポンス 200
-{ "token": "<JWT>", "username": "alice" }
-
-// レスポンス 401
-{ "error": "Invalid credentials" }
-```
-
-### `POST /users`
-
-アカウントを新規作成します。パスワードは bcrypt（salt rounds: 12）でハッシュ化して保存されます。
-
-```json
-// リクエスト
-{
-  "username": "alice",
-  "password": "password123",
-  "email": "alice@example.com"
-}
-```
-
-### JWT 検証ミドルウェア
-
-保護ルートへのリクエストには `Authorization: Bearer <token>` ヘッダーが必要です。トークンが無効または期限切れ（24時間）の場合は `401 Unauthorized` を返します。
+認証系エンドポイント（`POST /auth/signin` / `POST /users`）のリクエスト・レスポンス仕様は Swagger UI（`http://localhost:3000/docs`）を参照。パスワードは bcrypt（salt rounds: 12）でハッシュ化して保存され、JWT の有効期限は 24 時間。
 
 ## Web ページ
 

@@ -1,31 +1,6 @@
 # infra
 
-AWS CDK（TypeScript）によるインフラ定義。VPC・RDS・ECS Fargate を複数スタックで管理する。
-
-## スタック構成
-
-| スタック | 内容 |
-|---|---|
-| `EcrStack` | 全環境共通の ECR リポジトリ（API・Web × DEV/STG/PROD） |
-| `PipelineStack` | GitHub Actions OIDC ロール（ECR push・cdk deploy・cdk diff 用） |
-| `{Env}NetworkStack` | VPC・サブネット・セキュリティグループ（環境ごと） |
-| `{Env}DatabaseStack` | RDS PostgreSQL（プライベートサブネット）・Secrets Manager 認証情報（環境ごと） |
-| `{Env}ApiStack` | Hono API の ECS Fargate サービス・ALB（環境ごと） |
-| `{Env}WebStack` | Next.js Web の ECS Fargate サービス・ALB（環境ごと） |
-
-環境プレフィックス `{Env}` は `Dev` / `Stg` / `Prod`。STG・PROD は `enableStg=true` / `enableProd=true` コンテキストで有効化します。
-
-## 使用している AWS サービス
-
-| サービス | 用途 |
-|---|---|
-| Amazon VPC | プライベート/パブリックサブネット、セキュリティグループ、NAT ゲートウェイ |
-| Amazon ECS (Fargate) | API・Web コンテナのサーバーレス実行基盤 |
-| Application Load Balancer | API・Web への HTTP トラフィック分散 |
-| Amazon RDS (PostgreSQL) | タスクデータの永続化（プライベートサブネット配置） |
-| AWS Secrets Manager | DB 認証情報・JWT シークレットの安全な管理 |
-| Amazon ECR | コンテナイメージのレジストリ（API・Web × 環境別） |
-| AWS IAM (OIDC) | GitHub Actions が AWS にアクセスするための OIDC 連携ロール |
+AWS CDK（TypeScript）によるインフラ定義。VPC・RDS・ECS Fargate を複数スタックで管理する。スタック構成・使用しているAWSサービスの詳細は [インフラアーキテクチャ](../docs/infra-architecture.md) を参照。
 
 ## 事前準備
 
@@ -57,8 +32,3 @@ make cdk-bootstrap
 | `pnpm exec cdk deploy --all -c enableStg=true -c enableProd=true -c githubOrg=<org> -c githubRepo=<repo>` | PROD を追加してデプロイ |
 | `pnpm cdk deploy DevNetworkStack` | 指定スタックのみデプロイ |
 | `pnpm cdk destroy` | 全スタックを削除 |
-
-## 主要な依存関係
-
-- [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/home.html) — IaC フレームワーク
-- [aws-cdk-lib](https://docs.aws.amazon.com/cdk/api/v2/) — CDK コンストラクトライブラリ
