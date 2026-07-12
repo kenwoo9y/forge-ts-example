@@ -1,6 +1,6 @@
 # web
 
-Next.js ベースの Web アプリ。Auth.js で認証、TanStack Query でサーバー状態管理、Tailwind CSS + shadcn/ui で UI を構築する。
+Next.js ベースの Web アプリ。Auth.js で認証、TanStack Query でサーバー状態管理、Tailwind CSS + shadcn/ui で UI を構築します。
 
 ## 起動
 
@@ -19,24 +19,6 @@ pnpm dev
 |---|---|
 | Web アプリ | http://localhost:3001 |
 | Storybook | http://localhost:6006 |
-
-## コマンド一覧
-
-| コマンド | 内容 |
-|---|---|
-| `pnpm dev` | 開発サーバー起動（Turbopack） |
-| `pnpm build` | プロダクションビルド |
-| `pnpm start` | ビルド済みサーバーを起動 |
-| `pnpm type-check` | 型チェック |
-| `pnpm lint` | Biome でリント |
-| `pnpm format` | Biome でフォーマット |
-| `pnpm test` | テスト実行 |
-| `pnpm test:coverage` | カバレッジ付きテスト実行 |
-| `pnpm test:storybook` | Storybook のテスト実行 |
-| `pnpm test:e2e` | E2E テスト実行 |
-| `pnpm test:e2e:ui` | E2E テストを UI モードで実行 |
-| `pnpm test:e2e:debug` | E2E テストをデバッグモードで実行 |
-| `pnpm storybook` | Storybook 起動 |
 
 ## E2E テスト
 

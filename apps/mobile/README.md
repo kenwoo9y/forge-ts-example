@@ -1,6 +1,6 @@
 # mobile
 
-Expo ベースのモバイルアプリ。NativeWind でスタイリング、TanStack Query でサーバー状態管理、React Hook Form でフォーム管理を行う。
+Expo ベースのモバイルアプリ。NativeWind でスタイリング、TanStack Query でサーバー状態管理、React Hook Form でフォーム管理を行います。
 
 ## 起動
 
@@ -21,16 +21,3 @@ pnpm dev
 |---|---|
 | Expo Dev Tools | http://localhost:8081 |
 | Storybook | http://localhost:6007 |
-
-## コマンド一覧
-
-| コマンド | 内容 |
-|---|---|
-| `pnpm dev` | 開発サーバー起動 |
-| `pnpm ios` | iOS シミュレーターで起動 |
-| `pnpm android` | Android エミュレーターで起動 |
-| `pnpm web` | ブラウザで起動 |
-| `pnpm type-check` | 型チェック |
-| `pnpm test` | テスト実行 |
-| `pnpm test:coverage` | カバレッジ付きテスト実行 |
-| `pnpm storybook` | Storybook 起動 |
