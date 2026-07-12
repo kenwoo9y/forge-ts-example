@@ -2,7 +2,7 @@
 # Build context: monorepo root (docker build -f apps/api/Dockerfile .)
 
 # ─── Stage 1: Install dependencies ───────────────────────────────────────────
-FROM --platform=linux/arm64 node:26-alpine AS installer
+FROM --platform=$BUILDPLATFORM node:26-alpine AS installer
 WORKDIR /app
 
 ENV UV_USE_IO_URING=0
@@ -19,7 +19,7 @@ COPY packages/schema/package.json ./packages/schema/
 RUN pnpm install --frozen-lockfile
 
 # ─── Stage 2: Build ───────────────────────────────────────────────────────────
-FROM --platform=linux/arm64 installer AS builder
+FROM --platform=$BUILDPLATFORM installer AS builder
 WORKDIR /app
 
 # Copy source files for all packages used by the API
@@ -44,7 +44,7 @@ RUN pnpm --filter api build
 RUN pnpm --filter api --prod deploy --legacy /app/deploy
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
-FROM --platform=linux/arm64 node:26-alpine AS runner
+FROM --platform=$TARGETPLATFORM node:26-alpine AS runner
 WORKDIR /app
 
 # Prisma's query engine binary links against openssl
