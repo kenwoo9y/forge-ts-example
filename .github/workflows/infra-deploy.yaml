@@ -53,8 +53,14 @@ jobs:
 
       - name: CDK Synth
         working-directory: infra
-        run: npx cdk synth --no-notices
+        run: |
+          npx cdk synth --no-notices \
+            -c githubOrg="${{ github.repository_owner }}" \
+            -c githubRepo="${{ github.event.repository.name }}"
 
       - name: CDK Deploy
         working-directory: infra
-        run: npx cdk deploy --all --require-approval never --no-notices
+        run: |
+          npx cdk deploy --all --require-approval never --no-notices \
+            -c githubOrg="${{ github.repository_owner }}" \
+            -c githubRepo="${{ github.event.repository.name }}"
