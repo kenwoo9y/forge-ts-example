@@ -149,15 +149,22 @@ forge-ts-example/
 │   │   ├── .storybook/               # Storybook 設定
 │   │   ├── auth.ts                   # Auth.js 設定
 │   │   ├── proxy.ts                  # API プロキシ設定
+│   │   ├── declarations.d.ts
+│   │   ├── .env.local.example
+│   │   ├── .gitignore
 │   │   ├── biome.json
 │   │   ├── components.json           # shadcn/ui 設定
 │   │   ├── next.config.ts
 │   │   ├── playwright.config.ts      # Playwright 設定
 │   │   ├── postcss.config.mjs
 │   │   ├── tailwind.config.ts
+│   │   ├── vitest.config.ts
+│   │   ├── vitest.shims.d.ts
+│   │   ├── vitest.storybook.config.ts
 │   │   ├── compose.yaml
 │   │   ├── Dockerfile
 │   │   ├── package.json
+│   │   ├── README.md
 │   │   └── tsconfig.json
 │   ├── mobile/                       # Expo + React Native
 │   │   ├── app/                      # Expo Router（ファイルベースルーティング）
@@ -167,23 +174,33 @@ forge-ts-example/
 │   │   ├── .storybook/               # Storybook 設定
 │   │   ├── providers.tsx             # React コンテキストプロバイダー
 │   │   ├── global.css                # NativeWind グローバルスタイル
+│   │   ├── nativewind-env.d.ts
 │   │   ├── app.json                  # Expo 設定
+│   │   ├── .gitignore
 │   │   ├── babel.config.js
 │   │   ├── metro.config.js
+│   │   ├── postcss.config.js
 │   │   ├── tailwind.config.js
+│   │   ├── vitest.config.ts
 │   │   ├── package.json
+│   │   ├── README.md
 │   │   └── tsconfig.json
 │   └── api/                          # Hono（APIサーバー）
 │       ├── src/
 │       │   ├── application/          # ユースケース層
 │       │   ├── domain/               # ドメイン層（エンティティ・値オブジェクト・リポジトリ）
 │       │   ├── infrastructure/       # インフラ層（Prisma・JWT・ロガー）
-│       │   └── presentation/         # プレゼンテーション層（HTTPルーター・ハンドラー）
+│       │   ├── presentation/         # プレゼンテーション層（HTTPルーター・ハンドラー）
+│       │   ├── app.ts
+│       │   └── index.ts
 │       ├── .dockerignore
+│       ├── .env.example
+│       ├── .gitignore
 │       ├── compose.yaml
 │       ├── Dockerfile
 │       ├── vitest.config.ts
 │       ├── package.json
+│       ├── README.md
 │       └── tsconfig.json
 │
 ├── packages/
@@ -192,14 +209,22 @@ forge-ts-example/
 │   │   ├── prisma/
 │   │   │   ├── migrations/
 │   │   │   └── schema.prisma
+│   │   ├── .env.example
+│   │   ├── .gitignore
 │   │   ├── prisma.config.ts
 │   │   └── package.json
 │   ├── auth/                         # 認証共通ロジック（bcryptjs + Zod）
-│   │   └── src/
+│   │   ├── src/
+│   │   ├── package.json
+│   │   └── tsconfig.json
 │   ├── schema/                       # Zod スキーマ共有（API・Web 間）
-│   │   └── src/
+│   │   ├── src/
+│   │   ├── package.json
+│   │   └── tsconfig.json
 │   ├── error/                        # 共通エラー型定義
-│   │   └── src/
+│   │   ├── src/
+│   │   ├── package.json
+│   │   └── tsconfig.json
 │   └── config/                       # 各種共有設定
 │       ├── biome/
 │       ├── tsconfig/
@@ -207,6 +232,7 @@ forge-ts-example/
 │
 ├── infra/                            # AWS CDK によるインフラコード
 │   ├── bin/
+│   │   └── infra.ts
 │   ├── lib/
 │   │   ├── constructs/               # 再利用可能なCDKコンストラクト
 │   │   │   └── ecs-fargate-service.ts
@@ -224,9 +250,13 @@ forge-ts-example/
 │   │   ├── network-stack.test.ts
 │   │   ├── pipeline-stack.test.ts
 │   │   └── web-stack.test.ts
+│   ├── .env.example
+│   ├── .gitignore
 │   ├── cdk.json
 │   ├── package.json
-│   └── tsconfig.json
+│   ├── README.md
+│   ├── tsconfig.json
+│   └── vitest.config.ts
 │
 ├── docs/
 │
@@ -238,23 +268,29 @@ forge-ts-example/
 │   │   ├── ci-mobile.yaml
 │   │   ├── ci-infra.yaml
 │   │   ├── ci-yaml-format.yaml
-│   │   └── e2e.yaml
-│   ├── disabled-workflows/            # 有効化前のデプロイワークフロー（README参照）
+│   │   ├── e2e.yaml
 │   │   ├── app-deploy.yaml
 │   │   └── infra-deploy.yaml
 │   ├── dependabot.yaml
 │   └── pull_request_template.md
 │
 ├── .devcontainer/                    # 開発環境定義（VS Code Dev Container）
+│   ├── .env.example
 │   ├── compose.yaml
 │   ├── compose.override.yaml
 │   ├── devcontainer.json
-│   └── Dockerfile
+│   ├── devcontainer-lock.json
+│   ├── Dockerfile
+│   └── setup-aws.sh
 │
 ├── .biomeignore
+├── .dockerignore
+├── .env.template
 ├── .gitignore
 ├── .lefthook.yaml
 ├── .npmrc
+├── .prettierignore
+├── .prettierrc.json
 ├── biome.json
 ├── commitlint.config.js
 ├── cspell.json
@@ -263,5 +299,6 @@ forge-ts-example/
 ├── package.json
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml
+├── pnpm.yaml
 └── README.md
 ```
