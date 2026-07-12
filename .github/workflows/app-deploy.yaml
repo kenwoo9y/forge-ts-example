@@ -90,6 +90,21 @@ jobs:
           REPOSITORY: ${{ matrix.ecr_repository }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
+          # ECRはpush後に非同期でスキャンを登録するため、直後に describe するとScanNotFoundException になることがある。aws ecr wait image-scan-complete の
+          # waiterはこの例外をリトライ対象として扱わず即座に失敗するため、スキャンが登録されるまで先に手動でポーリングする。
+          echo "Waiting for image scan to be registered..."
+          for i in $(seq 1 30); do
+            if aws ecr describe-image-scan-findings \
+              --repository-name "$REPOSITORY" \
+              --image-id "imageTag=$IMAGE_TAG" \
+              --region "${{ vars.AWS_REGION }}" \
+              --query 'imageScanStatus.status' --output text >/dev/null 2>&1; then
+              break
+            fi
+            echo "Scan not registered yet... ($i/30)"
+            sleep 5
+          done
+
           echo "Waiting for image scan to complete..."
           aws ecr wait image-scan-complete \
             --repository-name "$REPOSITORY" \
