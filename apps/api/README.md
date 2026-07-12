@@ -1,6 +1,6 @@
 # api
 
-Hono ベースの REST API サーバー。Prisma で PostgreSQL に接続し、Zod OpenAPI でスキーマ管理・ドキュメント自動生成を行う。
+Hono ベースの REST API サーバー。Prisma で PostgreSQL に接続し、Zod OpenAPI でスキーマ管理・ドキュメント自動生成を行います。
 
 ## 起動
 
@@ -20,14 +20,3 @@ pnpm dev
 | API | http://localhost:3000 |
 | Swagger UI | http://localhost:3000/docs |
 | OpenAPI JSON | http://localhost:3000/openapi.json |
-
-## コマンド一覧
-
-| コマンド | 内容 |
-|---|---|
-| `pnpm dev` | 開発サーバー起動（ホットリロード） |
-| `pnpm build` | TypeScript をコンパイル |
-| `pnpm start` | ビルド済みサーバーを起動 |
-| `pnpm type-check` | 型チェック |
-| `pnpm test` | テスト実行 |
-| `pnpm test:coverage` | カバレッジ付きテスト実行 |

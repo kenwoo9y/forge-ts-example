@@ -43,7 +43,7 @@
 
 ## Web ページ
 
-[Auth.js (NextAuth v5)](https://authjs.dev/) の Credentials プロバイダーを使用しています。
+[Auth.js (NextAuth v5)](https://authjs.dev/) の Credentials プロバイダーを使用している。
 
 | パス | 説明 |
 |---|---|
@@ -51,7 +51,7 @@
 | `/signup` | アカウント作成ページ |
 | `/todos` | 認証済みユーザーのみアクセス可能 |
 
-保護ルートへのアクセスは `middleware.ts` でセッションの有無をチェックします。
+保護ルートへのアクセスは `middleware.ts` でセッションの有無をチェックする。
 
 ## セッションの取得
 
