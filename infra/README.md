@@ -16,17 +16,10 @@ CDK を初めて使う環境ではブートストラップが必要。
 make cdk-bootstrap
 ```
 
-## コマンド一覧
+## デプロイコマンド
 
 | コマンド | 内容 |
 |---|---|
-| `pnpm build` | TypeScript をコンパイル |
-| `pnpm watch` | ファイル変更を監視してコンパイル |
-| `pnpm type-check` | 型チェック |
-| `pnpm test` | スタックの単体テストを実行 |
-| `pnpm test:coverage` | カバレッジ付きテスト実行 |
-| `pnpm cdk synth` | CloudFormation テンプレートを生成 |
-| `pnpm cdk diff` | デプロイ済みスタックと現在の差分を表示 |
 | `pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | 全スタックをデプロイ（初回・DEV のみ） |
 | `pnpm exec cdk deploy --all -c enableStg=true -c githubOrg=<org> -c githubRepo=<repo>` | STG を追加してデプロイ |
 | `pnpm exec cdk deploy --all -c enableStg=true -c enableProd=true -c githubOrg=<org> -c githubRepo=<repo>` | PROD を追加してデプロイ |
