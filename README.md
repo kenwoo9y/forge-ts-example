@@ -122,16 +122,6 @@ AUTH_SECRET="your-secret-key"
 - `API_URL` — Auth.js のサインイン処理（サーバーサイド）が Hono API を呼び出すための URL です。
 - `AUTH_SECRET` — Auth.js が JWT セッションを暗号化するためのシークレットです。`JWT_SECRET` とは別の値を設定してください。
 
-## テスト
-
-```bash
-pnpm test
-```
-
-## AWS インフラのデプロイ
-
-DEV から始めて、段階的に STG・PROD を追加できます。初回セットアップ手順・STG/PROD の追加方法・CI/CD の流れの詳細は [デプロイ](docs/deploy.md) を、スタック構成・リソースサイズの既定値は [インフラアーキテクチャ](docs/infra-architecture.md) を参照してください。
-
 ## データベース
 
 ### マイグレーション
@@ -158,3 +148,13 @@ make psql
 ```
 
 パスワードの入力を求められるので、`.devcontainer/.env` に設定した `POSTGRES_PASSWORD` の値を入力してください。
+
+## テスト
+
+```bash
+pnpm test
+```
+
+## AWS インフラのデプロイ
+
+DEV から始めて、段階的に STG・PROD を追加できます。初回セットアップ手順・STG/PROD の追加方法・CI/CD の流れの詳細は [デプロイ](docs/deploy.md) を、スタック構成・リソースサイズの既定値は [インフラアーキテクチャ](docs/infra-architecture.md) を参照してください。
