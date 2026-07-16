@@ -8,17 +8,22 @@
 ![Prettier](https://img.shields.io/badge/prettier-1A2C34?style=for-the-badge&logo=prettier&logoColor=F7BA3E)
 ![cspell](https://img.shields.io/badge/cspell-4B32C3?style=for-the-badge&logo=checkmarx&logoColor=white)
 ![Lefthook](https://img.shields.io/badge/Lefthook-FF1E1E.svg?style=for-the-badge&logo=Lefthook&logoColor=white)
+![git-secrets](https://img.shields.io/badge/git--secrets-F05032.svg?style=for-the-badge&logo=git&logoColor=white)
 ![commitlint](https://img.shields.io/badge/commitlint-000000.svg?style=for-the-badge&logo=commitlint&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Shadcn/ui](https://img.shields.io/badge/shadcn/ui-%23000000?style=for-the-badge&logo=shadcnui&logoColor=white)
+![Radix UI](https://img.shields.io/badge/Radix%20UI-161618.svg?style=for-the-badge&logo=radixui&logoColor=white)
 ![React Hook Form](https://img.shields.io/badge/React%20Hook%20Form-%23EC5990.svg?style=for-the-badge&logo=reacthookform&logoColor=white)
 ![TanStack](https://img.shields.io/badge/TanStack-000000.svg?style=for-the-badge&logo=TanStack&logoColor=white)
 ![Auth.js](https://img.shields.io/badge/Auth.js-000000?style=for-the-badge&logo=authjs&logoColor=white)
 ![React Native](https://img.shields.io/badge/react_native-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Expo](https://img.shields.io/badge/Expo-1B1F23?style=for-the-badge&logo=expo&logoColor=white)
+![NativeWind](https://img.shields.io/badge/NativeWind-38BDF8.svg?style=for-the-badge)
 ![Hono](https://img.shields.io/badge/Hono-E36002.svg?style=for-the-badge&logo=Hono&logoColor=white)
+![bcrypt](https://img.shields.io/badge/bcrypt-338033.svg?style=for-the-badge)
+![JWT](https://img.shields.io/badge/JWT-000000.svg?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
 ![pino](https://img.shields.io/badge/pino-687634.svg?style=for-the-badge&logo=pino&logoColor=white)
 ![Zod](https://img.shields.io/badge/zod-%233068b7.svg?style=for-the-badge&logo=zod&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white)
@@ -39,7 +44,7 @@
 - **コード整形・静的解析**: Biome（アプリ・パッケージ全般）、Prettier（YAMLファイルのみ）
 - **共通設定**: `packages/config` に Biome / tsconfig / vitest を集約
 - **スペルチェック**: cspell
-- **Gitフック**: Lefthook
+- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint）
 - **コミットメッセージ規約**: commitlint
 
 ---
@@ -47,7 +52,7 @@
 ## 🖥 フロントエンド（Web）
 - **フレームワーク**: Next.js（App Router）
 - **CSSフレームワーク**: TailwindCSS v4
-- **UIライブラリ**: shadcn/ui（Radix UI + class-variance-authority）
+- **UIライブラリ**: shadcn/ui（Radix UI + class-variance-authority、アイコン: lucide-react）
 - **フォーム**: React Hook Form + Zod
 - **データフェッチ**: TanStack Query
 - **テーブル**: TanStack Table
@@ -82,7 +87,7 @@
 
 ## 🛢 データベース・ORM
 - **データベース**: PostgreSQL
-- **ORM**: Prisma
+- **ORM**: Prisma（`@prisma/adapter-pg` による Driver Adapter 経由で接続）
 - **構成**:
   - Prisma schema: `packages/db/prisma/schema.prisma`
   - マイグレーション: `packages/db/prisma/migrations`
@@ -128,11 +133,6 @@
 - `packages/config`：Biome / tsconfig / vitest 設定
 
 ---
-
-## 🧱 プロジェクト名
-- テンプレート名称：`forge-ts`
-- 実装例：`forge-ts-example`
-
 
 ## ディレクトリ構成
 ```

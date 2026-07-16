@@ -8,3 +8,4 @@ coverage
 .turbo
 .pnpm-store
 .vscode
+.claude/settings.local.json
