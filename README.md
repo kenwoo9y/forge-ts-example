@@ -1,10 +1,7 @@
 # forge-ts-example
 
-[![CI - API](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-api.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-api.yaml)
-[![CI - Web](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-web.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-web.yaml)
-[![CI - Mobile](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-mobile.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-mobile.yaml)
-[![CI - Infra](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-infra.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/ci-infra.yaml)
-[![E2E](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/e2e.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/e2e.yaml)
+[![App Deploy](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/app-deploy.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/app-deploy.yaml)
+[![Infra Deploy](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/infra-deploy.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/infra-deploy.yaml)
 
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/node.js-22-6DA55F?logo=node.js&logoColor=white)
