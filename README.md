@@ -1,8 +1,5 @@
 # forge-ts-example
 
-[![App Deploy](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/app-deploy.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/app-deploy.yaml)
-[![Infra Deploy](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/infra-deploy.yaml/badge.svg)](https://github.com/kenwoo9y/forge-ts-example/actions/workflows/infra-deploy.yaml)
-
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/node.js-22-6DA55F?logo=node.js&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm-11.13.0-%234a4a4a.svg?logo=pnpm&logoColor=f69220)
