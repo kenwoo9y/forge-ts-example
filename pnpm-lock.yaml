@@ -344,8 +344,8 @@ importers:
         specifier: 26.1.1
         version: 26.1.1
       aws-cdk:
-        specifier: 2.1132.0
-        version: 2.1132.0
+        specifier: 2.1133.0
+        version: 2.1133.0
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@26.1.1)(typescript@6.0.3)
@@ -3491,8 +3491,8 @@ packages:
       - yaml
       - mime-types
 
-  aws-cdk@2.1132.0:
-    resolution: {integrity: sha512-kcIzBZQO+2v+F97iaeI29fdOUQEx44wr0qDb9HXNqdU82V+1ZKI1KuFlHwH2nq7+6iNc1bu60se4hFf+2d7vXg==}
+  aws-cdk@2.1133.0:
+    resolution: {integrity: sha512-DGlCBwqxSHTe1u/IoT5WV+Bbd2K3UhwFHsdMqb2nQa1fkJmaQgoNFu0It+p3HxyMWeW+gKsVzT5KcjQPQ6Kzuw==}
     engines: {node: '>= 18.0.0'}
     hasBin: true
 
@@ -10045,7 +10045,7 @@ snapshots:
       '@aws-cdk/cloud-assembly-schema': 54.9.0
       constructs: 10.6.0
 
-  aws-cdk@2.1132.0: {}
+  aws-cdk@2.1133.0: {}
 
   aws-ssl-profiles@1.1.2: {}
 
