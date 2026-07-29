@@ -13,7 +13,8 @@
     "format": "turbo run format",
     "format:yaml": "prettier --write \"**/*.{yml,yaml}\"",
     "test": "turbo run test",
-    "spell-check": "cspell \"**\""
+    "spell-check": "cspell \"**\"",
+    "knip": "knip"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "@types/node": "26.1.1",
     "@vitest/coverage-v8": "4.1.10",
     "cspell": "^9.6.4",
+    "knip": "^6.29.0",
     "lefthook": "^2.1.9",
     "prettier": "^3.9.4",
     "turbo": "^2.10.7",
