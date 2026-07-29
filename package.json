@@ -14,7 +14,7 @@
     "format:yaml": "prettier --write \"**/*.{yml,yaml}\"",
     "test": "turbo run test",
     "spell-check": "cspell \"**\"",
-    "knip": "knip"
+    "knip": "DATABASE_URL=postgresql://user:password@localhost:5432/db knip"
   },
   "keywords": [],
   "author": "",
