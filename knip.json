@@ -1,4 +1,11 @@
 {
+  "ignore": [
+    "apps/mobile/metro.config.js",
+    "apps/mobile/postcss.config.js",
+    "apps/web/app/page.module.css",
+    "apps/web/e2e/global.setup.ts",
+    "infra/bin/infra.ts"
+  ],
   "workspaces": {
     "apps/mobile": {
       "metro": false
