@@ -1,0 +1,7 @@
+{
+  "workspaces": {
+    "apps/mobile": {
+      "metro": false
+    }
+  }
+}
