@@ -6,6 +6,7 @@
     "apps/web/e2e/global.setup.ts",
     "infra/bin/infra.ts"
   ],
+  "ignoreDependencies": ["pino-pretty", "@babel/core", "ts-node", "@commitlint/cli"],
   "workspaces": {
     "apps/mobile": {
       "metro": false
