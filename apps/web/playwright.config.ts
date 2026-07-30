@@ -36,7 +36,7 @@ export default defineConfig({
     /* Setup project for authentication */
     {
       name: "setup",
-      testMatch: /global\.setup\.ts/,
+      testMatch: "global.setup.ts",
     },
 
     {
