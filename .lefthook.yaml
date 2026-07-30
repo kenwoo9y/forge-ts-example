@@ -19,5 +19,5 @@ commit-msg:
 
 pre-push:
   commands:
-    knip:
-      run: pnpm knip
+    unused-code-check:
+      run: pnpm run unused-code-check
