@@ -77,7 +77,8 @@ jobs:
             -d "{\"username\":\"${E2E_USERNAME}\",\"password\":\"${E2E_PASSWORD}\"}" || true
 
       - name: Install Playwright Browsers
-        run: cd apps/web && pnpm exec playwright install --with-deps
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps
 
       - name: Run Playwright tests
         working-directory: apps/web
