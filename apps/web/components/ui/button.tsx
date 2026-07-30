@@ -56,4 +56,5 @@ function Button({
   );
 }
 
+/** @public */
 export { Button, buttonVariants };

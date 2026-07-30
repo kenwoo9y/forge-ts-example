@@ -1,22 +1,20 @@
 import type { TodoStatus } from "../types";
 
-export const STATUS_CONFIG: Record<
-  TodoStatus,
-  { label: string; className: string }
-> = {
-  doing: {
-    label: "進行中",
-    className: "bg-blue-100 text-blue-600 border border-blue-200",
-  },
-  todo: {
-    label: "未着手",
-    className: "bg-gray-100 text-gray-500 border border-gray-200",
-  },
-  done: {
-    label: "完了",
-    className: "bg-green-100 text-green-600 border border-green-200",
-  },
-};
+const STATUS_CONFIG: Record<TodoStatus, { label: string; className: string }> =
+  {
+    doing: {
+      label: "進行中",
+      className: "bg-blue-100 text-blue-600 border border-blue-200",
+    },
+    todo: {
+      label: "未着手",
+      className: "bg-gray-100 text-gray-500 border border-gray-200",
+    },
+    done: {
+      label: "完了",
+      className: "bg-green-100 text-green-600 border border-green-200",
+    },
+  };
 
 type StatusBadgeProps = {
   status: TodoStatus | null;

@@ -33,4 +33,5 @@ function Badge({ className, variant, ...props }: BadgeProps) {
   );
 }
 
+/** @public */
 export { Badge, badgeVariants };
