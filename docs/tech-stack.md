@@ -10,6 +10,7 @@
 ![Lefthook](https://img.shields.io/badge/Lefthook-FF1E1E.svg?style=for-the-badge&logo=Lefthook&logoColor=white)
 ![git-secrets](https://img.shields.io/badge/git--secrets-F05032.svg?style=for-the-badge&logo=git&logoColor=white)
 ![commitlint](https://img.shields.io/badge/commitlint-000000.svg?style=for-the-badge&logo=commitlint&logoColor=white)
+![Knip](https://img.shields.io/badge/Knip-F56E0F.svg?style=for-the-badge&logo=Knip&logoColor=white)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -44,7 +45,8 @@
 - **コード整形・静的解析**: Biome（アプリ・パッケージ全般）、Prettier（YAMLファイルのみ）
 - **共通設定**: `packages/config` に Biome / tsconfig / vitest を集約
 - **スペルチェック**: cspell
-- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint）
+- **未使用コード検出**: Knip（未使用ファイル・依存関係・exportsの検出）
+- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint、pre-push: Knipによる未使用コードチェック）
 - **コミットメッセージ規約**: commitlint
 
 ---
@@ -110,7 +112,7 @@
 - **単体テスト**: Vitest（Web / Mobile / API / Packages）
 - **E2Eテスト**: Playwright（主にWeb UI対象）
 - **CI/CD**:
-  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）
+  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）、`ci-unused-code`（Knipによる未使用コードチェック、リポジトリ全体を対象にPR時実行）
   - Dependabot: 依存パッケージの自動更新
 
 ---
@@ -268,6 +270,7 @@ forge-ts-example/
 │   │   ├── ci-mobile.yaml
 │   │   ├── ci-infra.yaml
 │   │   ├── ci-yaml-format.yaml
+│   │   ├── ci-unused-code.yaml
 │   │   ├── e2e.yaml
 │   │   ├── app-deploy.yaml
 │   │   └── infra-deploy.yaml
@@ -287,13 +290,14 @@ forge-ts-example/
 ├── .dockerignore
 ├── .env.template
 ├── .gitignore
-├── .lefthook.yaml
 ├── .npmrc
 ├── .prettierignore
 ├── .prettierrc.json
 ├── biome.json
 ├── commitlint.config.js
 ├── cspell.json
+├── knip.json
+├── lefthook.yml
 ├── Makefile
 ├── turbo.json
 ├── package.json

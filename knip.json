@@ -1,0 +1,12 @@
+{
+  "ignoreDependencies": ["pino-pretty", "@babel/core", "ts-node", "@prisma/client"],
+  "workspaces": {
+    "apps/mobile": {
+      "metro": false,
+      "entry": ["metro.config.js", "postcss.config.js"]
+    },
+    "infra": {
+      "entry": ["bin/infra.ts"]
+    }
+  }
+}

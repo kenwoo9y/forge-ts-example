@@ -1,6 +1,6 @@
 -include .devcontainer/.env
 
-.PHONY: help lint-check lint-fix format-check format-fix biome-format-check biome-format-fix yaml-format-check yaml-format-fix check check-fix biome-check biome-check-fix type-check secrets-scan psql migrate-generate migrate aws-login
+.PHONY: help lint-check lint-fix format-check format-fix biome-format-check biome-format-fix yaml-format-check yaml-format-fix check check-fix biome-check biome-check-fix type-check knip-check secrets-scan psql migrate-generate migrate aws-login
 .DEFAULT_GOAL := help
 
 lint-check: ## Run lint check
@@ -37,6 +37,9 @@ biome-check-fix: ## Run Biome check fix (lint + format)
 
 type-check: ## Run type check
 	pnpm exec tsc --noEmit .
+
+knip-check: ## Run Knip unused code check
+	pnpm run unused-code-check
 
 secrets-scan: ## Run AWS Git Secrets Scan
 	git secrets --scan

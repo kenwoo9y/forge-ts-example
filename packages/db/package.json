@@ -1,6 +1,5 @@
 {
   "name": "db",
-  "main": "index.js",
   "scripts": {
     "generate": "prisma generate",
     "test": "echo \"Error: no test specified\" && exit 1"
