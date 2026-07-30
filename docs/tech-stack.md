@@ -290,7 +290,6 @@ forge-ts-example/
 ├── .dockerignore
 ├── .env.template
 ├── .gitignore
-├── .lefthook.yaml
 ├── .npmrc
 ├── .prettierignore
 ├── .prettierrc.json
@@ -298,6 +297,7 @@ forge-ts-example/
 ├── commitlint.config.js
 ├── cspell.json
 ├── knip.json
+├── lefthook.yml
 ├── Makefile
 ├── turbo.json
 ├── package.json
