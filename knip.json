@@ -1,5 +1,12 @@
 {
-  "ignoreDependencies": ["pino-pretty", "@babel/core", "ts-node", "@prisma/client"],
+  "ignoreDependencies": [
+    "pino-pretty",
+    "@babel/core",
+    "ts-node",
+    "@prisma/client",
+    "lefthook",
+    "@commitlint/cli"
+  ],
   "workspaces": {
     "apps/mobile": {
       "metro": false,

@@ -297,7 +297,7 @@ forge-ts-example/
 ├── commitlint.config.js
 ├── cspell.json
 ├── knip.json
-├── lefthook.yml
+├── lefthook.yaml
 ├── Makefile
 ├── turbo.json
 ├── package.json
