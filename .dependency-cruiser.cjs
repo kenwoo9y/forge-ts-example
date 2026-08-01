@@ -148,7 +148,12 @@ module.exports = {
         'from.pathNot re of the not-to-dev-dep rule in the dependency-cruiser configuration',
       from: {
         path: '^(apps|packages|infra)',
-        pathNot: '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$'
+        pathNot: [
+          '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+          '[.](?:config|stories|setup)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
+          '(^|/)[.]storybook/',
+          '(^|/)e2e/'
+        ]
       },
       to: {
         dependencyTypes: [
@@ -203,10 +208,10 @@ module.exports = {
     },
 
     // Which modules to exclude
-    // exclude : {
-    //   // path: an array of regular expressions in strings to match against
-    //   path: '',
-    // },
+    exclude: {
+      // path: an array of regular expressions in strings to match against
+      path: '(^|/)(?:dist|\\.next|out|coverage|\\.turbo|cdk\\.out|generated)(/|$)',
+    },
 
     // Which modules to exclusively include (array of regular expressions in strings)
     // dependency-cruiser will skip everything that doesn't match this pattern
