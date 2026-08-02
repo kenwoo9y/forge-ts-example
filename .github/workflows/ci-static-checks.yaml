@@ -41,5 +41,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build error package
+        run: pnpm --filter error run build
+
+      - name: Build schema package
+        run: pnpm --filter schema run build
+
+      - name: Build auth package
+        run: pnpm --filter auth run build
+
+      - name: Generate Prisma client
+        run: pnpm --filter db run generate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+
+      - name: Build api package
+        run: pnpm --filter api run build
+
       - name: Run dependency-cruiser check
         run: pnpm run dependency-check
