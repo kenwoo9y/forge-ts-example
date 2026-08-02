@@ -1,4 +1,4 @@
-name: CI - Dependency Check
+name: CI - Static Checks
 
 on:
   pull_request:
@@ -6,6 +6,25 @@ on:
       - main
 
 jobs:
+  unused-code-check:
+    name: Unused Code Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Knip check
+        run: pnpm run unused-code-check
+
   dependency-check:
     name: Dependency Check
     runs-on: ubuntu-latest
