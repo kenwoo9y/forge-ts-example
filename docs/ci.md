@@ -80,6 +80,21 @@ Pull Request で `**/*.yml`・`**/*.yaml` に変更があった場合に実行�
 
 ---
 
+## CI - Static Checks (`.github/workflows/ci-static-checks.yaml`)
+
+### 概要
+
+`main` ブランチへの Pull Request で常に実行される、特定のアプリに紐づかないリポジトリ横断の静的解析ワークフロー（path フィルタなし）。未使用コードチェックと依存関係ルールチェックの 2 ジョブが並列で動く。
+
+### ジョブ一覧
+
+| ジョブ | 内容 |
+|---|---|
+| `unused-code-check` | `pnpm run unused-code-check`（`knip --no-config-hints`）で未使用ファイル・依存関係・exports を検出 |
+| `dependency-check` | `pnpm run dependency-check` で `apps/api` + `packages` + `infra`・`apps/web`・`apps/mobile` をそれぞれ dependency-cruiser で検証し、循環参照や devDependencies への不正な依存を検出 |
+
+---
+
 ## E2E テスト (`.github/workflows/e2e.yaml`)
 
 ### 概要
