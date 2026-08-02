@@ -27,7 +27,11 @@ module.exports = {
           '(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$',                  // dot files
           '[.]d[.]ts$',                                                       // TypeScript declaration files
           '(^|/)tsconfig[.]json$',                                            // TypeScript config
-          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$' // other configs
+          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
+          '[.]config[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',                   // tool configs read by their own tooling (tailwind, postcss, next, ...)
+          '(^|/)webpack[.]dependency-cruiser[.]cjs$',                        // dependency-cruiser's own alias-resolution helper
+          '(^|/)[.]storybook/',                                              // storybook config/mocks, resolved by storybook itself
+          '(^|/)packages/[^/]+/src/index[.]ts$'                              // package entry points, only consumed via the built dist by sibling packages
         ]
       },
       to: {},
@@ -152,7 +156,8 @@ module.exports = {
           '[.](?:spec|test)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
           '[.](?:config|stories|setup)[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
           '(^|/)[.]storybook/',
-          '(^|/)e2e/'
+          '(^|/)e2e/',
+          '[.]d[.]ts$'
         ]
       },
       to: {
@@ -248,7 +253,7 @@ module.exports = {
     // false (the default): ignore dependencies that only exist before typescript-to-javascript compilation
     // true: also detect dependencies that only exist before typescript-to-javascript compilation
     // 'specify': for each dependency identify whether it only exists before compilation or also after
-    // tsPreCompilationDeps: false,
+    tsPreCompilationDeps: true,
     
     // list of extensions to scan that aren't javascript or compile-to-javascript.
     // Empty by default. Only put extensions in here that you want to take into
