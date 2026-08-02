@@ -11,6 +11,7 @@
 ![git-secrets](https://img.shields.io/badge/git--secrets-F05032.svg?style=for-the-badge&logo=git&logoColor=white)
 ![commitlint](https://img.shields.io/badge/commitlint-000000.svg?style=for-the-badge&logo=commitlint&logoColor=white)
 ![Knip](https://img.shields.io/badge/Knip-F56E0F.svg?style=for-the-badge&logo=Knip&logoColor=white)
+![dependency-cruiser](https://img.shields.io/badge/dependency--cruiser-3E863D.svg?style=for-the-badge)
 ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
 ![Next JS](https://img.shields.io/badge/Next-black?style=for-the-badge&logo=next.js&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
@@ -46,7 +47,8 @@
 - **共通設定**: `packages/config` に Biome / tsconfig / vitest を集約
 - **スペルチェック**: cspell
 - **未使用コード検出**: Knip（未使用ファイル・依存関係・exportsの検出）
-- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint、pre-push: Knipによる未使用コードチェック）
+- **依存関係ルール検証**: dependency-cruiser（循環参照・devDependenciesへの不正な依存の検出。`apps/web`・`apps/mobile` は `@/*` パスエイリアス解決用に個別設定を継承）
+- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint、pre-push: Knipによる未使用コードチェック / dependency-cruiserによる依存関係ルールチェック）
 - **コミットメッセージ規約**: commitlint
 
 ---
@@ -112,7 +114,7 @@
 - **単体テスト**: Vitest（Web / Mobile / API / Packages）
 - **E2Eテスト**: Playwright（主にWeb UI対象）
 - **CI/CD**:
-  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）、`ci-unused-code`（Knipによる未使用コードチェック、リポジトリ全体を対象にPR時実行）
+  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）、`ci-static-checks`（Knipによる未使用コードチェック・dependency-cruiserによる依存関係ルールチェック、リポジトリ全体を対象にPR時実行）
   - Dependabot: 依存パッケージの自動更新
 
 ---
@@ -156,6 +158,8 @@ forge-ts-example/
 │   │   ├── .gitignore
 │   │   ├── biome.json
 │   │   ├── components.json           # shadcn/ui 設定
+│   │   ├── .dependency-cruiser.cjs   # dependency-cruiser 設定（ルート設定を継承）
+│   │   ├── webpack.dependency-cruiser.cjs # @/* エイリアス解決用（webpack互換の resolve 設定のみ）
 │   │   ├── next.config.ts
 │   │   ├── playwright.config.ts      # Playwright 設定
 │   │   ├── postcss.config.mjs
@@ -180,6 +184,8 @@ forge-ts-example/
 │   │   ├── app.json                  # Expo 設定
 │   │   ├── .gitignore
 │   │   ├── babel.config.js
+│   │   ├── .dependency-cruiser.cjs   # dependency-cruiser 設定（ルート設定を継承）
+│   │   ├── webpack.dependency-cruiser.cjs # @/* エイリアス解決用（webpack互換の resolve 設定のみ）
 │   │   ├── metro.config.js
 │   │   ├── postcss.config.js
 │   │   ├── tailwind.config.js
@@ -270,7 +276,7 @@ forge-ts-example/
 │   │   ├── ci-mobile.yaml
 │   │   ├── ci-infra.yaml
 │   │   ├── ci-yaml-format.yaml
-│   │   ├── ci-unused-code.yaml
+│   │   ├── ci-static-checks.yaml
 │   │   ├── e2e.yaml
 │   │   ├── app-deploy.yaml
 │   │   └── infra-deploy.yaml
@@ -287,6 +293,7 @@ forge-ts-example/
 │   └── setup-aws.sh
 │
 ├── .biomeignore
+├── .dependency-cruiser.cjs
 ├── .dockerignore
 ├── .env.template
 ├── .gitignore
