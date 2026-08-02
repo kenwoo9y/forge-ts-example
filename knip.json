@@ -8,9 +8,12 @@
     "@commitlint/cli"
   ],
   "workspaces": {
+    "apps/web": {
+      "entry": ["webpack.dependency-cruiser.cjs"]
+    },
     "apps/mobile": {
       "metro": false,
-      "entry": ["metro.config.js", "postcss.config.js"]
+      "entry": ["metro.config.js", "postcss.config.js", "webpack.dependency-cruiser.cjs"]
     },
     "infra": {
       "entry": ["bin/infra.ts"]

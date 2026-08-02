@@ -21,3 +21,5 @@ pre-push:
   commands:
     unused-code-check:
       run: pnpm run unused-code-check
+    dependency-check:
+      run: pnpm run dependency-check
