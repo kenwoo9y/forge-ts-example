@@ -1,6 +1,6 @@
 -include .devcontainer/.env
 
-.PHONY: help lint-check lint-fix format-check format-fix biome-format-check biome-format-fix yaml-format-check yaml-format-fix check check-fix biome-check biome-check-fix type-check knip-check secrets-scan psql migrate-generate migrate aws-login
+.PHONY: help lint-check lint-fix format-check format-fix biome-format-check biome-format-fix yaml-format-check check check-fix biome-check biome-check-fix secrets-scan psql migrate-generate migrate aws-login cdk-bootstrap
 .DEFAULT_GOAL := help
 
 lint-check: ## Run lint check
@@ -11,7 +11,8 @@ lint-fix: ## Run lint fix
 
 format-check: biome-format-check yaml-format-check ## Run all format checks (Biome + YAML)
 
-format-fix: biome-format-fix yaml-format-fix ## Run all format fixes (Biome + YAML)
+format-fix: biome-format-fix ## Run all format fixes (Biome + YAML)
+	pnpm run format:yaml
 
 biome-format-check: ## Run Biome format check
 	pnpm exec biome format .
@@ -22,24 +23,16 @@ biome-format-fix: ## Run Biome format fix
 yaml-format-check: ## Run YAML format check
 	pnpm exec prettier --check "**/*.{yml,yaml}"
 
-yaml-format-fix: ## Run YAML format fix
-	pnpm exec prettier --write "**/*.{yml,yaml}"
-
 check: biome-check yaml-format-check ## Run all checks (Biome lint+format + YAML)
 
-check-fix: biome-check-fix yaml-format-fix ## Run all check fixes (Biome lint+format + YAML)
+check-fix: biome-check-fix ## Run all check fixes (Biome lint+format + YAML)
+	pnpm run format:yaml
 
 biome-check: ## Run Biome check (lint + format)
 	pnpm exec biome check .
 
 biome-check-fix: ## Run Biome check fix (lint + format)
 	pnpm exec biome check --write .
-
-type-check: ## Run type check
-	pnpm exec tsc --noEmit .
-
-knip-check: ## Run Knip unused code check
-	pnpm run unused-code-check
 
 secrets-scan: ## Run AWS Git Secrets Scan
 	git secrets --scan
