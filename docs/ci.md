@@ -90,7 +90,7 @@ Pull Request で `**/*.yml`・`**/*.yaml` に変更があった場合に実行�
 
 | ジョブ | 内容 |
 |---|---|
-| `unused-code-check` | `pnpm run unused-code-check`（`knip --no-config-hints`）で未使用ファイル・依存関係・exports を検出 |
+| `unused-check` | `pnpm run unused-check`（`knip --no-config-hints`）で未使用ファイル・依存関係・exports を検出 |
 | `dependency-check` | `pnpm run dependency-check` で `apps/api` + `packages` + `infra`・`apps/web`・`apps/mobile` をそれぞれ dependency-cruiser で検証し、循環参照や devDependencies への不正な依存を検出 |
 
 ---
