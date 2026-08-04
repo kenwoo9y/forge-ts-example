@@ -19,7 +19,7 @@ commit-msg:
 
 pre-push:
   commands:
-    unused-code-check:
-      run: pnpm run unused-code-check
+    unused-check:
+      run: pnpm run unused-check
     dependency-check:
       run: pnpm run dependency-check
