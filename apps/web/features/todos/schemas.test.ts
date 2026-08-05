@@ -74,15 +74,14 @@ describe("todoFormSchema", () => {
   });
 
   describe("status", () => {
-    it.each([
-      "todo",
-      "doing",
-      "done",
-    ] as const)("ステータスが '%s' の場合：バリデーションが通る", (status) => {
-      expect(todoFormSchema.safeParse({ ...validData, status }).success).toBe(
-        true,
-      );
-    });
+    it.each(["todo", "doing", "done"] as const)(
+      "ステータスが '%s' の場合：バリデーションが通る",
+      (status) => {
+        expect(todoFormSchema.safeParse({ ...validData, status }).success).toBe(
+          true,
+        );
+      },
+    );
 
     it("ステータスが無効な値の場合：バリデーションエラーになる", () => {
       const result = todoFormSchema.safeParse({
