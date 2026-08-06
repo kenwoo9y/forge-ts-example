@@ -6,7 +6,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       root: '.',
-      exclude: ['node_modules', 'dist', 'src/infrastructure/**'],
+      exclude: ['node_modules', 'dist', 'src/infrastructure/**', 'integration/**'],
       coverage: {
         include: ['src/**'],
         exclude: [
