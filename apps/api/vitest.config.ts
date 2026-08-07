@@ -6,12 +6,15 @@ export default mergeConfig(
   defineConfig({
     test: {
       root: '.',
-      exclude: ['node_modules', 'dist', 'src/infrastructure/**', 'integration/**'],
+      exclude: ['node_modules', 'dist', 'src/infrastructure/prisma/**', 'integration/**'],
       coverage: {
         include: ['src/**'],
         exclude: [
-          'src/infrastructure/**',
+          'src/infrastructure/prisma/**',
+          'src/infrastructure/logger/**',
           'src/index.ts',
+          // DIコンポジションルート。実DBに対するIntegrationテスト（integration/*.integration.test.ts）が実際の配線ごと検証する
+          'src/app.ts',
           'src/**/dto.ts',
           'src/**/repository.ts',
           'src/**/queryService.ts',
