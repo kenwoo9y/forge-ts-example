@@ -62,7 +62,7 @@
 - **テーブル**: TanStack Table
 - **認証**: Auth.js（NextAuth v5）Credentials プロバイダー
 - **テスト**:
-  - 単体テスト: Vitest
+  - Unitテスト: Vitest
   - E2Eテスト: Playwright
   - UIドキュメント: Storybook
 
@@ -75,7 +75,7 @@
 - **フォーム**: React Hook Form + Zod
 - **データフェッチ**: TanStack Query
 - **テスト**:
-  - 単体テスト: Vitest
+  - Unitテスト: Vitest
   - UIドキュメント: Storybook
 
 ---
@@ -85,7 +85,9 @@
 - **認証**: bcryptjs（パスワードハッシュ化）+ jose（JWT 署名・検証）
 - **ロギング**: pino + hono-pino
 - **Docker対応**: ECSデプロイ用Dockerfileあり
-- **テスト**: Vitest
+- **テスト**:
+  - Unitテスト: Vitest
+  - Integrationテスト: Vitest（HTTPエンドポイント〜実DBを一気通貫で検証）
 
 ---
 
@@ -111,10 +113,11 @@
 ---
 
 ## 🧪 テスト / CI / DevOps
-- **単体テスト**: Vitest（Web / Mobile / API / Packages）
+- **Unitテスト**: Vitest（Web / Mobile / API / Packages）
+- **Integrationテスト**: Vitest（API。実DBに対してHTTPエンドポイント〜DBを一気通貫で検証）
 - **E2Eテスト**: Playwright（主にWeb UI対象）
 - **CI/CD**:
-  - GitHub Actions: `ci-api` / `ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）、`ci-static-checks`（Knipによる未使用コードチェック・dependency-cruiserによる依存関係ルールチェック、リポジトリ全体を対象にPR時実行）
+  - GitHub Actions: `ci-api`（lint / type-check / unit test / integration test）、`ci-web` / `ci-mobile` / `ci-infra`（lint / type-check / test）、`ci-yaml-format`（YAMLフォーマット検証）、`ci-static-checks`（Knipによる未使用コードチェック・dependency-cruiserによる依存関係ルールチェック、リポジトリ全体を対象にPR時実行）
   - Dependabot: 依存パッケージの自動更新
 
 ---
@@ -201,12 +204,15 @@ forge-ts-example/
 │       │   ├── presentation/         # プレゼンテーション層（HTTPルーター・ハンドラー）
 │       │   ├── app.ts
 │       │   └── index.ts
+│       ├── integration/              # Integrationテスト（HTTPエンドポイント〜実DBをリソース単位で検証）
 │       ├── .dockerignore
 │       ├── .env.example
+│       ├── .env.integration.example
 │       ├── .gitignore
 │       ├── compose.yaml
 │       ├── Dockerfile
 │       ├── vitest.config.ts
+│       ├── vitest.integration.config.ts
 │       ├── package.json
 │       ├── README.md
 │       └── tsconfig.json
