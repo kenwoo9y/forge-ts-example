@@ -32,6 +32,16 @@ describe('Task API (integration)', () => {
 
       expect(res.status).toBe(401);
     });
+
+    it('Bearerプレフィックスのないトークンで/tasks/:publicIdにGETすると401を返す', async () => {
+      const token = await signUpAndSignIn(app, 'alice');
+
+      const res = await app.request('/tasks/00000000-0000-0000-0000-000000000000', {
+        headers: { Authorization: token },
+      });
+
+      expect(res.status).toBe(401);
+    });
   });
 
   describe('POST /tasks（ownerIdを直接指定）', () => {

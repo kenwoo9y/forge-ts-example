@@ -180,6 +180,29 @@ describe('User Endpoints', () => {
       const body = await res.json();
       expect(body.code).toBe(ErrorCode.EMAIL_DUPLICATE);
     });
+
+    it('重複以外のエラーの場合：エラーが伝播する', async () => {
+      vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(null);
+      vi.mocked(mockUserRepository.save).mockRejectedValue(new Error('connection lost'));
+
+      const res = await app.request('/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'testuser', password: 'password123' }),
+      });
+
+      expect(res.status).toBe(500);
+    });
+
+    it('ユーザー名が30文字を超える場合：400を返す', async () => {
+      const res = await app.request('/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'a'.repeat(31), password: 'password123' }),
+      });
+
+      expect(res.status).toBe(400);
+    });
   });
 
   describe('GET /users/:username', () => {
@@ -365,6 +388,115 @@ describe('User Endpoints', () => {
       expect(res.status).toBe(200);
       expect(mockUserRepository.update).toHaveBeenCalled();
     });
+
+    it('ユーザー名を現在と同じ値に更新する場合：重複チェックをスキップして200を返す', async () => {
+      vi.mocked(mockUserRepository.update).mockResolvedValue(
+        new User(BigInt(1), Username.create('testuser'), null, 'Updated', null, null, now, now)
+      );
+
+      const res = await app.request('/users/testuser', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'testuser', firstName: 'Updated' }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(mockUserRepository.findByUsername).not.toHaveBeenCalled();
+    });
+
+    it('メールアドレスを現在と同じ値に更新する場合：重複チェックをスキップして200を返す', async () => {
+      vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(
+        new User(
+          BigInt(1),
+          Username.create('testuser'),
+          Email.create('same@example.com'),
+          null,
+          null,
+          null,
+          now,
+          now
+        )
+      );
+      vi.mocked(mockUserRepository.update).mockResolvedValue(
+        new User(
+          BigInt(1),
+          Username.create('testuser'),
+          Email.create('same@example.com'),
+          null,
+          null,
+          null,
+          now,
+          now
+        )
+      );
+
+      const res = await app.request('/users/testuser', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'same@example.com' }),
+      });
+
+      expect(res.status).toBe(200);
+      expect(mockUserRepository.findByEmail).not.toHaveBeenCalled();
+    });
+
+    it('メールアドレス未設定のユーザーに新しいメールアドレスを設定する場合：200を返す', async () => {
+      vi.mocked(mockUserRepository.findByUsername).mockResolvedValue(
+        new User(BigInt(1), Username.create('testuser'), null, null, null, null, now, now)
+      );
+      vi.mocked(mockUserRepository.findByEmail).mockResolvedValue(null);
+      vi.mocked(mockUserRepository.update).mockResolvedValue(
+        new User(
+          BigInt(1),
+          Username.create('testuser'),
+          Email.create('new@example.com'),
+          null,
+          null,
+          null,
+          now,
+          now
+        )
+      );
+
+      const res = await app.request('/users/testuser', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'new@example.com' }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.email).toBe('new@example.com');
+    });
+
+    it('firstName・lastNameをnullでクリアする場合：200を返しnullになる', async () => {
+      vi.mocked(mockUserRepository.update).mockResolvedValue(
+        new User(BigInt(1), Username.create('testuser'), null, null, null, null, now, now)
+      );
+
+      const res = await app.request('/users/testuser', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName: null, lastName: null }),
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.firstName).toBeNull();
+      expect(body.lastName).toBeNull();
+    });
+
+    it('ユーザー未検出以外のエラーの場合：エラーが伝播する', async () => {
+      vi.mocked(mockUserRepository.update).mockRejectedValue(new Error('connection lost'));
+
+      const res = await app.request('/users/testuser', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName: 'Updated' }),
+      });
+
+      expect(res.status).toBe(500);
+    });
   });
 
   describe('DELETE /users/:username', () => {
@@ -384,6 +516,14 @@ describe('User Endpoints', () => {
       expect(res.status).toBe(404);
       const body = await res.json();
       expect(body.code).toBe(ErrorCode.USER_NOT_FOUND);
+    });
+
+    it('ユーザー未検出以外のエラーの場合：エラーが伝播する', async () => {
+      vi.mocked(mockUserRepository.delete).mockRejectedValue(new Error('connection lost'));
+
+      const res = await app.request('/users/testuser', { method: 'DELETE' });
+
+      expect(res.status).toBe(500);
     });
   });
 

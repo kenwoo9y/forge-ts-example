@@ -18,13 +18,14 @@ export class Username extends ValueObject<string> {
    * @throws 空文字または最大文字数超過の場合にエラーをスローする
    */
   static create(value: string): Username {
-    /* c8 ignore next 6 -- validated by Zod schema before reaching domain */
+    /* c8 ignore start -- validated by Zod schema before reaching domain */
     if (value.length === 0) {
       throw new Error('Username must not be empty');
     }
     if (value.length > USERNAME_MAX_LENGTH) {
       throw new Error(`Username must be at most ${USERNAME_MAX_LENGTH} characters`);
     }
+    /* c8 ignore stop */
     return new Username(value);
   }
 
