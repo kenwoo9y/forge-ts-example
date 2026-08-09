@@ -288,6 +288,18 @@ describe('Task Endpoints', () => {
       const body = await res.json();
       expect(body.code).toBe(ErrorCode.TASK_NOT_FOUND);
     });
+
+    it('タスク未検出以外のエラーの場合：エラーが伝播する', async () => {
+      vi.mocked(mockTaskRepository.update).mockRejectedValue(new Error('connection lost'));
+
+      const res = await app.request(`/tasks/${taskPublicId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Updated' }),
+      });
+
+      expect(res.status).toBe(500);
+    });
   });
 
   describe('DELETE /tasks/:publicId', () => {
@@ -309,6 +321,14 @@ describe('Task Endpoints', () => {
       expect(res.status).toBe(404);
       const body = await res.json();
       expect(body.code).toBe(ErrorCode.TASK_NOT_FOUND);
+    });
+
+    it('タスク未検出以外のエラーの場合：エラーが伝播する', async () => {
+      vi.mocked(mockTaskRepository.delete).mockRejectedValue(new Error('connection lost'));
+
+      const res = await app.request(`/tasks/${taskPublicId}`, { method: 'DELETE' });
+
+      expect(res.status).toBe(500);
     });
   });
 });

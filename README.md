@@ -12,6 +12,7 @@ TypeScript モノレポのテンプレート実装例。Hono API・Next.js Web�
 - [技術スタック](docs/tech-stack.md)
 - [インフラアーキテクチャ](docs/infra-architecture.md)
 - [認証](docs/auth.md)
+- [テスト方針](docs/testing.md)
 - [CI](docs/ci.md)
 - [デプロイ](docs/deploy.md)
 

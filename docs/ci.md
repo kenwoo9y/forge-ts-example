@@ -4,7 +4,7 @@
 
 ### 概要
 
-`main` ブランチへの Pull Request で `apps/api/**`・`packages/**`・`pnpm-lock.yaml` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・ユニットテストの 3 ジョブが並列で動く。
+`main` ブランチへの Pull Request で `apps/api/**`・`packages/**`・`pnpm-lock.yaml` に変更があった場合に実行されるワークフロー。Lint/Format チェック・型チェック・Unitテスト・Integrationテストの 4 ジョブが並列で動く。
 
 ### ジョブ一覧
 
@@ -13,6 +13,7 @@
 | `lint-and-format` | `biome check apps/api` でコードスタイルを検証 |
 | `type-check` | `error` / `schema` パッケージのビルドと Prisma クライアント生成後に `pnpm --filter api run type-check` を実行 |
 | `unit-test` | 同上の前準備後に `pnpm --filter api run test:coverage` でカバレッジ付きテストを実行 |
+| `integration-test` | `postgres:16` サービスコンテナ起動・マイグレーション適用後に `pnpm --filter api run test:integration` でHTTPエンドポイント〜実DBを一気通貫に検証 |
 
 ---
 
