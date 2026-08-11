@@ -2,12 +2,15 @@
 
 import {
   type ColumnDef,
+  columnSizingFeature,
+  createPaginatedRowModel,
+  createSortedRowModel,
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
+  rowPaginationFeature,
+  rowSortingFeature,
   type SortingState,
-  useReactTable,
+  tableFeatures,
+  useTable,
 } from "@tanstack/react-table";
 import {
   ArrowDown,
@@ -49,6 +52,14 @@ const STATUS_ORDER: Record<string, number> = {
 
 const PAGE_SIZE = 10;
 
+const features = tableFeatures({
+  rowSortingFeature,
+  rowPaginationFeature,
+  columnSizingFeature,
+  sortedRowModel: createSortedRowModel(),
+  paginatedRowModel: createPaginatedRowModel(),
+});
+
 type TodoTableProps = {
   todos: Todo[];
   onEditClick: (todo: Todo) => void;
@@ -60,7 +71,7 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [isPending, startTransition] = useTransition();
 
-  const columns = useMemo<ColumnDef<Todo>[]>(
+  const columns = useMemo<ColumnDef<typeof features, Todo>[]>(
     () => [
       {
         accessorKey: "title",
@@ -82,7 +93,7 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
         cell: ({ getValue }) => (
           <StatusBadge status={getValue<Todo["status"]>()} />
         ),
-        sortingFn: (rowA, rowB) => {
+        sortFn: (rowA, rowB) => {
           const a = STATUS_ORDER[rowA.original.status ?? ""] ?? 0;
           const b = STATUS_ORDER[rowB.original.status ?? ""] ?? 0;
           return a - b;
@@ -123,19 +134,17 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
     [onEditClick, onDeleteClick],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features,
     data: todos,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize: PAGE_SIZE } },
+    initialState: { pagination: { pageIndex: 0, pageSize: PAGE_SIZE } },
   });
 
-  const { pageIndex, pageSize } = table.getState().pagination;
-  const totalRows = table.getFilteredRowModel().rows.length;
+  const { pageIndex, pageSize } = table.state.pagination;
+  const totalRows = table.getCoreRowModel().rows.length;
   const totalPages = table.getPageCount();
 
   return (
@@ -203,7 +212,7 @@ function TodoTable({ todos, onEditClick, onDeleteClick }: TodoTableProps) {
               <TableCell className="text-gray-400">
                 {pageIndex * pageSize + rowIndex + 1}
               </TableCell>
-              {row.getVisibleCells().map((cell) => (
+              {row.getAllCells().map((cell) => (
                 <TableCell key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </TableCell>

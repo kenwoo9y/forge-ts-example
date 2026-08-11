@@ -13,7 +13,8 @@
     },
     "apps/mobile": {
       "metro": false,
-      "entry": ["metro.config.js", "postcss.config.js", "webpack.dependency-cruiser.cjs"]
+      "entry": ["metro.config.js", "postcss.config.js", "webpack.dependency-cruiser.cjs"],
+      "ignoreDependencies": ["react-native-css-interop"]
     },
     "infra": {
       "entry": ["bin/infra.ts"]
