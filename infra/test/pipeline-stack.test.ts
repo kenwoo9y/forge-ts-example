@@ -27,7 +27,7 @@ function buildPipelineStack() {
   const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
   const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
 
-  // DEV のみ作成（enableStg/enableProd は指定しない）
+  // DEV のみ作成（stg/prod は指定しない）
   const ecrStack = new EcrStack(app, 'TestEcrStack', { env: TEST_ENV });
 
   const image = ecs.ContainerImage.fromRegistry('nginx');
@@ -60,13 +60,16 @@ function buildPipelineStack() {
 
     ecrStack,
     dev: {
-      apiStack,
-      webStack,
-      vpc: networkStack.vpc,
-      rdsSecurityGroup: networkStack.rdsSecurityGroup,
-      database: databaseStack.database,
-      databaseCredentials: databaseStack.credentials,
-      dbName: 'test_db',
+      kind: 'local',
+      resources: {
+        apiStack,
+        webStack,
+        vpc: networkStack.vpc,
+        rdsSecurityGroup: networkStack.rdsSecurityGroup,
+        database: databaseStack.database,
+        databaseCredentials: databaseStack.credentials,
+        dbName: 'test_db',
+      },
     },
   });
 
@@ -310,7 +313,9 @@ describe('PipelineStack', () => {
 
 // ─── STG 昇格ありのテスト ──────────────────────────────────────────────────────
 
-describe('PipelineStack (enableStg=true)', () => {
+describe('PipelineStack (stgAccountId指定)', () => {
+  const STG_ACCOUNT_ID = '222222222222';
+
   const template = (() => {
     const app = new cdk.App();
     const networkStack = new NetworkStack(app, 'TestNetworkStack', { env: TEST_ENV });
@@ -323,17 +328,11 @@ describe('PipelineStack (enableStg=true)', () => {
     const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
     const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
 
-    const stgNetworkStack = new NetworkStack(app, 'StgNetworkStack', { env: TEST_ENV });
-    const stgDatabaseStack = new DatabaseStack(app, 'StgDatabaseStack', {
+    // STGはDevとは別アカウント。ECRのみDevアカウントに集約される
+    const ecrStack = new EcrStack(app, 'TestEcrStack', {
       env: TEST_ENV,
-      vpc: stgNetworkStack.vpc,
-      rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
-      dbName: 'test_db',
+      stgAccountId: STG_ACCOUNT_ID,
     });
-    const stgSharedStack = new cdk.Stack(app, 'StgSharedStack', { env: TEST_ENV });
-    const stgJwtSecret = new secretsmanager.Secret(stgSharedStack, 'StgJwtSecret');
-
-    const ecrStack = new EcrStack(app, 'TestEcrStack', { env: TEST_ENV, enableStg: true });
     const image = ecs.ContainerImage.fromRegistry('nginx');
 
     const apiStack = new ApiStack(app, 'TestApiStack', {
@@ -355,26 +354,10 @@ describe('PipelineStack (enableStg=true)', () => {
       image,
       deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
     });
-    const stgApiStack = new ApiStack(app, 'StgApiStack', {
-      env: TEST_ENV,
-      vpc: stgNetworkStack.vpc,
-      rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
-      database: stgDatabaseStack.database,
-      databaseCredentials: stgDatabaseStack.credentials,
-      jwtSecret: stgJwtSecret,
-      image,
-      dbName: 'test_db',
-      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
-    });
-    const stgWebStack = new WebStack(app, 'StgWebStack', {
-      env: TEST_ENV,
-      vpc: stgNetworkStack.vpc,
-      apiUrl: 'http://stg-api.example.com',
-      authSecret: new secretsmanager.Secret(stgSharedStack, 'StgAuthSecret'),
-      image,
-      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
-    });
 
+    // STGのデプロイ実行リソース（DeploymentGroup・マイグレーション用CodeBuild）は
+    // STGアカウントの DeployTargetStack 側に作成されるため、PipelineStack のテストでは
+    // アカウントIDのみを渡す（詳細は deploy-target-stack.test.ts で検証する）
     const pipelineStack = new PipelineStack(app, 'TestPipelineStack', {
       env: TEST_ENV,
       githubOrg: 'acme',
@@ -382,23 +365,18 @@ describe('PipelineStack (enableStg=true)', () => {
 
       ecrStack,
       dev: {
-        apiStack,
-        webStack,
-        vpc: networkStack.vpc,
-        rdsSecurityGroup: networkStack.rdsSecurityGroup,
-        database: databaseStack.database,
-        databaseCredentials: databaseStack.credentials,
-        dbName: 'test_db',
+        kind: 'local',
+        resources: {
+          apiStack,
+          webStack,
+          vpc: networkStack.vpc,
+          rdsSecurityGroup: networkStack.rdsSecurityGroup,
+          database: databaseStack.database,
+          databaseCredentials: databaseStack.credentials,
+          dbName: 'test_db',
+        },
       },
-      stg: {
-        apiStack: stgApiStack,
-        webStack: stgWebStack,
-        vpc: stgNetworkStack.vpc,
-        rdsSecurityGroup: stgNetworkStack.rdsSecurityGroup,
-        database: stgDatabaseStack.database,
-        databaseCredentials: stgDatabaseStack.credentials,
-        dbName: 'test_db',
-      },
+      stg: { accountId: STG_ACCOUNT_ID },
     });
     return Template.fromStack(pipelineStack);
   })();
@@ -418,9 +396,9 @@ describe('PipelineStack (enableStg=true)', () => {
     });
   });
 
-  it('DEV+STGで4つのデプロイメントグループが作成される（API×2・Web×2）', () => {
+  it('PipelineStack自体にはDEV用の2つのデプロイメントグループのみ作成される（STG分はDeployTargetStack側）', () => {
     const groups = template.findResources('AWS::CodeDeploy::DeploymentGroup');
-    expect(Object.keys(groups).length).toBe(4);
+    expect(Object.keys(groups).length).toBe(2);
   });
 
   it('DEV→STG昇格用の CodeBuild プロジェクトが作成される', () => {
@@ -430,5 +408,171 @@ describe('PipelineStack (enableStg=true)', () => {
     template.hasResourceProperties('AWS::CodeBuild::Project', {
       Name: 'WebPromoteToStg',
     });
+  });
+
+  it('DeployStgアクションが命名規則から導出したDeploymentGroupを参照する', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({
+          Name: 'DeployStg',
+          Actions: Match.arrayWith([
+            Match.objectLike({
+              Configuration: Match.objectLike({
+                ApplicationName: 'ApiStg',
+                DeploymentGroupName: 'ApiStgDeploymentGroup',
+              }),
+              RoleArn: `arn:aws:iam::${STG_ACCOUNT_ID}:role/pipeline-cross-account-stg`,
+            }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  it('MigrateStgアクションがクロスアカウントロールでCodeBuildプロジェクトを起動する', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({
+          Name: 'MigrateStg',
+          Actions: Match.arrayWith([
+            Match.objectLike({
+              Configuration: Match.objectLike({ ProjectName: 'ApiMigrateStg' }),
+              RoleArn: `arn:aws:iam::${STG_ACCOUNT_ID}:role/pipeline-cross-account-stg`,
+            }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  it('アーティファクトバケットのKMSキーがクロスアカウント用に作成される（crossAccountKeys: true、Api/Web各パイプライン分で2つ）', () => {
+    template.resourceCountIs('AWS::KMS::Key', 2);
+  });
+});
+
+// ─── Devがクロスアカウント（PIPELINE_ACCOUNT_ID指定）のテスト ──────────────────
+
+describe('PipelineStack (devがcross-account)', () => {
+  const PIPELINE_ACCOUNT_ID = '333333333333';
+  const DEV_ACCOUNT_ID = TEST_ENV.account;
+  const PIPELINE_ENV = { account: PIPELINE_ACCOUNT_ID, region: TEST_ENV.region };
+
+  const template = (() => {
+    const app = new cdk.App();
+    // Dev環境のインフラはDevアカウント（TEST_ENV）に配置
+    const networkStack = new NetworkStack(app, 'TestNetworkStack', { env: TEST_ENV });
+    const databaseStack = new DatabaseStack(app, 'TestDatabaseStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      dbName: 'test_db',
+    });
+    const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
+    const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
+    const image = ecs.ContainerImage.fromRegistry('nginx');
+
+    // PipelineStack自体はapiStack/webStackを参照しない（devがcross-accountのため）が、
+    // Devアカウント側に実際のECSリソースが存在する状態を再現するために作成しておく
+    new ApiStack(app, 'TestApiStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      database: databaseStack.database,
+      databaseCredentials: databaseStack.credentials,
+      jwtSecret,
+      image,
+      dbName: 'test_db',
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+    new WebStack(app, 'TestWebStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      apiUrl: 'http://api.example.com',
+      authSecret: new secretsmanager.Secret(sharedStack, 'AuthSecret'),
+      image,
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+
+    // ECRはPipelineアカウントに集約される（Devとは別アカウント）
+    const ecrStack = new EcrStack(app, 'TestEcrStack', {
+      env: PIPELINE_ENV,
+      devAccountId: DEV_ACCOUNT_ID,
+    });
+
+    // PipelineStackはPipelineアカウントに配置。Devのデプロイ実行リソースは
+    // DevアカウントのDeployTargetStack側に作成されるため、accountIdのみ渡す
+    const pipelineStack = new PipelineStack(app, 'TestPipelineStack', {
+      env: PIPELINE_ENV,
+      githubOrg: 'acme',
+      githubRepo: 'forge',
+      ecrStack,
+      dev: { kind: 'cross-account', accountId: DEV_ACCOUNT_ID },
+    });
+    return Template.fromStack(pipelineStack);
+  })();
+
+  it('CDK bootstrapロールへのAssumeRoleが、Pipeline自身とDevアカウントの両方を対象にする', () => {
+    template.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: {
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Sid: 'CdkDeploy',
+            Action: 'sts:AssumeRole',
+            Resource: Match.arrayWith([
+              `arn:aws:iam::${PIPELINE_ACCOUNT_ID}:role/cdk-*`,
+              `arn:aws:iam::${DEV_ACCOUNT_ID}:role/cdk-*`,
+            ]),
+          }),
+        ]),
+      },
+    });
+  });
+
+  it('PipelineStack自体にはDeploymentGroupが作成されない（Dev分もDeployTargetStack側）', () => {
+    const groups = template.findResources('AWS::CodeDeploy::DeploymentGroup');
+    expect(Object.keys(groups).length).toBe(0);
+  });
+
+  it('DeployDevアクションが命名規則から導出したクロスアカウントロール・DeploymentGroupを参照する', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({
+          Name: 'DeployDev',
+          Actions: Match.arrayWith([
+            Match.objectLike({
+              Configuration: Match.objectLike({
+                ApplicationName: 'ApiDev',
+                DeploymentGroupName: 'ApiDevDeploymentGroup',
+              }),
+              RoleArn: `arn:aws:iam::${DEV_ACCOUNT_ID}:role/pipeline-cross-account-dev`,
+            }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  it('MigrateDevアクションがクロスアカウントロールでCodeBuildプロジェクトを起動する', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({
+          Name: 'MigrateDev',
+          Actions: Match.arrayWith([
+            Match.objectLike({
+              Configuration: Match.objectLike({ ProjectName: 'ApiMigrateDev' }),
+              RoleArn: `arn:aws:iam::${DEV_ACCOUNT_ID}:role/pipeline-cross-account-dev`,
+            }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  it('アーティファクトバケットのKMSキーがクロスアカウント用に作成される', () => {
+    template.resourceCountIs('AWS::KMS::Key', 2);
   });
 });
