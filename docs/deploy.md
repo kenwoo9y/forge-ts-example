@@ -267,6 +267,9 @@ IAM ロールのトラストポリシーは Environment（`main`）に紐づけ�
 |---|---|---|
 | `AWS_INFRA_DEPLOY_ROLE_ARN` | Secret | OIDC ロール ARN（CDK deploy 用） |
 | `AWS_REGION` | Variable | AWS リージョン |
+| `PIPELINE_ACCOUNT_ID` | Variable | 任意。Pipelineアカウントを切り出した場合のみ設定（[Pipelineアカウントの切り出し](#pipelineアカウントの切り出し任意)参照） |
+| `STG_ACCOUNT_ID` | Variable | 任意。STG環境を追加した場合のみ設定（[STG 環境の追加](#stg-環境の追加)参照） |
+| `PROD_ACCOUNT_ID` | Variable | 任意。PROD環境を追加した場合のみ設定（[PROD 環境の追加](#prod-環境の追加)参照） |
 
 ---
 
