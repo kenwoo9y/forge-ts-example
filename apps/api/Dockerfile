@@ -41,7 +41,7 @@ RUN pnpm --filter schema build
 RUN pnpm --filter api build
 
 # Create a self-contained deployment bundle (resolves workspace:* deps)
-RUN pnpm --filter api --prod deploy --legacy /app/deploy
+RUN pnpm --filter api --prod deploy /app/deploy
 
 # ─── Stage 3: Runtime ─────────────────────────────────────────────────────────
 FROM --platform=$TARGETPLATFORM node:26-alpine AS runner
