@@ -213,6 +213,8 @@ export class PipelineStack extends cdk.Stack {
   ): void {
     const devRepository = dev.kind === 'local' ? dev.config.repository : dev.repository;
     const containerPort = dev.kind === 'local' ? dev.config.containerPort : dev.containerPort;
+    // Prismaマイグレーションが必要なのはDBに接続するApiのみ。Webは静的なため不要
+    const needsMigration = appName === 'Api';
 
     const pipeline = new codepipeline.Pipeline(this, `${appName}AppPipeline`, {
       pipelineName: `${appName}AppPipeline`,
@@ -251,21 +253,23 @@ export class PipelineStack extends cdk.Stack {
           }),
         ],
       });
-      pipeline.addStage({
-        stageName: 'MigrateDev',
-        actions: [
-          new cpactions.CodeBuildAction({
-            actionName: 'PrismaMigrateDeploy',
-            project: buildMigrateProject(
-              this,
-              migrateProjectName(appName, 'dev'),
-              dev.envResources,
-              dev.config.repository
-            ),
-            input: devSource,
-          }),
-        ],
-      });
+      if (needsMigration) {
+        pipeline.addStage({
+          stageName: 'MigrateDev',
+          actions: [
+            new cpactions.CodeBuildAction({
+              actionName: 'PrismaMigrateDeploy',
+              project: buildMigrateProject(
+                this,
+                migrateProjectName(appName, 'dev'),
+                dev.envResources,
+                dev.config.repository
+              ),
+              input: devSource,
+            }),
+          ],
+        });
+      }
       pipeline.addStage({
         stageName: 'DeployDev',
         actions: [
@@ -300,21 +304,23 @@ export class PipelineStack extends cdk.Stack {
           }),
         ],
       });
-      pipeline.addStage({
-        stageName: 'MigrateDev',
-        actions: [
-          new cpactions.CodeBuildAction({
-            actionName: 'PrismaMigrateDeploy',
-            project: codebuild.PipelineProject.fromProjectName(
-              this,
-              `${appName}DevMigrateProject`,
-              migrateProjectName(appName, 'dev')
-            ),
-            input: devSource,
-            role: devRole,
-          }),
-        ],
-      });
+      if (needsMigration) {
+        pipeline.addStage({
+          stageName: 'MigrateDev',
+          actions: [
+            new cpactions.CodeBuildAction({
+              actionName: 'PrismaMigrateDeploy',
+              project: codebuild.PipelineProject.fromProjectName(
+                this,
+                `${appName}DevMigrateProject`,
+                migrateProjectName(appName, 'dev')
+              ),
+              input: devSource,
+              role: devRole,
+            }),
+          ],
+        });
+      }
       pipeline.addStage({
         stageName: 'DeployDev',
         actions: [
@@ -377,21 +383,23 @@ export class PipelineStack extends cdk.Stack {
         }),
       ],
     });
-    pipeline.addStage({
-      stageName: 'MigrateStg',
-      actions: [
-        new cpactions.CodeBuildAction({
-          actionName: 'PrismaMigrateDeploy',
-          project: codebuild.PipelineProject.fromProjectName(
-            this,
-            `${appName}StgMigrateProject`,
-            migrateProjectName(appName, 'stg')
-          ),
-          input: stgSource,
-          role: stgRole,
-        }),
-      ],
-    });
+    if (needsMigration) {
+      pipeline.addStage({
+        stageName: 'MigrateStg',
+        actions: [
+          new cpactions.CodeBuildAction({
+            actionName: 'PrismaMigrateDeploy',
+            project: codebuild.PipelineProject.fromProjectName(
+              this,
+              `${appName}StgMigrateProject`,
+              migrateProjectName(appName, 'stg')
+            ),
+            input: stgSource,
+            role: stgRole,
+          }),
+        ],
+      });
+    }
     pipeline.addStage({
       stageName: 'DeployStg',
       actions: [
@@ -453,21 +461,23 @@ export class PipelineStack extends cdk.Stack {
         }),
       ],
     });
-    pipeline.addStage({
-      stageName: 'MigrateProd',
-      actions: [
-        new cpactions.CodeBuildAction({
-          actionName: 'PrismaMigrateDeploy',
-          project: codebuild.PipelineProject.fromProjectName(
-            this,
-            `${appName}ProdMigrateProject`,
-            migrateProjectName(appName, 'prod')
-          ),
-          input: prodSource,
-          role: prodRole,
-        }),
-      ],
-    });
+    if (needsMigration) {
+      pipeline.addStage({
+        stageName: 'MigrateProd',
+        actions: [
+          new cpactions.CodeBuildAction({
+            actionName: 'PrismaMigrateDeploy',
+            project: codebuild.PipelineProject.fromProjectName(
+              this,
+              `${appName}ProdMigrateProject`,
+              migrateProjectName(appName, 'prod')
+            ),
+            input: prodSource,
+            role: prodRole,
+          }),
+        ],
+      });
+    }
     pipeline.addStage({
       stageName: 'DeployProd',
       actions: [

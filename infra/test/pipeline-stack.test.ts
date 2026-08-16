@@ -217,6 +217,17 @@ describe('PipelineStack', () => {
       });
     });
 
+    it('MigrateDevステージはApiパイプラインのみに存在し、Webパイプラインには存在しない', () => {
+      template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+        Name: 'ApiAppPipeline',
+        Stages: Match.arrayWith([Match.objectLike({ Name: 'MigrateDev' })]),
+      });
+      template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+        Name: 'WebAppPipeline',
+        Stages: Match.not(Match.arrayWith([Match.objectLike({ Name: 'MigrateDev' })])),
+      });
+    });
+
     it('ECRソースアクションが設定される（APIパイプライン）', () => {
       template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
         Name: 'ApiAppPipeline',
@@ -447,6 +458,13 @@ describe('PipelineStack (stgAccountId指定)', () => {
     });
   });
 
+  it('MigrateStgステージはWebパイプラインには存在しない', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'WebAppPipeline',
+      Stages: Match.not(Match.arrayWith([Match.objectLike({ Name: 'MigrateStg' })])),
+    });
+  });
+
   it('アーティファクトバケットのKMSキーがクロスアカウント用に作成される（crossAccountKeys: true、Api/Web各パイプライン分で2つ）', () => {
     template.resourceCountIs('AWS::KMS::Key', 2);
   });
@@ -583,6 +601,13 @@ describe('PipelineStack (prodAccountId指定)', () => {
     });
   });
 
+  it('MigrateProdステージはWebパイプラインには存在しない', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'WebAppPipeline',
+      Stages: Match.not(Match.arrayWith([Match.objectLike({ Name: 'MigrateProd' })])),
+    });
+  });
+
   it('PipelineStack自体にはDEV用の2つのデプロイメントグループのみ作成される（STG/PROD分はDeployTargetStack側）', () => {
     const groups = template.findResources('AWS::CodeDeploy::DeploymentGroup');
     expect(Object.keys(groups).length).toBe(2);
@@ -706,6 +731,13 @@ describe('PipelineStack (devがcross-account)', () => {
           ]),
         }),
       ]),
+    });
+  });
+
+  it('MigrateDevステージはWebパイプラインには存在しない', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'WebAppPipeline',
+      Stages: Match.not(Match.arrayWith([Match.objectLike({ Name: 'MigrateDev' })])),
     });
   });
 

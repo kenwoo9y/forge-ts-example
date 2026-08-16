@@ -91,9 +91,9 @@ describe('DeployTargetStack', () => {
     });
   });
 
-  it('Prismaマイグレーション用CodeBuildプロジェクトが命名規則通りの名前で作成される', () => {
+  it('Prismaマイグレーション用CodeBuildプロジェクトがApiのみ命名規則通りの名前で作成される', () => {
     template.hasResourceProperties('AWS::CodeBuild::Project', { Name: 'ApiMigrateStg' });
-    template.hasResourceProperties('AWS::CodeBuild::Project', { Name: 'WebMigrateStg' });
+    template.resourcePropertiesCountIs('AWS::CodeBuild::Project', { Name: 'WebMigrateStg' }, 0);
   });
 
   it('マイグレーションCodeBuildにDevアカウント集約ECRリポジトリへのpull権限が付与される', () => {

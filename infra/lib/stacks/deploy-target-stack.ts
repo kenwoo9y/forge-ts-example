@@ -77,17 +77,12 @@ export class DeployTargetStack extends cdk.Stack {
       deploymentGroupName: codeDeployGroupName('Web', envName),
     });
 
+    // Prismaマイグレーションが必要なのはDBに接続するApiのみ。Webは静的なため不要
     const apiMigrateProject = buildMigrateProject(
       this,
       migrateProjectName('Api', envName),
       envResources,
       apiRepo
-    );
-    const webMigrateProject = buildMigrateProject(
-      this,
-      migrateProjectName('Web', envName),
-      envResources,
-      webRepo
     );
 
     // ─── クロスアカウント実行ロール（Devアカウントのパイプラインが引き受ける） ─────────
@@ -121,7 +116,7 @@ export class DeployTargetStack extends cdk.Stack {
       new iam.PolicyStatement({
         sid: 'CodeBuildMigrate',
         actions: ['codebuild:StartBuild', 'codebuild:StopBuild', 'codebuild:BatchGetBuilds'],
-        resources: [apiMigrateProject.projectArn, webMigrateProject.projectArn],
+        resources: [apiMigrateProject.projectArn],
       })
     );
     // タスク定義はrevisionごとにARNが変わり、GenerateステージはCDK deployのたびに
