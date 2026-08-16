@@ -33,6 +33,8 @@ export interface ApiStackProps extends cdk.StackProps {
   deploymentController?: ecs.DeploymentControllerType;
   /** ALBをインターネット向けにするか（デフォルト: false） */
   internetFacing?: boolean;
+  /** タスク定義のfamily名（デプロイコントローラーが CODE_DEPLOY の場合のみ使用） */
+  family?: string;
 }
 
 /**
@@ -60,6 +62,7 @@ export class ApiStack extends cdk.Stack {
       desiredCount = 1,
       deploymentController,
       internetFacing = false,
+      family,
     } = props;
 
     this.ecsFargateService = new EcsFargateService(this, 'ApiService', {
@@ -68,6 +71,7 @@ export class ApiStack extends cdk.Stack {
       containerPort: 3000,
       command,
       internetFacing,
+      family,
       environment: {
         DB_HOST: database.dbInstanceEndpointAddress,
         DB_PORT: database.dbInstanceEndpointPort,

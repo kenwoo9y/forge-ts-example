@@ -1,11 +1,15 @@
 # Deploy
 
+## アカウント構成
+
+DEV・STG・PROD はそれぞれ別々のAWSアカウントにデプロイする（詳細は [infra-architecture.md](./infra-architecture.md) の「アカウント構成」を参照）。CI/CDパイプラインとECRは「Pipelineアカウント」に同居し、STG・PROD（およびPipelineを切り出した場合のDEV）へはクロスアカウントでデプロイする。デフォルトではPipelineアカウント＝DEVアカウントで追加設定不要。`cdk synth`/`cdk deploy` は常にPipelineアカウントの認証情報で実行する（デフォルトではDEVアカウントの認証情報。IDは認証情報からCDK CLIが自動的に読み取るため明示指定は不要）。
+
 ## 初回セットアップ（AWSアカウントへの初回デプロイ）
 
 DEV から始めて、段階的に STG・PROD を追加できる。
 
 ```bash
-# 1. AWS SSO でログイン
+# 1. AWS SSO でログイン（DEVアカウント）
 make aws-login
 
 # 2. CDK bootstrap（初回のみ）
@@ -44,30 +48,58 @@ git push -u origin enable-deployment-workflows
 
 ### STG 環境の追加
 
-```bash
-cd infra
+STGは別AWSアカウントにデプロイするため、事前にアカウントを用意し、DEVアカウントからの信頼設定が必要。
 
-# enableStg=true を付けて再デプロイ（stg/jwt-secret は CDK が自動作成）
-pnpm exec cdk deploy --all \
-  -c enableStg=true \
+```bash
+# 0. STGアカウントを作成した上で、STGアカウントの認証情報でCDK bootstrapを実行
+#    （DEVアカウントからのcdk deploy/パイプラインを信頼させる）
+cdk bootstrap aws://<STGアカウントID>/<リージョン> --trust <DEVアカウントID>
+
+# 1. DEVアカウントの認証情報に戻り、STG_ACCOUNT_ID を設定して再デプロイ
+#    （stg/jwt-secret は CDK が自動作成）
+cd infra
+STG_ACCOUNT_ID=<STGアカウントID> pnpm exec cdk deploy --all \
   -c githubOrg=<GitHub ユーザー名または組織名> \
   -c githubRepo=<リポジトリ名>
 ```
 
-デプロイ後、次回の main push から CodePipeline に STG 承認・昇格ステージが追加される。
+デプロイ後、次回の main push から CodePipeline に STG 承認・昇格ステージが追加される。`STG_ACCOUNT_ID` は今後の全デプロイ（CI含む）で継続して設定しておく必要がある（`.env` に設定するか、CI側の環境変数として登録する）。
 
 ### PROD 環境の追加
 
-```bash
-cd infra
+PRODも同様に別AWSアカウントを用意する。
 
-# enableStg=true enableProd=true を付けて再デプロイ（prod/jwt-secret は CDK が自動作成）
-pnpm exec cdk deploy --all \
-  -c enableStg=true \
-  -c enableProd=true \
+```bash
+# 0. PRODアカウントの認証情報でCDK bootstrapを実行
+cdk bootstrap aws://<PRODアカウントID>/<リージョン> --trust <DEVアカウントID>
+
+# 1. DEVアカウントの認証情報に戻り、STG_ACCOUNT_ID/PROD_ACCOUNT_ID を設定して再デプロイ
+#    （prod/jwt-secret は CDK が自動作成）
+cd infra
+STG_ACCOUNT_ID=<STGアカウントID> PROD_ACCOUNT_ID=<PRODアカウントID> pnpm exec cdk deploy --all \
   -c githubOrg=<GitHub ユーザー名または組織名> \
   -c githubRepo=<リポジトリ名>
 ```
+
+### Pipelineアカウントの切り出し（任意）
+
+デフォルトではPipeline（CodePipeline・ECR）はDEVアカウントに同居する。専用のTooling/CI-CDアカウントに切り出したい場合、`PIPELINE_ACCOUNT_ID`を設定する。この場合、DEVもSTG/PROD同様にPipelineからのクロスアカウントデプロイ対象になる。
+
+```bash
+# 0. Pipeline用アカウントを作成した上で、そのアカウントの認証情報でCDK bootstrapを実行
+#    （--trustにはこれまでcdkを実行してきたアカウント＝現在のDEVアカウントのIDを指定する）
+cdk bootstrap aws://<Pipelineアカウント ID>/<リージョン> --trust <現在のDEVアカウントID>
+
+# 1. DEVアカウントの認証情報のまま、PIPELINE_ACCOUNT_ID を設定して再デプロイ
+#    （Pipeline・ECRがPipelineアカウントへ、CodeDeploy/マイグレーション用CodeBuild等が
+#    DevDeployTargetStackとしてDEVアカウントへ作成される）
+cd infra
+PIPELINE_ACCOUNT_ID=<Pipelineアカウント ID> pnpm exec cdk deploy --all \
+  -c githubOrg=<GitHub ユーザー名または組織名> \
+  -c githubRepo=<リポジトリ名>
+```
+
+`PIPELINE_ACCOUNT_ID` は今後の全デプロイ（CI含む）で継続して設定しておく必要がある。また、GitHub Actionsが使うOIDCロール（`github-actions-app-deploy`・`github-actions-infra-deploy`）もPipelineアカウント側に作成されるため、GitHub Secretsの値をPipelineアカウントのロールARNに更新する必要がある。
 
 ---
 
@@ -235,6 +267,9 @@ IAM ロールのトラストポリシーは Environment（`main`）に紐づけ�
 |---|---|---|
 | `AWS_INFRA_DEPLOY_ROLE_ARN` | Secret | OIDC ロール ARN（CDK deploy 用） |
 | `AWS_REGION` | Variable | AWS リージョン |
+| `PIPELINE_ACCOUNT_ID` | Variable | 任意。Pipelineアカウントを切り出した場合のみ設定（[Pipelineアカウントの切り出し](#pipelineアカウントの切り出し任意)参照） |
+| `STG_ACCOUNT_ID` | Variable | 任意。STG環境を追加した場合のみ設定（[STG 環境の追加](#stg-環境の追加)参照） |
+| `PROD_ACCOUNT_ID` | Variable | 任意。PROD環境を追加した場合のみ設定（[PROD 環境の追加](#prod-環境の追加)参照） |
 
 ---
 
@@ -339,19 +374,19 @@ docker push $REGISTRY/forge-ts/web-dev:latest
 
 ### 概要
 
-ECR の `:latest` タグ更新を EventBridge で検知して起動するパイプライン。DEV への自動デプロイ後、承認を経て STG・PROD へ順番にイメージを昇格させる。
+ECR の `:latest` タグ更新を EventBridge で検知して起動するパイプライン（Pipelineアカウントに配置。デフォルトはDEVと同居）。DEV への自動デプロイ後、承認を経て STG・PROD へ順番にイメージを昇格させる。STG・PROD（およびPipelineを切り出した場合のDEV）の実行（デプロイ・マイグレーション）はPipelineアカウントからのクロスアカウントアクションになる（詳細は [infra-architecture.md](./infra-architecture.md) の `PipelineStack`/`DeployTargetStack` を参照）。
 
 ### 昇格モデル
 
 ```
-ECR forge-ts/api-dev:latest push
+ECR forge-ts/api-dev:latest push（常にPipelineアカウント内のリポジトリ）
   └─ DEV 自動デプロイ（Blue/Green, LINEAR_10PERCENT_EVERY_1MINUTES）
-       └─ 承認（enableStg 時）
-            └─ forge-ts/api-stg:latest へ昇格（同一イメージダイジェスト）
-                 └─ STG 自動デプロイ
-                      └─ 承認（enableProd 時）
+       └─ 承認（STG_ACCOUNT_ID 設定時）
+            └─ forge-ts/api-stg:latest へ昇格（同一イメージダイジェスト、Pipelineアカウント内で完結）
+                 └─ STGアカウントへクロスアカウントデプロイ
+                      └─ 承認（PROD_ACCOUNT_ID 設定時）
                            └─ forge-ts/api-prod:latest へ昇格
-                                └─ PROD 自動デプロイ
+                                └─ PRODアカウントへクロスアカウントデプロイ
 ```
 
 昇格はイメージの**再ビルドなし**でマニフェストをコピーするため、DEV で検証済のバイナリがそのまま PROD に届く。
@@ -360,7 +395,7 @@ ECR forge-ts/api-dev:latest push
 
 `Migrate*` ステージは Prisma マイグレーションを実行するステージで、`ApiAppPipeline` にのみ存在する（`WebAppPipeline` には無い）。
 
-| ステージ | 常時 | enableStg | enableProd | 対象 |
+| ステージ | 常時 | STG_ACCOUNT_ID | PROD_ACCOUNT_ID | 対象 |
 |---|---|---|---|---|
 | Source | ✓ | ✓ | ✓ | 両方 |
 | GenerateDev | ✓ | ✓ | ✓ | 両方 |

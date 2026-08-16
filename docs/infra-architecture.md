@@ -1,6 +1,15 @@
 # インフラアーキテクチャ
 
-AWS CDK (TypeScript) で定義されている。グローバルスタック 2 つ（`EcrStack`・`PipelineStack`）と、環境ごとのスタック 4 つ（`NetworkStack`・`DatabaseStack`・`ApiStack`・`WebStack`）で構成される。DEV 環境は常に作成され、STG・PROD は CDK コンテキスト（`enableStg` / `enableProd`）で有効化する。
+AWS CDK (TypeScript) で定義。DEV・STG・PROD はそれぞれ**別々の AWS アカウント**にデプロイする。DEV は常に作成され、STG・PROD は `STG_ACCOUNT_ID` / `PROD_ACCOUNT_ID` 環境変数が設定されている場合のみ作成される。
+
+## アカウント構成
+
+- CI/CD パイプライン（`PipelineStack`）とECRは、同じ「**Pipelineアカウント**」に同居する。デフォルト（`PIPELINE_ACCOUNT_ID`未指定）では**DEVアカウントと同居**し、追加設定は不要。`PIPELINE_ACCOUNT_ID`にDEVとは異なるアカウントIDを指定すると、専用のTooling/CI-CDアカウントとして切り出せる（AWSの標準的なマルチアカウント構成に合わせやすくなる一方、切り出す場合はアカウントが1つ増える）
+- `cdk synth`/`cdk deploy` は常に Pipeline アカウントの認証情報で実行する。Pipeline アカウントのIDは、`PIPELINE_ACCOUNT_ID`が未指定なら`CDK_DEFAULT_ACCOUNT`（CDK CLIが認証情報から自動セット、＝DEVアカウント）にフォールバックする
+- STG・PROD、および（`PIPELINE_ACCOUNT_ID`でPipelineをDEVと別アカウントにした場合の）DEV へは、Pipeline アカウントからの**クロスアカウントデプロイ**になる。それらのデプロイ実行リソース（CodeDeployのDeploymentGroup・Prismaマイグレーション用CodeBuild）は `DeployTargetStack` として各アカウントに作成し、Pipeline アカウントの `PipelineStack` が公開されたIAMロールを引き受けて操作する
+- ECR は **Pipeline アカウントに集約**する（DEV/STG/PRODすべてのリポジトリを含む）。Pipeline以外のアカウントからのpullは、リポジトリのリソースポリシー（`AccountPrincipal`）で許可する
+- CloudFormation はスタックをまたいだクロスアカウント参照ができないため、Pipelineアカウントとは異なるアカウントのリソース参照はすべて `lib/pipeline-naming.ts` の命名規則からアカウントID・リソース名を逆算し、`fromXxxAttributes` 系メソッドでインポートする方式を取っている
+- 実際にPipelineアカウントとは異なるアカウントへデプロイするには、事前に該当アカウントで `cdk bootstrap aws://<ACCOUNT_ID>/<REGION> --trust <Pipelineアカウントのアカウント自体のID>` を実行し、Pipelineアカウントからの信頼を設定しておく必要がある（詳細は [deploy.md](./deploy.md)）
 
 ## システム概要
 
@@ -103,16 +112,17 @@ graph LR
     WS --> PS
 ```
 
-`PipelineStack`は、Blue/GreenデプロイのためのTargetGroup/Listener（ApiStack・WebStack由来）に加えて、Prismaマイグレーション用CodeBuildをRDSと同じVPCに配置するため`NetworkStack`（vpc・rdsSecurityGroup）・`DatabaseStack`（RDSインスタンス・認証情報）にも依存する。
+`PipelineStack`（Pipelineアカウント）は、Pipelineと同一アカウントの環境（デフォルトではDEVのみ）についてはBlue/GreenデプロイのためのTargetGroup/Listener（ApiStack・WebStack由来）や、Prismaマイグレーション用CodeBuildを配置するための`NetworkStack`（vpc・rdsSecurityGroup）・`DatabaseStack`（RDSインスタンス・認証情報）に依存する。Pipelineとは別アカウントの環境（STG/PROD、および`PIPELINE_ACCOUNT_ID`指定時のDEV）については同一アカウント内のライブCDK参照が使えないため、`DeployTargetStack`（各環境のアカウント）が代わりにこれらへ依存し、`PipelineStack`側は命名規則から逆算したARN/名前でインポートするだけになる。
 
-| スタック | ファイル | スコープ | 役割 |
+| スタック | ファイル | アカウント | 役割 |
 |---|---|---|---|
-| `EcrStack` | `lib/stacks/ecr-stack.ts` | グローバル | ECR リポジトリ（api / web × 環境） |
-| `PipelineStack` | `lib/stacks/pipeline-stack.ts` | グローバル | GitHub Actions用OIDCロール + アプリCodePipeline（Blue/Greenデプロイ・DBマイグレーション） |
-| `NetworkStack` | `lib/stacks/network-stack.ts` | 環境ごと | VPC・サブネット・セキュリティグループ |
-| `DatabaseStack` | `lib/stacks/database-stack.ts` | 環境ごと | RDS PostgreSQL・DB 認証情報 |
-| `ApiStack` | `lib/stacks/api-stack.ts` | 環境ごと | Hono API サーバー (ECS Fargate、内部ALB) |
-| `WebStack` | `lib/stacks/web-stack.ts` | 環境ごと | Next.js フロントエンド (ECS Fargate、公開ALB) |
+| `EcrStack` | `lib/stacks/ecr-stack.ts` | Pipeline（デフォルトはDEVと同居） | ECR リポジトリ（api / web × 環境、Pipelineアカウントに集約） |
+| `PipelineStack` | `lib/stacks/pipeline-stack.ts` | Pipeline（デフォルトはDEVと同居） | GitHub Actions用OIDCロール + アプリCodePipeline（Blue/Greenデプロイ・DBマイグレーション、Pipelineとは別アカウントの環境へはクロスアカウント） |
+| `NetworkStack` | `lib/stacks/network-stack.ts` | 環境ごと（DEV/STG/PROD） | VPC・サブネット・セキュリティグループ |
+| `DatabaseStack` | `lib/stacks/database-stack.ts` | 環境ごと（DEV/STG/PROD） | RDS PostgreSQL・DB 認証情報 |
+| `ApiStack` | `lib/stacks/api-stack.ts` | 環境ごと（DEV/STG/PROD） | Hono API サーバー (ECS Fargate、内部ALB) |
+| `WebStack` | `lib/stacks/web-stack.ts` | 環境ごと（DEV/STG/PROD） | Next.js フロントエンド (ECS Fargate、公開ALB) |
+| `DeployTargetStack` | `lib/stacks/deploy-target-stack.ts` | Pipelineとは別アカウントの環境（STG/PROD、および`PIPELINE_ACCOUNT_ID`指定時のDEV） | CodeDeployのDeploymentGroup・Prismaマイグレーション用CodeBuild・Pipelineアカウントが引き受けるクロスアカウントIAMロール |
 
 ---
 
@@ -187,7 +197,7 @@ flowchart LR
 
 ### EcrStack
 
-環境ごとに api / web の ECR リポジトリペアを管理するグローバルスタック。DEV は常に作成され、STG・PROD はコンテキストフラグで制御する。
+環境ごとに api / web の ECR リポジトリペアを管理する、Pipelineアカウント（デフォルトはDEVと同居）のスタック。DEV は常に作成され、STG・PROD は対応するアカウントIDが指定されている場合のみ作成する。
 
 | 項目 | 値 |
 |---|---|
@@ -196,27 +206,42 @@ flowchart LR
 | ライフサイクルルール | 最新 20 イメージのみ保持 |
 | 削除ポリシー | `RETAIN`（スタック削除時もリポジトリは残る） |
 
-| 環境 | 有効化条件 |
+| 環境 | 作成条件 |
 |---|---|
 | DEV | 常時 |
-| STG | `enableStg: true` |
-| PROD | `enableProd: true` |
+| STG | `STG_ACCOUNT_ID` 環境変数が設定されている場合のみ |
+| PROD | `PROD_ACCOUNT_ID` 環境変数が設定されている場合のみ |
+
+DEV（`PIPELINE_ACCOUNT_ID`でPipelineをDEVと別アカウントにした場合のみ）・STG/PRODリポジトリには、対応するアカウント（`AccountPrincipal`）からの`ecr:BatchGetImage`等のpullを許可するリソースポリシーが自動付与される。各アカウント側のECSタスク実行ロールはIAM側の権限（`AmazonECSTaskExecutionRolePolicy`）を既に持っているため、これだけでクロスアカウントpullが成立する。
 
 ### PipelineStack
 
-グローバルスタック。役割は大きく2つ。
+Pipelineアカウント（デフォルトはDEVと同居）のスタック。役割は大きく2つ。
 
 1. **GitHub Actions用のOIDCロール**（IAMのみ、CodePipelineとは無関係）
    | ロール | 用途 | スコープ |
    |---|---|---|
    | `github-actions-app-deploy` | DEV ECRへのイメージpush専用 | `refs/heads/main` |
-   | `github-actions-infra-deploy` | `cdk deploy`（`main` Environment承認必須） | GitHub Environment `main` |
+   | `github-actions-infra-deploy` | `cdk deploy`（`main` Environment承認必須）。Pipelineアカウント自身の`cdk-*`ブートストラップロールに加え、DEV（`PIPELINE_ACCOUNT_ID`指定時）・`STG_ACCOUNT_ID`/`PROD_ACCOUNT_ID`が設定されていればそれぞれの`cdk-*`ロールもAssumeRole対象に含まれる | GitHub Environment `main` |
 
 2. **アプリ用CodePipeline**（`ApiAppPipeline` / `WebAppPipeline`）
-   - **Source**: GitHubではなく、DEV ECRリポジトリへの`:latest`イメージpushをEventBridge経由で検知して起動（`EcrSourceAction`）
+   - **Source**: GitHubではなく、DEV ECRリポジトリ（Pipelineアカウント内）への`:latest`イメージpushをEventBridge経由で検知して起動（`EcrSourceAction`）。ECRは常にPipelineアカウントに集約されるため、このステージ自体はDEVがクロスアカウントの場合でも常にPipelineアカウント内で完結する
    - **Generate → (Migrate) → Deploy** の順にステージが並ぶ。`Migrate*`（`MigrateDev`/`MigrateStg`/`MigrateProd`）は`ApiAppPipeline`のみに存在し、VPC内に配置したCodeBuildで`prisma migrate deploy`を実行してからBlue/Greenデプロイに進む
-   - `Generate*`ステージは、ECSサービスが現在使用中のタスク定義ではなく、**`cdk deploy`のたびに最新化されるCloudFormation側のタスク定義ARN**を起点にコンテナイメージだけを差し替える（`CODE_DEPLOY`コントローラーのECSサービスはタスク定義の更新をCloudFormationだけでは反映しないため）
-   - DEV→STG→PRODの昇格は再ビルドではなくECRイメージダイジェストのコピー（`buildPromoteProject`）。承認ゲートは`ApproveStg`/`ApproveProd`（`ManualApprovalAction`）
+   - `Generate*`ステージは、ECSサービスが現在使用中のタスク定義ではなく、**`cdk deploy`のたびに最新化されるタスク定義のfamily名**（revision省略で最新ACTIVEを取得、例: `stg-api`）を起点にコンテナイメージだけを差し替える（`CODE_DEPLOY`コントローラーのECSサービスはタスク定義の更新をCloudFormationだけでは反映しないため）。対象環境がPipelineとは別アカウントの場合はbuildspec内で`sts assume-role`によりクロスアカウントロールを引き受けてから`ecs describe-task-definition`を呼ぶ
+   - DEV→STG→PRODの昇格は再ビルドではなくECRイメージダイジェストのコピー（`buildPromoteProject`、ECRが常にPipelineアカウントに集約されているため常に同一アカウント内で完結）。承認ゲートは`ApproveStg`/`ApproveProd`（`ManualApprovalAction`）
+   - `Migrate*`・`Deploy*`アクションのうち対象環境がPipelineとは別アカウントのもの（STG/PROD、および`PIPELINE_ACCOUNT_ID`指定時のDEV）は、`DeployTargetStack`（各環境のアカウント）が公開する`pipeline-cross-account-{dev|stg|prod}`ロールを`role`propに渡すことでクロスアカウント実行する（CodePipelineネイティブのクロスアカウントアクション機構）。アーティファクトS3バケットは、いずれかの環境がPipelineとは別アカウントの場合`crossAccountKeys: true`でカスタマー管理KMSキーを使用し、このロールに読み取り・復号権限を付与する
+
+### DeployTargetStack
+
+`STG_ACCOUNT_ID` / `PROD_ACCOUNT_ID`（および`PIPELINE_ACCOUNT_ID`でPipelineをDEVと別アカウントにした場合のDEV）が該当する場合のみ、それぞれのアカウントに作成されるスタック。Pipelineアカウントのパイプラインからは対象環境のアカウントに対してCloudFormationのクロスアカウント参照ができないため、デプロイ実行に必要なリソースをアカウントローカルに用意し、`lib/pipeline-naming.ts`の命名規則から逆算できる名前・ARNで公開する。
+
+| リソース | 用途 |
+|---|---|
+| CodeDeploy Application/DeploymentGroup（Api/Web） | Blue/Greenデプロイの実行先。`ApiStg`/`ApiStgDeploymentGroup`のように命名規則で固定した名前を持つ |
+| Prismaマイグレーション用CodeBuild（Api/Web） | RDSと同じVPCに配置（Pipelineアカウントに置いたCodeBuildはアカウントを跨いでVPCへ到達できないため） |
+| `pipeline-cross-account-{env}` IAMロール | Pipelineアカウント（`AccountPrincipal`）のみが引き受け可能。CodeDeploy操作・CodeBuild起動・ECSタスク定義参照の権限を持つ |
+
+ECRイメージのpullに必要な権限は、Pipelineアカウントに集約されたECRリポジトリ側のリソースポリシー（`EcrStack`）で許可されるため、このスタック側では追加のECR設定は不要（IAM側の`ecr:BatchGetImage`等の許可のみ付与）。
 
 ### NetworkStack
 
@@ -311,6 +336,18 @@ Blue/Green側は `PipelineStack` の `CodeDeployEcsDeployAction` が本番トラ
 
 ## 設定パラメータ
 
+### アカウント関連
+
+| 環境変数 | デフォルト | 説明 |
+|---|---|---|
+| `CDK_DEFAULT_ACCOUNT` | なし | DEVアカウントのID。cdk実行時の認証情報からCDK CLIが自動セットするため、明示指定は不要 |
+| `CDK_DEFAULT_REGION` | なし | 全アカウント共通のリージョン。`STG_ACCOUNT_ID`/`PROD_ACCOUNT_ID`/`PIPELINE_ACCOUNT_ID`（DEVと異なる場合）設定時は必須（未設定だと`cdk synth`/`deploy`がエラーで停止する） |
+| `PIPELINE_ACCOUNT_ID` | `CDK_DEFAULT_ACCOUNT`（＝DEVと同居） | Pipeline（`PipelineStack`・`EcrStack`）を配置するアカウントのID。DEVと異なる値を指定した場合のみDEVもクロスアカウントターゲット（`DevDeployTargetStack`）として扱われる |
+| `STG_ACCOUNT_ID` | なし | STGアカウントのID。設定されている場合のみSTG関連スタック（`StgNetworkStack`等・`StgDeployTargetStack`）が作成される |
+| `PROD_ACCOUNT_ID` | なし | PRODアカウントのID。設定されている場合のみPROD関連スタックが作成される |
+
+### 環境ごとのリソース設定
+
 `bin/infra.ts` の `createEnvInfra()` が読み取る。ほとんどが環境ごとに `DEV_` / `STG_` / `PROD_` を接頭辞として付けた環境変数（`${E}_XXX`）で、環境ごとに個別上書きできる。`POSTGRES_DB` のみ接頭辞なしの共通変数で、必須（未設定だと `cdk synth`/`deploy` がエラーで停止する）。
 
 | 環境変数 | デフォルト | 説明 |
@@ -326,6 +363,6 @@ Blue/Green側は `PipelineStack` の `CodeDeployEcsDeployAction` が本番トラ
 | `{ENV}_WEB_MEMORY_MIB` | `512` | Web タスクのメモリ (MiB) |
 | `{ENV}_WEB_DESIRED_COUNT` | `1` | Web タスクの起動数 |
 
-`{ENV}` は `DEV` / `STG` / `PROD`（例: `DEV_API_CPU`, `STG_DB_INSTANCE_TYPE`）。`enableStg` / `enableProd` コンテキストが有効な環境のみ意味を持つ。
+`{ENV}` は `DEV` / `STG` / `PROD`（例: `DEV_API_CPU`, `STG_DB_INSTANCE_TYPE`）。`STG_ACCOUNT_ID`/`PROD_ACCOUNT_ID`が設定されている環境のみ意味を持つ。
 
 NetworkStackのAZ数（デフォルト2）は環境変数化されておらず、`NetworkStack` のコンストラクタ引数（現状 `bin/infra.ts` からは未指定でコンストラクト側デフォルトを使用）でのみ変更可能。

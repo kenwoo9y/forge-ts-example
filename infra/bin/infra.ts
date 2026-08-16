@@ -3,8 +3,10 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import { type EnvName, ecrRepoArn, ecrRepoName, taskDefFamily } from '../lib/pipeline-naming';
 import { ApiStack } from '../lib/stacks/api-stack';
 import { DatabaseStack } from '../lib/stacks/database-stack';
+import { DeployTargetStack } from '../lib/stacks/deploy-target-stack';
 import { EcrStack } from '../lib/stacks/ecr-stack';
 import { NetworkStack } from '../lib/stacks/network-stack';
 import { type EnvResources, PipelineStack } from '../lib/stacks/pipeline-stack';
@@ -17,16 +19,13 @@ function envInt(key: string, defaultValue: number): number {
   return val !== undefined ? parseInt(val, 10) : defaultValue;
 }
 
-function isEnabled(app: cdk.App, key: string): boolean {
-  const val = app.node.tryGetContext(key);
-  return val === true || val === 'true';
+function requireEnv(value: string | undefined, name: string): string {
+  if (!value) throw new Error(`${name} environment variable is required`);
+  return value;
 }
 
 // ─── デフォルト設定（全環境共通・最小コスト）────────────────────────────────
-// 環境ごとに増強する場合は DEV_API_CPU / STG_API_CPU / PROD_API_CPU 等の
-// 環境変数で上書きする
-
-type EnvName = 'dev' | 'stg' | 'prod';
+// 環境ごとに増強する場合は DEV_API_CPU / STG_API_CPU / PROD_API_CPU 等の環境変数で上書きする
 
 const DEFAULT_API_CPU = 256;
 const DEFAULT_API_MEMORY = 512;
@@ -97,6 +96,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     memoryLimitMiB: envInt(`${E}_API_MEMORY_MIB`, DEFAULT_API_MEMORY),
     desiredCount: envInt(`${E}_API_DESIRED_COUNT`, DEFAULT_API_COUNT),
     deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    family: taskDefFamily('Api', envName),
   });
 
   const webStack = new WebStack(app, `${P}WebStack`, {
@@ -110,6 +110,7 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
     memoryLimitMiB: envInt(`${E}_WEB_MEMORY_MIB`, DEFAULT_WEB_MEMORY),
     desiredCount: envInt(`${E}_WEB_DESIRED_COUNT`, DEFAULT_WEB_COUNT),
     deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    family: taskDefFamily('Web', envName),
   });
 
   return {
@@ -124,32 +125,108 @@ function createEnvInfra(app: cdk.App, envName: EnvName, env: cdk.Environment): E
 }
 
 // ─── アプリ ──────────────────────────────────────────────────────────────────
+// Dev/Stg/Prodはそれぞれ別のAWSアカウントにデプロイする。CI/CDパイプライン（PipelineStack）とECRは同じ「Pipelineアカウント」に同居する。
+// Pipelineアカウントは PIPELINE_ACCOUNT_ID環境変数で明示指定でき、未指定時はDevアカウント（＝cdk実行時の認証情報から自動セットされるCDK_DEFAULT_ACCOUNT）と同居する（デフォルト・追加設定不要）。
+// PIPELINE_ACCOUNT_ID を Dev と異なるアカウントに指定した場合、DevもStg/Prodと同様にクロスアカウントターゲット（DeployTargetStackが作成される）として扱われる。
+// Stg/ProdアカウントIDは認証情報から自動判別できないため STG_ACCOUNT_ID / PROD_ACCOUNT_ID環境変数で明示指定する（.env.example 参照。実アカウント作成・cdk bootstrap --trust は別途運用作業として必要）。
+// これらが設定されているかどうかが、そのまま「そのアカウントにデプロイするか」を表す唯一のフラグになる。
 
 const app = new cdk.App();
 
-const cdkEnv = {
-  account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.CDK_DEFAULT_REGION,
-};
+const region = process.env.CDK_DEFAULT_REGION;
+const devAccountId = process.env.CDK_DEFAULT_ACCOUNT;
+const pipelineAccountId = process.env.PIPELINE_ACCOUNT_ID ?? devAccountId;
+const stgAccountId = process.env.STG_ACCOUNT_ID;
+const prodAccountId = process.env.PROD_ACCOUNT_ID;
 
-const enableStg = isEnabled(app, 'enableStg');
-const enableProd = isEnabled(app, 'enableProd');
+const devIsCrossAccount = pipelineAccountId !== devAccountId;
 
-const ecrStack = new EcrStack(app, 'EcrStack', { env: cdkEnv, enableStg, enableProd });
+if ((stgAccountId || prodAccountId || devIsCrossAccount) && !region) {
+  throw new Error(
+    'CDK_DEFAULT_REGION environment variable is required when STG_ACCOUNT_ID/PROD_ACCOUNT_ID/PIPELINE_ACCOUNT_ID is set'
+  );
+}
 
-const dev = createEnvInfra(app, 'dev', cdkEnv);
-const stg = enableStg ? createEnvInfra(app, 'stg', cdkEnv) : undefined;
-const prod = enableProd ? createEnvInfra(app, 'prod', cdkEnv) : undefined;
+const devEnv: cdk.Environment = { account: devAccountId, region };
+const pipelineEnv: cdk.Environment = { account: pipelineAccountId, region };
+
+// ECRはPipelineアカウントに集約する（デフォルトはDevと同居）。
+// Dev（別アカウントの場合）・Stg/Prodのリポジトリには、当該アカウントからのクロスアカウントpullを許可するリソースポリシーを付与する
+const ecrStack = new EcrStack(app, 'EcrStack', {
+  env: pipelineEnv,
+  devAccountId: devIsCrossAccount ? devAccountId : undefined,
+  stgAccountId,
+  prodAccountId,
+});
+
+const dev = createEnvInfra(app, 'dev', devEnv);
+
+if (devIsCrossAccount) {
+  const resolvedPipelineAccountId = requireEnv(pipelineAccountId, 'PIPELINE_ACCOUNT_ID');
+  const devRegion = requireEnv(region, 'CDK_DEFAULT_REGION');
+  new DeployTargetStack(app, 'DevDeployTargetStack', {
+    env: devEnv,
+    envName: 'dev',
+    pipelineAccountId: resolvedPipelineAccountId,
+    envResources: dev,
+    ecrRepoArns: {
+      api: ecrRepoArn(resolvedPipelineAccountId, devRegion, ecrRepoName('Api', 'dev')),
+      web: ecrRepoArn(resolvedPipelineAccountId, devRegion, ecrRepoName('Web', 'dev')),
+    },
+  });
+}
+
+if (stgAccountId) {
+  const resolvedPipelineAccountId = requireEnv(
+    pipelineAccountId,
+    'PIPELINE_ACCOUNT_ID (or CDK_DEFAULT_ACCOUNT)'
+  );
+  const stgRegion = requireEnv(region, 'CDK_DEFAULT_REGION');
+  const stgEnv: cdk.Environment = { account: stgAccountId, region: stgRegion };
+  const stg = createEnvInfra(app, 'stg', stgEnv);
+  new DeployTargetStack(app, 'StgDeployTargetStack', {
+    env: stgEnv,
+    envName: 'stg',
+    pipelineAccountId: resolvedPipelineAccountId,
+    envResources: stg,
+    ecrRepoArns: {
+      api: ecrRepoArn(resolvedPipelineAccountId, stgRegion, ecrRepoName('Api', 'stg')),
+      web: ecrRepoArn(resolvedPipelineAccountId, stgRegion, ecrRepoName('Web', 'stg')),
+    },
+  });
+}
+
+if (prodAccountId) {
+  const resolvedPipelineAccountId = requireEnv(
+    pipelineAccountId,
+    'PIPELINE_ACCOUNT_ID (or CDK_DEFAULT_ACCOUNT)'
+  );
+  const prodRegion = requireEnv(region, 'CDK_DEFAULT_REGION');
+  const prodEnv: cdk.Environment = { account: prodAccountId, region: prodRegion };
+  const prod = createEnvInfra(app, 'prod', prodEnv);
+  new DeployTargetStack(app, 'ProdDeployTargetStack', {
+    env: prodEnv,
+    envName: 'prod',
+    pipelineAccountId: resolvedPipelineAccountId,
+    envResources: prod,
+    ecrRepoArns: {
+      api: ecrRepoArn(resolvedPipelineAccountId, prodRegion, ecrRepoName('Api', 'prod')),
+      web: ecrRepoArn(resolvedPipelineAccountId, prodRegion, ecrRepoName('Web', 'prod')),
+    },
+  });
+}
 
 const githubOrg = (app.node.tryGetContext('githubOrg') as string | undefined) ?? '';
 const githubRepo = (app.node.tryGetContext('githubRepo') as string | undefined) ?? '';
 
 new PipelineStack(app, 'PipelineStack', {
-  env: cdkEnv,
+  env: pipelineEnv,
   githubOrg,
   githubRepo,
   ecrStack,
-  dev,
-  stg,
-  prod,
+  dev: devIsCrossAccount
+    ? { kind: 'cross-account', accountId: requireEnv(devAccountId, 'CDK_DEFAULT_ACCOUNT') }
+    : { kind: 'local', resources: dev },
+  stg: stgAccountId ? { accountId: stgAccountId } : undefined,
+  prod: prodAccountId ? { accountId: prodAccountId } : undefined,
 });

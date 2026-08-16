@@ -28,6 +28,7 @@
     "buildx",
     "cpactions",
     "depcruise",
+    "deploymentconfig",
     "esbenp",
     "esbuild",
     "pullrequest",

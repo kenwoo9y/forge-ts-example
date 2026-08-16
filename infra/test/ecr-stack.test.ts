@@ -1,5 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
-import { Template } from 'aws-cdk-lib/assertions';
+import { Match, Template } from 'aws-cdk-lib/assertions';
 import { describe, expect, it } from 'vitest';
 import { EcrStack } from '../lib/stacks/ecr-stack';
 
@@ -53,9 +53,11 @@ describe('EcrStack', () => {
   });
 });
 
-describe('EcrStack (enableStg=true)', () => {
+describe('EcrStack (stgAccountId指定)', () => {
   const app = new cdk.App();
-  const stack = new EcrStack(app, 'TestEcrStackWithStg', { enableStg: true });
+  const stack = new EcrStack(app, 'TestEcrStackCrossAccount', {
+    stgAccountId: '222222222222',
+  });
   const template = Template.fromStack(stack);
 
   it('DEV+STGで4つのリポジトリが作成される', () => {
@@ -73,11 +75,72 @@ describe('EcrStack (enableStg=true)', () => {
       RepositoryName: 'forge-ts/web-stg',
     });
   });
+
+  it('STGリポジトリにSTGアカウントからのpullを許可するリソースポリシーが付与される', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/api-stg',
+      RepositoryPolicyText: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Sid: 'CrossAccountPull',
+            // AccountPrincipal は Stack非依存のためパーティションを `Fn::Join` で組み立てる
+            Principal: Match.objectLike({
+              AWS: Match.objectLike({
+                'Fn::Join': Match.arrayWith([
+                  Match.arrayWith([Match.stringLikeRegexp('222222222222')]),
+                ]),
+              }),
+            }),
+            Action: Match.arrayWith(['ecr:BatchGetImage']),
+          }),
+        ]),
+      }),
+    });
+  });
+
+  it('DEVリポジトリにはクロスアカウントのリソースポリシーが付与されない', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/api-dev',
+      RepositoryPolicyText: Match.absent(),
+    });
+  });
 });
 
-describe('EcrStack (enableStg=true, enableProd=true)', () => {
+describe('EcrStack (devAccountId指定、PIPELINE_ACCOUNT_ID使用時)', () => {
   const app = new cdk.App();
-  const stack = new EcrStack(app, 'TestEcrStackFull', { enableStg: true, enableProd: true });
+  const stack = new EcrStack(app, 'TestEcrStackDevCrossAccount', {
+    devAccountId: '444444444444',
+  });
+  const template = Template.fromStack(stack);
+
+  it('DEVリポジトリにDevアカウントからのpullを許可するリソースポリシーが付与される', () => {
+    template.hasResourceProperties('AWS::ECR::Repository', {
+      RepositoryName: 'forge-ts/api-dev',
+      RepositoryPolicyText: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Sid: 'CrossAccountPull',
+            Principal: Match.objectLike({
+              AWS: Match.objectLike({
+                'Fn::Join': Match.arrayWith([
+                  Match.arrayWith([Match.stringLikeRegexp('444444444444')]),
+                ]),
+              }),
+            }),
+            Action: Match.arrayWith(['ecr:BatchGetImage']),
+          }),
+        ]),
+      }),
+    });
+  });
+});
+
+describe('EcrStack (stgAccountId + prodAccountId指定)', () => {
+  const app = new cdk.App();
+  const stack = new EcrStack(app, 'TestEcrStackFull', {
+    stgAccountId: '222222222222',
+    prodAccountId: '333333333333',
+  });
   const template = Template.fromStack(stack);
 
   it('DEV+STG+PRODで6つのリポジトリが作成される', () => {

@@ -18,10 +18,13 @@ make cdk-bootstrap
 
 ## デプロイコマンド
 
+DEV・STG・PROD は別々のAWSアカウントにデプロイする。CI/CDパイプライン（`PipelineStack`）とECRは「Pipelineアカウント」に同居し、デフォルトはDEVアカウントと同居する（`PIPELINE_ACCOUNT_ID`で別アカウントに切り出し可能）。`cdk` は常にPipelineアカウントの認証情報で実行し、STG・PROD（・Pipelineを切り出した場合のDEV）はアカウントIDを環境変数で指定した場合のみ対象になる。
+
 | コマンド | 内容 |
 |---|---|
-| `pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | 全スタックをデプロイ（初回・DEV のみ） |
-| `pnpm exec cdk deploy --all -c enableStg=true -c githubOrg=<org> -c githubRepo=<repo>` | STG を追加してデプロイ |
-| `pnpm exec cdk deploy --all -c enableStg=true -c enableProd=true -c githubOrg=<org> -c githubRepo=<repo>` | PROD を追加してデプロイ |
+| `pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | 全スタックをデプロイ（初回・DEV のみ、PipelineはDEVと同居） |
+| `STG_ACCOUNT_ID=<accountId> pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | STG を追加してデプロイ（事前にSTGアカウントでの`cdk bootstrap --trust`が必要） |
+| `STG_ACCOUNT_ID=<accountId> PROD_ACCOUNT_ID=<accountId> pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | PROD を追加してデプロイ（事前にPRODアカウントでの`cdk bootstrap --trust`が必要） |
+| `PIPELINE_ACCOUNT_ID=<accountId> pnpm exec cdk deploy --all -c githubOrg=<org> -c githubRepo=<repo>` | Pipeline・ECRをDEVとは別アカウント（Tooling等）に切り出してデプロイ（事前にそのアカウントでの`cdk bootstrap --trust`が必要） |
 | `pnpm cdk deploy DevNetworkStack` | 指定スタックのみデプロイ |
 | `pnpm cdk destroy` | 全スタックを削除 |

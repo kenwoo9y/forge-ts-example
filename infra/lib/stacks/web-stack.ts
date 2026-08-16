@@ -24,6 +24,8 @@ export interface WebStackProps extends cdk.StackProps {
   desiredCount?: number;
   /** デプロイコントローラー（デフォルト: ECS） */
   deploymentController?: ecs.DeploymentControllerType;
+  /** タスク定義のfamily名（デプロイコントローラーが CODE_DEPLOY の場合のみ使用） */
+  family?: string;
 }
 
 /**
@@ -47,6 +49,7 @@ export class WebStack extends cdk.Stack {
       memoryLimitMiB = 512,
       desiredCount = 1,
       deploymentController,
+      family,
     } = props;
 
     this.ecsFargateService = new EcsFargateService(this, 'WebService', {
@@ -54,6 +57,7 @@ export class WebStack extends cdk.Stack {
       image,
       containerPort: 3001,
       command,
+      family,
       environment: {
         API_URL: apiUrl,
         NODE_ENV: 'production',

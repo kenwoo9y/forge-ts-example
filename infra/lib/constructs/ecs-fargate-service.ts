@@ -19,6 +19,12 @@ export interface EcsFargateServiceProps {
   deploymentController?: ecs.DeploymentControllerType;
   /** ALBをインターネット向けにするか（デフォルト: true）。APIなど内部通信専用の場合は false を指定 */
   internetFacing?: boolean;
+  /**
+   * タスク定義のfamily名（deploymentController が CODE_DEPLOY の場合のみ使用）。
+   * 未指定時はCDKが構築パスから自動生成する。クロスアカウントパイプラインからの
+   * `ecs describe-task-definition`（revisionを省略してfamily名で最新ACTIVEを引く）が安定して機能するよう、明示的な指定を推奨する
+   */
+  family?: string;
 }
 
 /**
@@ -51,6 +57,7 @@ export class EcsFargateService extends Construct {
       desiredCount = 1,
       deploymentController = ecs.DeploymentControllerType.ECS,
       internetFacing = true,
+      family,
     } = props;
 
     this.cluster = new ecs.Cluster(this, 'Cluster', { vpc });
@@ -59,6 +66,7 @@ export class EcsFargateService extends Construct {
       const taskDef = new ecs.FargateTaskDefinition(this, 'TaskDef', {
         cpu,
         memoryLimitMiB,
+        family,
         runtimePlatform: {
           cpuArchitecture: ecs.CpuArchitecture.ARM64,
           operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,

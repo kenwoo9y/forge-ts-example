@@ -3,58 +3,79 @@ import * as codebuild from 'aws-cdk-lib/aws-codebuild';
 import * as codedeploy from 'aws-cdk-lib/aws-codedeploy';
 import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
 import * as cpactions from 'aws-cdk-lib/aws-codepipeline-actions';
-import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import type * as ecr from 'aws-cdk-lib/aws-ecr';
-import type * as ecs from 'aws-cdk-lib/aws-ecs';
-import type * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import type * as rds from 'aws-cdk-lib/aws-rds';
 import type { Construct } from 'constructs';
-import type { ApiStack } from './api-stack';
+import {
+  buildAppEnvConfig,
+  buildDeploymentGroup,
+  buildMigrateProject,
+} from '../constructs/deployment-helpers';
+import {
+  type AppName,
+  codeDeployAppName,
+  codeDeployGroupName,
+  crossAccountRoleArn,
+  type EnvName,
+  migrateProjectName,
+  taskDefFamily,
+} from '../pipeline-naming';
 import type { EcrStack } from './ecr-stack';
-import type { WebStack } from './web-stack';
+import type { EnvResources, LocalAppEnvConfig } from './pipeline-types';
 
-export interface EnvResources {
-  apiStack: ApiStack;
-  webStack: WebStack;
-  /** マイグレーション用CodeBuildをRDSと同じVPCに配置するために使用 */
-  vpc: ec2.Vpc;
-  /** マイグレーション用CodeBuildからのアクセスを許可するために使用 */
-  rdsSecurityGroup: ec2.SecurityGroup;
-  database: rds.DatabaseInstance;
-  databaseCredentials: rds.DatabaseSecret;
-  dbName: string;
+export type { EnvResources } from './pipeline-types';
+
+/** Stg/Prodアカウント（`DeployTargetStack`が配置されているアカウント）への参照 */
+interface CrossAccountEnv {
+  accountId: string;
 }
+
+/**
+ * Devの配置方法。`PIPELINE_ACCOUNT_ID`未指定（デフォルト）ならPipelineと同一アカウントのため
+ * ライブCDK参照（`local`）、指定時はStg/Prodと同様にクロスアカウント（`cross-account`）になる。
+ */
+type DevTarget =
+  | { kind: 'local'; resources: EnvResources }
+  | { kind: 'cross-account'; accountId: string };
 
 export interface PipelineStackProps extends cdk.StackProps {
   githubOrg: string;
   githubRepo: string;
   ecrStack: EcrStack;
-  dev: EnvResources;
-  stg?: EnvResources;
-  prod?: EnvResources;
+  dev: DevTarget;
+  stg?: CrossAccountEnv;
+  prod?: CrossAccountEnv;
 }
 
-interface AppEnvConfig {
-  repository: ecr.Repository;
-  fargateService: ecs.FargateService;
-  /**
-   * cdk deployのたびに最新化されるタスク定義ARN。
-   * CODE_DEPLOYコントローラーのECSサービスは、CloudFormationのタスク定義更新を
-   * 自動では反映しないため、パイプライン側でこのARNを起点に生成する。
-   */
-  taskDefinitionArn: string;
-  blueTargetGroup: elbv2.ApplicationTargetGroup;
-  greenTargetGroup: elbv2.ApplicationTargetGroup;
-  productionListener: elbv2.ApplicationListener;
-  testListener?: elbv2.ApplicationListener;
+/** Stg/Prod・クロスアカウントDev向けのタスク定義生成CodeBuildに渡す最小限の設定 */
+interface GenerateProjectConfig {
+  taskDefFamily: string;
   containerPort: string;
+  /** 指定時、buildspec内で`sts assume-role`してからECS APIを呼ぶ（クロスアカウント用） */
+  crossAccountRoleArn?: string;
 }
+
+/** DEVステージで使う設定。Pipelineと同一アカウントなら`local`、別アカウントなら`cross-account` */
+type DevPipelineTarget =
+  | { kind: 'local'; config: LocalAppEnvConfig; envResources: EnvResources }
+  | {
+      kind: 'cross-account';
+      accountId: string;
+      repository: ecr.IRepository;
+      containerPort: string;
+    };
 
 /**
- * CI/CDパイプラインスタック
+ * CI/CDパイプラインスタック（Pipelineアカウントに配置。デフォルトはDevと同居、
+ * `PIPELINE_ACCOUNT_ID`指定時は別アカウント）
  * - GitHub Actions OIDC ロール（ECR push・cdk deploy・cdk diff 用）
  * - アプリパイプライン（DEV→STG→PROD の昇格モデル）
+ *
+ * Stg/Prod、および（Pipelineと別アカウントの場合の）DevはPipelineとは別アカウントにデプロイされるため、
+ * CloudFormationのクロススタック参照は使えない。
+ * それらのデプロイ実行リソース（CodeDeployのDeploymentGroup・Prismaマイグレーション用CodeBuild）は
+ * `DeployTargetStack`として各アカウントに作成し、ここでは`pipeline-naming.ts`の命名規則からARN/名前を逆算して
+ * `fromXxxAttributes`でインポートし、`DeployTargetStack`が公開するクロスアカウントロールを`role`propで渡して呼び出す。
  */
 export class PipelineStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: PipelineStackProps) {
@@ -112,102 +133,106 @@ export class PipelineStack extends cdk.Stack {
       description: 'GitHub Actions: cdk deploy via infra-deploy.yaml (main environment only)',
     });
 
+    // Dev（別アカウントの場合）・Stg/Prodアカウントで`cdk bootstrap --trust <Account ID>`済みであることが前提
     infraDeployOidcRole.addToPolicy(
       new iam.PolicyStatement({
         sid: 'CdkDeploy',
         actions: ['sts:AssumeRole'],
-        resources: [`arn:aws:iam::${this.account}:role/cdk-*`],
+        resources: [
+          `arn:aws:iam::${this.account}:role/cdk-*`,
+          ...(dev.kind === 'cross-account' ? [`arn:aws:iam::${dev.accountId}:role/cdk-*`] : []),
+          ...(stg ? [`arn:aws:iam::${stg.accountId}:role/cdk-*`] : []),
+          ...(prod ? [`arn:aws:iam::${prod.accountId}:role/cdk-*`] : []),
+        ],
       })
     );
 
     // ─── アプリパイプライン（API・Web） ───────────────────────────────────────
-    const devApiGreenTg = dev.apiStack.ecsFargateService.greenTargetGroup;
-    const devWebGreenTg = dev.webStack.ecsFargateService.greenTargetGroup;
-    if (!devApiGreenTg || !devWebGreenTg) {
-      throw new Error('DEV ApiStack/WebStack must use CODE_DEPLOY deployment controller');
-    }
+    const devApiTarget: DevPipelineTarget =
+      dev.kind === 'local'
+        ? {
+            kind: 'local',
+            config: buildAppEnvConfig(
+              dev.resources.apiStack,
+              ecrStack.dev.api,
+              taskDefFamily('Api', 'dev'),
+              '3000'
+            ),
+            envResources: dev.resources,
+          }
+        : {
+            kind: 'cross-account',
+            accountId: dev.accountId,
+            repository: ecrStack.dev.api,
+            containerPort: '3000',
+          };
+    const devWebTarget: DevPipelineTarget =
+      dev.kind === 'local'
+        ? {
+            kind: 'local',
+            config: buildAppEnvConfig(
+              dev.resources.webStack,
+              ecrStack.dev.web,
+              taskDefFamily('Web', 'dev'),
+              '3001'
+            ),
+            envResources: dev.resources,
+          }
+        : {
+            kind: 'cross-account',
+            accountId: dev.accountId,
+            repository: ecrStack.dev.web,
+            containerPort: '3001',
+          };
 
-    const devApiConfig: AppEnvConfig = {
-      repository: ecrStack.dev.api,
-      fargateService: dev.apiStack.ecsFargateService.fargateService,
-      taskDefinitionArn: dev.apiStack.ecsFargateService.taskDefinition.taskDefinitionArn,
-      blueTargetGroup: dev.apiStack.ecsFargateService.blueTargetGroup,
-      greenTargetGroup: devApiGreenTg,
-      productionListener: dev.apiStack.ecsFargateService.productionListener,
-      testListener: dev.apiStack.ecsFargateService.testListener,
-      containerPort: '3000',
-    };
-    const devWebConfig: AppEnvConfig = {
-      repository: ecrStack.dev.web,
-      fargateService: dev.webStack.ecsFargateService.fargateService,
-      taskDefinitionArn: dev.webStack.ecsFargateService.taskDefinition.taskDefinitionArn,
-      blueTargetGroup: dev.webStack.ecsFargateService.blueTargetGroup,
-      greenTargetGroup: devWebGreenTg,
-      productionListener: dev.webStack.ecsFargateService.productionListener,
-      testListener: dev.webStack.ecsFargateService.testListener,
-      containerPort: '3001',
-    };
-
-    const stgApiConfig =
-      stg && ecrStack.stg ? this.buildEnvConfig(stg.apiStack, ecrStack.stg.api, '3000') : undefined;
-    const stgWebConfig =
-      stg && ecrStack.stg ? this.buildEnvConfig(stg.webStack, ecrStack.stg.web, '3001') : undefined;
-    const prodApiConfig =
+    this.createAppPipeline(
+      'Api',
+      devApiTarget,
+      stg && ecrStack.stg ? { accountId: stg.accountId, repository: ecrStack.stg.api } : undefined,
       prod && ecrStack.prod
-        ? this.buildEnvConfig(prod.apiStack, ecrStack.prod.api, '3000')
-        : undefined;
-    const prodWebConfig =
+        ? { accountId: prod.accountId, repository: ecrStack.prod.api }
+        : undefined
+    );
+    this.createAppPipeline(
+      'Web',
+      devWebTarget,
+      stg && ecrStack.stg ? { accountId: stg.accountId, repository: ecrStack.stg.web } : undefined,
       prod && ecrStack.prod
-        ? this.buildEnvConfig(prod.webStack, ecrStack.prod.web, '3001')
-        : undefined;
-
-    this.createAppPipeline('Api', devApiConfig, stgApiConfig, prodApiConfig, { dev, stg, prod });
-    this.createAppPipeline('Web', devWebConfig, stgWebConfig, prodWebConfig);
-  }
-
-  private buildEnvConfig(
-    appStack: ApiStack | WebStack,
-    repository: ecr.Repository,
-    containerPort: string
-  ): AppEnvConfig {
-    const svc = appStack.ecsFargateService;
-    if (!svc.greenTargetGroup) {
-      throw new Error('AppStack must use CODE_DEPLOY deployment controller');
-    }
-    return {
-      repository,
-      fargateService: svc.fargateService,
-      taskDefinitionArn: svc.taskDefinition.taskDefinitionArn,
-      blueTargetGroup: svc.blueTargetGroup,
-      greenTargetGroup: svc.greenTargetGroup,
-      productionListener: svc.productionListener,
-      testListener: svc.testListener,
-      containerPort,
-    };
+        ? { accountId: prod.accountId, repository: ecrStack.prod.web }
+        : undefined
+    );
   }
 
   // ─── アプリパイプライン（昇格モデル） ─────────────────────────────────────
 
   private createAppPipeline(
-    appName: string,
-    devConfig: AppEnvConfig,
-    stgConfig?: AppEnvConfig,
-    prodConfig?: AppEnvConfig,
-    migrationEnvs?: { dev: EnvResources; stg?: EnvResources; prod?: EnvResources }
+    appName: AppName,
+    dev: DevPipelineTarget,
+    stg?: { accountId: string; repository: ecr.IRepository },
+    prod?: { accountId: string; repository: ecr.IRepository }
   ): void {
+    const devRepository = dev.kind === 'local' ? dev.config.repository : dev.repository;
+    const containerPort = dev.kind === 'local' ? dev.config.containerPort : dev.containerPort;
+    // Prismaマイグレーションが必要なのはDBに接続するApiのみ。Webは静的なため不要
+    const needsMigration = appName === 'Api';
+
     const pipeline = new codepipeline.Pipeline(this, `${appName}AppPipeline`, {
       pipelineName: `${appName}AppPipeline`,
       restartExecutionOnUpdate: false,
+      // Devが別アカウント、またはStg/Prodへのクロスアカウントアクションがある場合、
+      // アーティファクトバケットを暗号化するカスタマー管理KMSキーが必要
+      crossAccountKeys: dev.kind === 'cross-account' || Boolean(stg || prod),
     });
 
-    // Source: DEV ECR の :latest をトリガーに起動
+    // Source: DEV ECR の :latest をトリガーに起動（ECRは常にPipelineアカウントに集約されるため、
+    // Devがクロスアカウントの場合でもこのステージ自体は常にPipelineアカウント内で完結する）
     const devSource = new codepipeline.Artifact(`${appName}DevSource`);
     pipeline.addStage({
       stageName: 'Source',
       actions: [
         new cpactions.EcrSourceAction({
           actionName: 'ECR',
-          repository: devConfig.repository,
+          repository: devRepository,
           imageTag: 'latest',
           output: devSource,
         }),
@@ -216,188 +241,299 @@ export class PipelineStack extends cdk.Stack {
 
     // DEV: デプロイメントアーティファクト生成 → Blue/Green デプロイ
     const devGen = new codepipeline.Artifact(`${appName}DevGen`);
-    pipeline.addStage({
-      stageName: 'GenerateDev',
-      actions: [
-        new cpactions.CodeBuildAction({
-          actionName: 'GenerateDeployArtifacts',
-          project: this.buildGenerateProject(`${appName}GenDev`, devConfig),
-          input: devSource,
-          outputs: [devGen],
-        }),
-      ],
-    });
-    if (migrationEnvs) {
+    if (dev.kind === 'local') {
       pipeline.addStage({
-        stageName: 'MigrateDev',
-        actions: [
-          new cpactions.CodeBuildAction({
-            actionName: 'PrismaMigrateDeploy',
-            project: this.buildMigrateProject(
-              `${appName}MigrateDev`,
-              migrationEnvs.dev,
-              devConfig.repository
-            ),
-            input: devSource,
-          }),
-        ],
-      });
-    }
-    pipeline.addStage({
-      stageName: 'DeployDev',
-      actions: [
-        new cpactions.CodeDeployEcsDeployAction({
-          actionName: 'CodeDeployBlueGreen',
-          deploymentGroup: this.buildDeploymentGroup(`${appName}Dev`, devConfig),
-          appSpecTemplateInput: devGen,
-          taskDefinitionTemplateInput: devGen,
-        }),
-      ],
-    });
-
-    // STG への昇格（enableStg 時のみ）
-    if (stgConfig) {
-      const stgSource = new codepipeline.Artifact(`${appName}StgSource`);
-
-      pipeline.addStage({
-        stageName: 'ApproveStg',
-        actions: [new cpactions.ManualApprovalAction({ actionName: 'ApproveStg' })],
-      });
-      pipeline.addStage({
-        stageName: 'PromoteToStg',
-        actions: [
-          new cpactions.CodeBuildAction({
-            actionName: 'PromoteImage',
-            project: this.buildPromoteProject(
-              `${appName}PromoteToStg`,
-              devConfig.repository,
-              stgConfig.repository
-            ),
-            input: devSource,
-            outputs: [stgSource],
-          }),
-        ],
-      });
-
-      const stgGen = new codepipeline.Artifact(`${appName}StgGen`);
-      pipeline.addStage({
-        stageName: 'GenerateStg',
+        stageName: 'GenerateDev',
         actions: [
           new cpactions.CodeBuildAction({
             actionName: 'GenerateDeployArtifacts',
-            project: this.buildGenerateProject(`${appName}GenStg`, stgConfig),
-            input: stgSource,
-            outputs: [stgGen],
+            project: this.buildGenerateProject(`${appName}GenDev`, dev.config),
+            input: devSource,
+            outputs: [devGen],
           }),
         ],
       });
-      if (migrationEnvs?.stg) {
+      if (needsMigration) {
         pipeline.addStage({
-          stageName: 'MigrateStg',
+          stageName: 'MigrateDev',
           actions: [
             new cpactions.CodeBuildAction({
               actionName: 'PrismaMigrateDeploy',
-              project: this.buildMigrateProject(
-                `${appName}MigrateStg`,
-                migrationEnvs.stg,
-                stgConfig.repository
+              project: buildMigrateProject(
+                this,
+                migrateProjectName(appName, 'dev'),
+                dev.envResources,
+                dev.config.repository
               ),
-              input: stgSource,
+              input: devSource,
             }),
           ],
         });
       }
       pipeline.addStage({
-        stageName: 'DeployStg',
+        stageName: 'DeployDev',
         actions: [
           new cpactions.CodeDeployEcsDeployAction({
             actionName: 'CodeDeployBlueGreen',
-            deploymentGroup: this.buildDeploymentGroup(`${appName}Stg`, stgConfig),
-            appSpecTemplateInput: stgGen,
-            taskDefinitionTemplateInput: stgGen,
+            deploymentGroup: buildDeploymentGroup(this, `${appName}Dev`, dev.config),
+            appSpecTemplateInput: devGen,
+            taskDefinitionTemplateInput: devGen,
           }),
         ],
       });
+    } else {
+      const devRoleArn = crossAccountRoleArn(dev.accountId, 'dev');
+      const devRole = iam.Role.fromRoleArn(this, `${appName}DevCrossAccountRole`, devRoleArn, {
+        mutable: false,
+      });
+      pipeline.artifactBucket.grantRead(devRole);
+      pipeline.artifactBucket.encryptionKey?.grantDecrypt(devRole);
 
-      // PROD への昇格（enableProd 時のみ）
-      if (prodConfig) {
-        const prodSource = new codepipeline.Artifact(`${appName}ProdSource`);
-
+      pipeline.addStage({
+        stageName: 'GenerateDev',
+        actions: [
+          new cpactions.CodeBuildAction({
+            actionName: 'GenerateDeployArtifacts',
+            project: this.buildGenerateProject(`${appName}GenDev`, {
+              taskDefFamily: taskDefFamily(appName, 'dev'),
+              containerPort,
+              crossAccountRoleArn: devRoleArn,
+            }),
+            input: devSource,
+            outputs: [devGen],
+          }),
+        ],
+      });
+      if (needsMigration) {
         pipeline.addStage({
-          stageName: 'ApproveProd',
-          actions: [new cpactions.ManualApprovalAction({ actionName: 'ApproveProd' })],
-        });
-        pipeline.addStage({
-          stageName: 'PromoteToProd',
+          stageName: 'MigrateDev',
           actions: [
             new cpactions.CodeBuildAction({
-              actionName: 'PromoteImage',
-              project: this.buildPromoteProject(
-                `${appName}PromoteToProd`,
-                stgConfig.repository,
-                prodConfig.repository
+              actionName: 'PrismaMigrateDeploy',
+              project: codebuild.PipelineProject.fromProjectName(
+                this,
+                `${appName}DevMigrateProject`,
+                migrateProjectName(appName, 'dev')
               ),
-              input: stgSource,
-              outputs: [prodSource],
-            }),
-          ],
-        });
-
-        const prodGen = new codepipeline.Artifact(`${appName}ProdGen`);
-        pipeline.addStage({
-          stageName: 'GenerateProd',
-          actions: [
-            new cpactions.CodeBuildAction({
-              actionName: 'GenerateDeployArtifacts',
-              project: this.buildGenerateProject(`${appName}GenProd`, prodConfig),
-              input: prodSource,
-              outputs: [prodGen],
-            }),
-          ],
-        });
-        if (migrationEnvs?.prod) {
-          pipeline.addStage({
-            stageName: 'MigrateProd',
-            actions: [
-              new cpactions.CodeBuildAction({
-                actionName: 'PrismaMigrateDeploy',
-                project: this.buildMigrateProject(
-                  `${appName}MigrateProd`,
-                  migrationEnvs.prod,
-                  prodConfig.repository
-                ),
-                input: prodSource,
-              }),
-            ],
-          });
-        }
-        pipeline.addStage({
-          stageName: 'DeployProd',
-          actions: [
-            new cpactions.CodeDeployEcsDeployAction({
-              actionName: 'CodeDeployBlueGreen',
-              deploymentGroup: this.buildDeploymentGroup(`${appName}Prod`, prodConfig),
-              appSpecTemplateInput: prodGen,
-              taskDefinitionTemplateInput: prodGen,
+              input: devSource,
+              role: devRole,
             }),
           ],
         });
       }
+      pipeline.addStage({
+        stageName: 'DeployDev',
+        actions: [
+          new cpactions.CodeDeployEcsDeployAction({
+            actionName: 'CodeDeployBlueGreen',
+            deploymentGroup: this.importDeploymentGroup(appName, 'dev'),
+            appSpecTemplateInput: devGen,
+            taskDefinitionTemplateInput: devGen,
+            role: devRole,
+          }),
+        ],
+      });
     }
+
+    // STG への昇格（stg指定時のみ）
+    if (!stg) return;
+
+    const stgRoleArn = crossAccountRoleArn(stg.accountId, 'stg');
+    const stgRole = iam.Role.fromRoleArn(this, `${appName}StgCrossAccountRole`, stgRoleArn, {
+      mutable: false,
+    });
+    pipeline.artifactBucket.grantRead(stgRole);
+    pipeline.artifactBucket.encryptionKey?.grantDecrypt(stgRole);
+
+    const stgSource = new codepipeline.Artifact(`${appName}StgSource`);
+
+    pipeline.addStage({
+      stageName: 'ApproveStg',
+      actions: [new cpactions.ManualApprovalAction({ actionName: 'ApproveStg' })],
+    });
+    pipeline.addStage({
+      stageName: 'PromoteToStg',
+      actions: [
+        new cpactions.CodeBuildAction({
+          actionName: 'PromoteImage',
+          project: this.buildPromoteProject(
+            `${appName}PromoteToStg`,
+            devRepository,
+            stg.repository
+          ),
+          input: devSource,
+          outputs: [stgSource],
+        }),
+      ],
+    });
+
+    const stgGen = new codepipeline.Artifact(`${appName}StgGen`);
+    pipeline.addStage({
+      stageName: 'GenerateStg',
+      actions: [
+        new cpactions.CodeBuildAction({
+          actionName: 'GenerateDeployArtifacts',
+          project: this.buildGenerateProject(`${appName}GenStg`, {
+            taskDefFamily: taskDefFamily(appName, 'stg'),
+            containerPort,
+            crossAccountRoleArn: stgRoleArn,
+          }),
+          input: stgSource,
+          outputs: [stgGen],
+        }),
+      ],
+    });
+    if (needsMigration) {
+      pipeline.addStage({
+        stageName: 'MigrateStg',
+        actions: [
+          new cpactions.CodeBuildAction({
+            actionName: 'PrismaMigrateDeploy',
+            project: codebuild.PipelineProject.fromProjectName(
+              this,
+              `${appName}StgMigrateProject`,
+              migrateProjectName(appName, 'stg')
+            ),
+            input: stgSource,
+            role: stgRole,
+          }),
+        ],
+      });
+    }
+    pipeline.addStage({
+      stageName: 'DeployStg',
+      actions: [
+        new cpactions.CodeDeployEcsDeployAction({
+          actionName: 'CodeDeployBlueGreen',
+          deploymentGroup: this.importDeploymentGroup(appName, 'stg'),
+          appSpecTemplateInput: stgGen,
+          taskDefinitionTemplateInput: stgGen,
+          role: stgRole,
+        }),
+      ],
+    });
+
+    // PROD への昇格（prod指定時のみ）
+    if (!prod) return;
+
+    const prodRoleArn = crossAccountRoleArn(prod.accountId, 'prod');
+    const prodRole = iam.Role.fromRoleArn(this, `${appName}ProdCrossAccountRole`, prodRoleArn, {
+      mutable: false,
+    });
+    pipeline.artifactBucket.grantRead(prodRole);
+    pipeline.artifactBucket.encryptionKey?.grantDecrypt(prodRole);
+
+    const prodSource = new codepipeline.Artifact(`${appName}ProdSource`);
+
+    pipeline.addStage({
+      stageName: 'ApproveProd',
+      actions: [new cpactions.ManualApprovalAction({ actionName: 'ApproveProd' })],
+    });
+    pipeline.addStage({
+      stageName: 'PromoteToProd',
+      actions: [
+        new cpactions.CodeBuildAction({
+          actionName: 'PromoteImage',
+          project: this.buildPromoteProject(
+            `${appName}PromoteToProd`,
+            stg.repository,
+            prod.repository
+          ),
+          input: stgSource,
+          outputs: [prodSource],
+        }),
+      ],
+    });
+
+    const prodGen = new codepipeline.Artifact(`${appName}ProdGen`);
+    pipeline.addStage({
+      stageName: 'GenerateProd',
+      actions: [
+        new cpactions.CodeBuildAction({
+          actionName: 'GenerateDeployArtifacts',
+          project: this.buildGenerateProject(`${appName}GenProd`, {
+            taskDefFamily: taskDefFamily(appName, 'prod'),
+            containerPort,
+            crossAccountRoleArn: prodRoleArn,
+          }),
+          input: prodSource,
+          outputs: [prodGen],
+        }),
+      ],
+    });
+    if (needsMigration) {
+      pipeline.addStage({
+        stageName: 'MigrateProd',
+        actions: [
+          new cpactions.CodeBuildAction({
+            actionName: 'PrismaMigrateDeploy',
+            project: codebuild.PipelineProject.fromProjectName(
+              this,
+              `${appName}ProdMigrateProject`,
+              migrateProjectName(appName, 'prod')
+            ),
+            input: prodSource,
+            role: prodRole,
+          }),
+        ],
+      });
+    }
+    pipeline.addStage({
+      stageName: 'DeployProd',
+      actions: [
+        new cpactions.CodeDeployEcsDeployAction({
+          actionName: 'CodeDeployBlueGreen',
+          deploymentGroup: this.importDeploymentGroup(appName, 'prod'),
+          appSpecTemplateInput: prodGen,
+          taskDefinitionTemplateInput: prodGen,
+          role: prodRole,
+        }),
+      ],
+    });
+  }
+
+  // ─── ヘルパー: クロスアカウントの DeploymentGroup をインポート ───────────────
+
+  private importDeploymentGroup(
+    appName: AppName,
+    envName: EnvName
+  ): codedeploy.IEcsDeploymentGroup {
+    const application = codedeploy.EcsApplication.fromEcsApplicationName(
+      this,
+      `${appName}${envName}ApplicationImport`,
+      codeDeployAppName(appName, envName)
+    );
+    return codedeploy.EcsDeploymentGroup.fromEcsDeploymentGroupAttributes(
+      this,
+      `${appName}${envName}DeploymentGroupImport`,
+      {
+        application,
+        deploymentGroupName: codeDeployGroupName(appName, envName),
+        deploymentConfig: codedeploy.EcsDeploymentConfig.LINEAR_10PERCENT_EVERY_1MINUTES,
+      }
+    );
   }
 
   // ─── ヘルパー: デプロイアーティファクト生成 CodeBuild ───────────────────────
 
-  private buildGenerateProject(id: string, config: AppEnvConfig): codebuild.PipelineProject {
+  private buildGenerateProject(
+    id: string,
+    config: GenerateProjectConfig
+  ): codebuild.PipelineProject {
     const project = new codebuild.PipelineProject(this, `${id}Project`, {
       projectName: id,
       environment: {
         buildImage: codebuild.LinuxBuildImage.STANDARD_7_0,
         environmentVariables: {
-          // サービスの「現在の」タスク定義ではなく、cdk deployのたびに更新されるCloudFormation側の最新タスク定義ARNを使う
-          TASK_DEF_ARN: { value: config.taskDefinitionArn },
+          // family名（revision省略）で常に最新ACTIVEリビジョンを引く。
+          // クロスアカウントの場合、cdk deployのたびに変わるrevision付きARNは
+          // アカウントを跨いで参照できないため、安定したfamily名を使う
+          TASK_DEF_FAMILY: { value: config.taskDefFamily },
           CONTAINER_PORT: { value: config.containerPort },
           CONTAINER_NAME: { value: 'Container' },
+          ...(config.crossAccountRoleArn
+            ? { CROSS_ACCOUNT_ROLE_ARN: { value: config.crossAccountRoleArn } }
+            : {}),
         },
       },
       buildSpec: codebuild.BuildSpec.fromObject({
@@ -406,7 +542,15 @@ export class PipelineStack extends cdk.Stack {
           build: {
             commands: [
               "IMAGE_URI=$(python3 -c \"import json; print(json.load(open('imageDetail.json'))['ImageURI'])\")",
-              'aws ecs describe-task-definition --task-definition "$TASK_DEF_ARN" --query taskDefinition --output json | jq \'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.placementConstraints,.compatibilities,.registeredAt,.registeredBy,.deregisteredAt)\' > taskdef.json',
+              ...(config.crossAccountRoleArn
+                ? [
+                    'CREDENTIALS=$(aws sts assume-role --role-arn "$CROSS_ACCOUNT_ROLE_ARN" --role-session-name generate-taskdef --query Credentials --output json)',
+                    'export AWS_ACCESS_KEY_ID=$(echo "$CREDENTIALS" | jq -r .AccessKeyId)',
+                    'export AWS_SECRET_ACCESS_KEY=$(echo "$CREDENTIALS" | jq -r .SecretAccessKey)',
+                    'export AWS_SESSION_TOKEN=$(echo "$CREDENTIALS" | jq -r .SessionToken)',
+                  ]
+                : []),
+              'aws ecs describe-task-definition --task-definition "$TASK_DEF_FAMILY" --query taskDefinition --output json | jq \'del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.placementConstraints,.compatibilities,.registeredAt,.registeredBy,.deregisteredAt)\' > taskdef.json',
               'jq --arg img "$IMAGE_URI" --arg name "$CONTAINER_NAME" \'(.containerDefinitions[] | select(.name == $name)) |= (. + {image: $img} | del(.command))\' taskdef.json > taskdef_tmp.json && mv taskdef_tmp.json taskdef.json',
               'jq \'. + {"runtimePlatform": {"cpuArchitecture": "ARM64", "operatingSystemFamily": "LINUX"}}\' taskdef.json > taskdef_tmp.json && mv taskdef_tmp.json taskdef.json',
               'printf \'version: 0.0\\nResources:\\n  - TargetService:\\n      Type: AWS::ECS::Service\\n      Properties:\\n        TaskDefinition: <TASK_DEFINITION>\\n        LoadBalancerInfo:\\n          ContainerName: "%s"\\n          ContainerPort: %s\\n\' "$CONTAINER_NAME" "$CONTAINER_PORT" > appspec.yaml',
@@ -422,15 +566,24 @@ export class PipelineStack extends cdk.Stack {
         resources: ['*'],
       })
     );
+    if (config.crossAccountRoleArn) {
+      project.addToRolePolicy(
+        new iam.PolicyStatement({
+          actions: ['sts:AssumeRole'],
+          resources: [config.crossAccountRoleArn],
+        })
+      );
+    }
     return project;
   }
 
   // ─── ヘルパー: 環境間イメージ昇格 CodeBuild ────────────────────────────────
+  // ECRはDevアカウントに集約されているため、この昇格は常にDevアカウント内（同一レジストリ内のマニフェストコピー）で完結し、クロスアカウント対応は不要
 
   private buildPromoteProject(
     id: string,
-    srcRepo: ecr.Repository,
-    dstRepo: ecr.Repository
+    srcRepo: ecr.IRepository,
+    dstRepo: ecr.IRepository
   ): codebuild.PipelineProject {
     const project = new codebuild.PipelineProject(this, `${id}Project`, {
       projectName: id,
@@ -486,106 +639,5 @@ export class PipelineStack extends cdk.Stack {
       })
     );
     return project;
-  }
-
-  // ─── ヘルパー: Prisma マイグレーション CodeBuild ───────────────────────────
-  // RDSはECSのセキュリティグループ以外からの接続を許可していないため、CodeBuildを
-  // 同じVPC内に配置してRDSに直接到達させる。
-
-  private buildMigrateProject(
-    id: string,
-    env: EnvResources,
-    repository: ecr.Repository
-  ): codebuild.PipelineProject {
-    const migrationSg = new ec2.SecurityGroup(this, `${id}Sg`, {
-      vpc: env.vpc,
-      description: `Security group for ${id} Prisma migration CodeBuild`,
-      allowAllOutbound: true,
-    });
-    new ec2.CfnSecurityGroupIngress(this, `${id}Ingress`, {
-      groupId: env.rdsSecurityGroup.securityGroupId,
-      ipProtocol: 'tcp',
-      fromPort: 5432,
-      toPort: 5432,
-      sourceSecurityGroupId: migrationSg.securityGroupId,
-    });
-
-    const project = new codebuild.PipelineProject(this, `${id}Project`, {
-      projectName: id,
-      vpc: env.vpc,
-      subnetSelection: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
-      securityGroups: [migrationSg],
-      environment: {
-        buildImage: codebuild.LinuxArmBuildImage.AMAZON_LINUX_2023_STANDARD_3_0,
-        privileged: true,
-        environmentVariables: {
-          DB_HOST: { value: env.database.dbInstanceEndpointAddress },
-          DB_PORT: { value: env.database.dbInstanceEndpointPort },
-          DB_NAME: { value: env.dbName },
-          DB_USERNAME: {
-            type: codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER,
-            value: `${env.databaseCredentials.secretArn}:username`,
-          },
-          DB_PASSWORD: {
-            type: codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER,
-            value: `${env.databaseCredentials.secretArn}:password`,
-          },
-        },
-      },
-      buildSpec: codebuild.BuildSpec.fromObject({
-        version: '0.2',
-        phases: {
-          install: {
-            'runtime-versions': { nodejs: 22 },
-          },
-          build: {
-            commands: [
-              "IMAGE_URI=$(python3 -c \"import json; print(json.load(open('imageDetail.json'))['ImageURI'])\")",
-              'REGISTRY=$(echo "$IMAGE_URI" | cut -d/ -f1)',
-              'aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"',
-              'docker pull "$IMAGE_URI"',
-              // デプロイ対象イメージから db パッケージ（schema.prisma / migrations）を取り出す
-              // イメージ側は非rootで動くため、バインドマウント先への書き込み用にrootで実行する
-              'docker run --rm --user root --entrypoint sh -v "$(pwd)":/out "$IMAGE_URI" -c "cp -rL /app/node_modules/db /out/db-package"',
-              'cd db-package',
-              // CodeBuildは環境変数を直接注入するのでdotenv自体不要なため、dotenv依存のない最小構成で上書きする
-              'printf \'import { defineConfig, env } from "prisma/config";\\nexport default defineConfig({\\n  schema: "./prisma/schema.prisma",\\n  migrations: { path: "./prisma/migrations" },\\n  datasource: { url: env("DATABASE_URL") },\\n});\\n\' > prisma.config.ts',
-              'PRISMA_VERSION=$(node -e "console.log(require(\'./package.json\').devDependencies.prisma)")',
-              'npm install --no-save "prisma@$PRISMA_VERSION"',
-              'DATABASE_URL="postgresql://$DB_USERNAME:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" npx prisma migrate deploy',
-            ],
-          },
-        },
-      }),
-    });
-
-    project.addToRolePolicy(
-      new iam.PolicyStatement({
-        actions: ['ecr:GetAuthorizationToken'],
-        resources: ['*'],
-      })
-    );
-    repository.grantPull(project);
-    env.databaseCredentials.grantRead(project);
-
-    return project;
-  }
-
-  // ─── ヘルパー: CodeDeploy デプロイメントグループ ────────────────────────────
-
-  private buildDeploymentGroup(id: string, config: AppEnvConfig): codedeploy.EcsDeploymentGroup {
-    const blueGreenConfig: codedeploy.EcsBlueGreenDeploymentConfig = {
-      blueTargetGroup: config.blueTargetGroup,
-      greenTargetGroup: config.greenTargetGroup,
-      listener: config.productionListener,
-      terminationWaitTime: cdk.Duration.minutes(0),
-      ...(config.testListener ? { testListener: config.testListener } : {}),
-    };
-    return new codedeploy.EcsDeploymentGroup(this, `${id}DeploymentGroup`, {
-      service: config.fargateService,
-      blueGreenDeploymentConfig: blueGreenConfig,
-      deploymentConfig: codedeploy.EcsDeploymentConfig.LINEAR_10PERCENT_EVERY_1MINUTES,
-      autoRollback: { failedDeployment: true, stoppedDeployment: false },
-    });
   }
 }
