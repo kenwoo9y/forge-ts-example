@@ -128,6 +128,9 @@ Settings → Secrets and variables → Actions → Secrets
 | `AWS_INFRA_DEPLOY_ROLE_ARN` | `infra-deploy.yaml` | OIDC ロール ARN（CDK deploy 用） |
 | `E2E_USERNAME` / `E2E_PASSWORD` | `e2e.yaml` | E2E テスト用アカウント（必須。詳細は [ci.md](./ci.md)） |
 | `JWT_SECRET` / `AUTH_SECRET` | `e2e.yaml` | 任意。未設定時はワークフロー内の固定値で代替 |
+| `PIPELINE_ACCOUNT_ID` | `infra-deploy.yaml` | 任意。Pipelineアカウントを切り出した場合のみ設定（[Pipelineアカウントの切り出し](#pipelineアカウントの切り出し任意)参照） |
+| `STG_ACCOUNT_ID` | `infra-deploy.yaml` | 任意。STG環境を追加した場合のみ設定（[STG 環境の追加](#stg-環境の追加)参照） |
+| `PROD_ACCOUNT_ID` | `infra-deploy.yaml` | 任意。PROD環境を追加した場合のみ設定（[PROD 環境の追加](#prod-環境の追加)参照） |
 
 上記2つの OIDC ロールは **CDK（`PipelineStack`）自身が作成する** 。ローカルの強い権限を持つ AWS 認証情報で一度 `cdk deploy --all` を実行し、出力されたロール ARN をここに設定する（初回セットアップの全手順は [README.md](../README.md) を参照）。
 
@@ -139,6 +142,8 @@ Settings → Secrets and variables → Actions → Variables
 |---|---|---|
 | `AWS_REGION` | 全ワークフロー | 例: `ap-northeast-1` |
 | `POSTGRES_DB` | `infra-deploy.yaml` | RDS のデータベース名（`cdk synth`/`deploy` の実行に必須。未設定だとエラーで停止する） |
+
+> `PIPELINE_ACCOUNT_ID` / `STG_ACCOUNT_ID` / `PROD_ACCOUNT_ID` はAWSアカウントIDのため、Variablesではなく上記「GitHub Secrets」に設定する。
 
 ### 4. ブランチ保護ルール（`main`）
 
@@ -267,9 +272,10 @@ IAM ロールのトラストポリシーは Environment（`main`）に紐づけ�
 |---|---|---|
 | `AWS_INFRA_DEPLOY_ROLE_ARN` | Secret | OIDC ロール ARN（CDK deploy 用） |
 | `AWS_REGION` | Variable | AWS リージョン |
-| `PIPELINE_ACCOUNT_ID` | Variable | 任意。Pipelineアカウントを切り出した場合のみ設定（[Pipelineアカウントの切り出し](#pipelineアカウントの切り出し任意)参照） |
-| `STG_ACCOUNT_ID` | Variable | 任意。STG環境を追加した場合のみ設定（[STG 環境の追加](#stg-環境の追加)参照） |
-| `PROD_ACCOUNT_ID` | Variable | 任意。PROD環境を追加した場合のみ設定（[PROD 環境の追加](#prod-環境の追加)参照） |
+| `POSTGRES_DB` | Variable | RDS のデータベース名 |
+| `PIPELINE_ACCOUNT_ID` | Secret | 任意。Pipelineアカウントを切り出した場合のみ設定（[Pipelineアカウントの切り出し](#pipelineアカウントの切り出し任意)参照） |
+| `STG_ACCOUNT_ID` | Secret | 任意。STG環境を追加した場合のみ設定（[STG 環境の追加](#stg-環境の追加)参照） |
+| `PROD_ACCOUNT_ID` | Secret | 任意。PROD環境を追加した場合のみ設定（[PROD 環境の追加](#prod-環境の追加)参照） |
 
 ---
 

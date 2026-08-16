@@ -23,9 +23,9 @@ jobs:
       contents: read
     env:
       POSTGRES_DB: ${{ vars.POSTGRES_DB }}
-      PIPELINE_ACCOUNT_ID: ${{ vars.PIPELINE_ACCOUNT_ID }}
-      STG_ACCOUNT_ID: ${{ vars.STG_ACCOUNT_ID }}
-      PROD_ACCOUNT_ID: ${{ vars.PROD_ACCOUNT_ID }}
+      PIPELINE_ACCOUNT_ID: ${{ secrets.PIPELINE_ACCOUNT_ID }}
+      STG_ACCOUNT_ID: ${{ secrets.STG_ACCOUNT_ID }}
+      PROD_ACCOUNT_ID: ${{ secrets.PROD_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v6
 
@@ -39,9 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ジョブログとしてそのまま公開されないようマスクする
+      # PIPELINE/STG/PROD_ACCOUNT_IDはsecretsのため通常はGitHub側で自動マスクされるが、
+      # cdk synth/deployの出力（クロスアカウントロールARN等）で加工された形で出力されると自動マスクをすり抜ける場合があるため、念のため明示的にマスク登録する
       # 認証情報を設定する前に登録することで、Configure AWS credentials自体の出力にアカウントIDが含まれていた場合も確実にマスクされるようにする
-      # STG/PROD/PipelineアカウントのIDも、cdk synth/deployの出力（クロスアカウントロールARN等）に含まれ得るためマスク対象にする
       - name: Mask AWS account ID
         env:
           ROLE_ARN: ${{ secrets.AWS_INFRA_DEPLOY_ROLE_ARN }}
