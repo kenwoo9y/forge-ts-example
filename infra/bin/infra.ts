@@ -135,7 +135,7 @@ const app = new cdk.App();
 
 const region = process.env.CDK_DEFAULT_REGION;
 const devAccountId = process.env.CDK_DEFAULT_ACCOUNT;
-const pipelineAccountId = process.env.PIPELINE_ACCOUNT_ID ?? devAccountId;
+const pipelineAccountId = process.env.PIPELINE_ACCOUNT_ID || devAccountId;
 const stgAccountId = process.env.STG_ACCOUNT_ID;
 const prodAccountId = process.env.PROD_ACCOUNT_ID;
 
