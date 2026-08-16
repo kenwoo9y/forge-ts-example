@@ -26,7 +26,7 @@ import type { EnvResources, LocalAppEnvConfig } from './pipeline-types';
 export type { EnvResources } from './pipeline-types';
 
 /** Stg/Prodアカウント（`DeployTargetStack`が配置されているアカウント）への参照 */
-export interface CrossAccountEnv {
+interface CrossAccountEnv {
   accountId: string;
 }
 
@@ -34,7 +34,7 @@ export interface CrossAccountEnv {
  * Devの配置方法。`PIPELINE_ACCOUNT_ID`未指定（デフォルト）ならPipelineと同一アカウントのため
  * ライブCDK参照（`local`）、指定時はStg/Prodと同様にクロスアカウント（`cross-account`）になる。
  */
-export type DevTarget =
+type DevTarget =
   | { kind: 'local'; resources: EnvResources }
   | { kind: 'cross-account'; accountId: string };
 
