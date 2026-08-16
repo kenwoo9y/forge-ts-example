@@ -452,6 +452,143 @@ describe('PipelineStack (stgAccountId指定)', () => {
   });
 });
 
+// ─── PROD 昇格ありのテスト ────────────────────────────────────────────────────
+
+describe('PipelineStack (prodAccountId指定)', () => {
+  const STG_ACCOUNT_ID = '222222222222';
+  const PROD_ACCOUNT_ID = '444444444444';
+
+  const template = (() => {
+    const app = new cdk.App();
+    const networkStack = new NetworkStack(app, 'TestNetworkStack', { env: TEST_ENV });
+    const databaseStack = new DatabaseStack(app, 'TestDatabaseStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      dbName: 'test_db',
+    });
+    const sharedStack = new cdk.Stack(app, 'TestSharedStack', { env: TEST_ENV });
+    const jwtSecret = new secretsmanager.Secret(sharedStack, 'JwtSecret');
+
+    // STG/PRODはDevとは別アカウント。ECRのみDevアカウントに集約される
+    const ecrStack = new EcrStack(app, 'TestEcrStack', {
+      env: TEST_ENV,
+      stgAccountId: STG_ACCOUNT_ID,
+      prodAccountId: PROD_ACCOUNT_ID,
+    });
+    const image = ecs.ContainerImage.fromRegistry('nginx');
+
+    const apiStack = new ApiStack(app, 'TestApiStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      rdsSecurityGroup: networkStack.rdsSecurityGroup,
+      database: databaseStack.database,
+      databaseCredentials: databaseStack.credentials,
+      jwtSecret,
+      image,
+      dbName: 'test_db',
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+    const webStack = new WebStack(app, 'TestWebStack', {
+      env: TEST_ENV,
+      vpc: networkStack.vpc,
+      apiUrl: 'http://api.example.com',
+      authSecret: new secretsmanager.Secret(sharedStack, 'AuthSecret'),
+      image,
+      deploymentController: ecs.DeploymentControllerType.CODE_DEPLOY,
+    });
+
+    // STG/PRODのデプロイ実行リソースはそれぞれのアカウントのDeployTargetStack側に作成されるため、
+    // PipelineStackのテストではアカウントIDのみを渡す
+    const pipelineStack = new PipelineStack(app, 'TestPipelineStack', {
+      env: TEST_ENV,
+      githubOrg: 'acme',
+      githubRepo: 'forge',
+
+      ecrStack,
+      dev: {
+        kind: 'local',
+        resources: {
+          apiStack,
+          webStack,
+          vpc: networkStack.vpc,
+          rdsSecurityGroup: networkStack.rdsSecurityGroup,
+          database: databaseStack.database,
+          databaseCredentials: databaseStack.credentials,
+          dbName: 'test_db',
+        },
+      },
+      stg: { accountId: STG_ACCOUNT_ID },
+      prod: { accountId: PROD_ACCOUNT_ID },
+    });
+    return Template.fromStack(pipelineStack);
+  })();
+
+  it('APIパイプラインにPROD承認・昇格・デプロイステージが追加される', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({ Name: 'ApproveProd' }),
+        Match.objectLike({ Name: 'PromoteToProd' }),
+        Match.objectLike({ Name: 'GenerateProd' }),
+        Match.objectLike({ Name: 'MigrateProd' }),
+        Match.objectLike({ Name: 'DeployProd' }),
+      ]),
+    });
+  });
+
+  it('STG→PROD昇格用の CodeBuild プロジェクトが作成される', () => {
+    template.hasResourceProperties('AWS::CodeBuild::Project', {
+      Name: 'ApiPromoteToProd',
+    });
+    template.hasResourceProperties('AWS::CodeBuild::Project', {
+      Name: 'WebPromoteToProd',
+    });
+  });
+
+  it('DeployProdアクションが命名規則から導出したDeploymentGroup・クロスアカウントロールを参照する', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({
+          Name: 'DeployProd',
+          Actions: Match.arrayWith([
+            Match.objectLike({
+              Configuration: Match.objectLike({
+                ApplicationName: 'ApiProd',
+                DeploymentGroupName: 'ApiProdDeploymentGroup',
+              }),
+              RoleArn: `arn:aws:iam::${PROD_ACCOUNT_ID}:role/pipeline-cross-account-prod`,
+            }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  it('MigrateProdアクションがクロスアカウントロールでCodeBuildプロジェクトを起動する', () => {
+    template.hasResourceProperties('AWS::CodePipeline::Pipeline', {
+      Name: 'ApiAppPipeline',
+      Stages: Match.arrayWith([
+        Match.objectLike({
+          Name: 'MigrateProd',
+          Actions: Match.arrayWith([
+            Match.objectLike({
+              Configuration: Match.objectLike({ ProjectName: 'ApiMigrateProd' }),
+              RoleArn: `arn:aws:iam::${PROD_ACCOUNT_ID}:role/pipeline-cross-account-prod`,
+            }),
+          ]),
+        }),
+      ]),
+    });
+  });
+
+  it('PipelineStack自体にはDEV用の2つのデプロイメントグループのみ作成される（STG/PROD分はDeployTargetStack側）', () => {
+    const groups = template.findResources('AWS::CodeDeploy::DeploymentGroup');
+    expect(Object.keys(groups).length).toBe(2);
+  });
+});
+
 // ─── Devがクロスアカウント（PIPELINE_ACCOUNT_ID指定）のテスト ──────────────────
 
 describe('PipelineStack (devがcross-account)', () => {

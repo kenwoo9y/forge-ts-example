@@ -9,7 +9,7 @@ export default mergeConfig(
       exclude: ['node_modules', 'cdk.out'],
       coverage: {
         include: ['lib/**'],
-        exclude: ['lib/**/*.test.ts'],
+        exclude: ['lib/**/*.test.ts', 'lib/**/*-types.ts'],
       },
     },
   })
