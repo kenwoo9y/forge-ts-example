@@ -23,3 +23,5 @@ pre-push:
       run: pnpm run unused-check
     dependency-check:
       run: pnpm run dependency-check
+    type-check:
+      run: pnpm run type-check
