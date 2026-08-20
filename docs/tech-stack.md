@@ -48,7 +48,7 @@
 - **スペルチェック**: cspell
 - **未使用コード検出**: Knip（未使用ファイル・依存関係・exportsの検出）
 - **依存関係ルール検証**: dependency-cruiser（循環参照・devDependenciesへの不正な依存の検出。`apps/web`・`apps/mobile` は `@/*` パスエイリアス解決用に個別設定を継承）
-- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint、pre-push: Knipによる未使用コードチェック / dependency-cruiserによる依存関係ルールチェック）
+- **Gitフック**: Lefthook（pre-commit: Biome check / YAML整形 / git-secrets によるシークレットスキャン / cspell、commit-msg: commitlint、pre-push: 型チェック / Knipによる未使用コードチェック / dependency-cruiserによる依存関係ルールチェック）
 - **コミットメッセージ規約**: commitlint
 
 ---
@@ -316,6 +316,5 @@ forge-ts-example/
 ├── package.json
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml
-├── pnpm.yaml
 └── README.md
 ```
