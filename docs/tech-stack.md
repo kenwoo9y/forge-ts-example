@@ -301,7 +301,7 @@ forge-ts-example/
 ├── .biomeignore
 ├── .dependency-cruiser.cjs
 ├── .dockerignore
-├── .env.template
+├── .env.example
 ├── .gitignore
 ├── .npmrc
 ├── .prettierignore
