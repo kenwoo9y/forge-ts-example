@@ -28,14 +28,14 @@
     "@commitlint/cli": "^21.0.0",
     "@commitlint/config-conventional": "^20.4.3",
     "@types/node": "26.2.0",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
     "cspell": "^10.0.1",
     "dependency-cruiser": "^18.1.1",
     "knip": "^6.29.0",
     "lefthook": "^2.1.9",
     "prettier": "^3.9.4",
-    "turbo": "^2.10.7",
+    "turbo": "^2.10.11",
     "typescript": "^6.0.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   }
 }
